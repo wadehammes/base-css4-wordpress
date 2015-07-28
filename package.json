@@ -62,7 +62,8 @@
     "basscss-utility-layout": "latest",
     "basscss-utility-typography": "latest",
     "basscss-white-space": "latest",
-    "flex-object": "latest"
+    "flex-object": "latest",
+    "normalize.css": "latest"
   },
   "devDependencies": {
     "gulp"           : "^3.8.11",

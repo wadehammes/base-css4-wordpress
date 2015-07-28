@@ -1,13 +1,15 @@
 /*
- * Bassplate
- * Boilerplate for Basscss with cssnext
- * http://github.com/basscss/bassplate
- *
- * Remove or comment out unneeded modules and import your own files.
- * Adjust global media queries and custom properties below.
- *
- */
+* Bassplate
+* Boilerplate for Basscss with cssnext
+* http://github.com/basscss/bassplate
+*
+* Remove or comment out unneeded modules and import your own files.
+* Adjust global media queries and custom properties below.
+*
+*/
 
+/* Normalize */
+@import 'normalize.css';
 
 /* Basscss Modules */
 @import 'basscss-base-reset';
