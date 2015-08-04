@@ -53,11 +53,11 @@
     </nav>
     <!-- End Mobile Nav -->
 
-    <div class="site site--container">
+    <div class="site container">
 
-      <header class="header <?php if(is_front_page()) { echo 'header--blog'; } ?>" role="banner">
+      <header class="fit header <?php if(is_front_page()) { echo 'header--blog'; } ?>" role="banner">
         <?php joints_top_nav(); ?>
       </header>
       <!-- End Header -->
 
-      <main class="content" role="application">
+      <main class="fit content" role="application">
