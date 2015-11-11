@@ -76,7 +76,7 @@ gulp.task("stylesheets", function() {
     .pipe(gulp.dest(stylePathDest))
     .pipe(gzip(gzip_options))
     .pipe(gulp.dest(stylePathDest))
-    .pipe(livereload({start: true}))
+    .pipe(livereload())
     .pipe(notify({ message: 'Styles task complete' }));
 });
 
@@ -93,7 +93,7 @@ gulp.task('scripts', function() {
   .pipe(concat('app.js', {newLine: ';'}))
   .pipe(uglify())
   .pipe(gulp.dest(scriptsPathDest))
-  .pipe(livereload({start: true}))
+  .pipe(livereload())
   .pipe(notify({ message: 'Scripts task complete' }));
 });
 
