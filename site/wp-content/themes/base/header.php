@@ -39,7 +39,7 @@
     <!-- TYPEKIT ACCOUNT -->
 
     <!-- SCRIPT -->
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
+    <!-- <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>-->
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.2/html5shiv.min.js"></script>
 
     <!-- GA -->
@@ -48,16 +48,6 @@
 
   <body <?php body_class(); ?>>
 
-    <nav class="navigation navigation--mobile navigation--off-canvas">
-      <?php joints_off_canvas(); ?>
-    </nav>
-    <!-- End Mobile Nav -->
+    <div class="site-container">
 
-    <div class="site container">
-
-      <header class="fit header <?php if(is_front_page()) { echo 'header--blog'; } ?>" role="banner">
-        <?php joints_top_nav(); ?>
-      </header>
-      <!-- End Header -->
-
-      <main class="fit content" role="application">
+      <main class="content">

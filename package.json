@@ -80,8 +80,6 @@
     "gulp-gzip"      : "1.1.0",
     "gulp-jshint"    : "1.11.0",
     "gulp-shell"     : "0.4.2",
-    "gulp-webserver" : "0.9.1",
-    "opn"            : "2.0.1",
     "gulp-cssnext"   : "1.0.1",
     "gulp-htmlmin"   : "1.1.3"
   }
