@@ -5,7 +5,7 @@
 <!--[if (gt IE 9)|!(IE)]><!--><html <?php language_attributes(); ?> class="no-js"><!--<![endif]-->
 <html>
   <head>
-    <title><?php bloginfo('name'); ?><?php wp_title('|'); ?></title>
+    <title><?php wp_title('|'); ?></title>
 
     <!-- GOOGLE -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
