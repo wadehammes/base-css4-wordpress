@@ -74,6 +74,7 @@
 /* Custom file import */
 @import 'globals/body';
 @import 'globals/colors';
+@import 'globals/align';
 @import 'globals/typography';
 @import 'globals/whitespace';
 
