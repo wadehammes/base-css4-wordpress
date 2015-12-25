@@ -1,0 +1,10 @@
+html * {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--body-background-color);
+  font-family: var(--global-font-family);
+  font-weight: var(--font-weight-regular);
+  text-rendering: optimizeLegibility;
+}

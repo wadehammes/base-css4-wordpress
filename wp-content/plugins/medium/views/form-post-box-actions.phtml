@@ -1,0 +1,148 @@
+<div class="misc-pub-section misc-pub-medium-status">
+	<div class="post-medium-images">
+		<a href="<?php echo $data->medium_user->url ?>"><img class="post-medium-image post-medium-image-avatar" src="<?php echo $data->medium_user->image_url ?>"/></a>
+		<a href="https://medium.com"><img class="post-medium-image post-medium-image-logo" src="<?php echo $data->medium_logo_url ?>"/></a>
+	</div>
+	<?php
+	$statusSpan = '<b><span id="post-medium-status-display">' . $data->medium_post_statuses[$data->medium_post->status] . "</span></b>";
+	?>
+	<span id="medium-status"><?php printf(__("Cross-post as: %s", "medium"), $statusSpan) ?>
+		<a href="#edit_medium_status" class="edit-medium-status hide-if-no-js">
+			<span aria-hidden="true"><?php _e("Edit", "medium") ?></span>
+			<span class="screen-reader-text"><?php _e("Edit Cross-post option", "medium") ?></span>
+		</a>
+	</span>
+
+	<div id="post-medium-status-select" class="hide-if-js">
+		<input type="hidden" id="medium-status-hidden" value="<?php echo $data->medium_post->status ?>" />
+		<?php
+		foreach ($data->medium_post_statuses as $status => $label) {
+			if (!$data->default_publication_publishable && ($status == "unlisted" || $status == "public")) {
+				$disabled = 'disabled="disabled"';
+			} else {
+				$disabled = "";
+			}
+			?>
+			<input type="radio" <?php echo $disabled ?> name="medium-status" id="medium-status-radio-<?php echo $status ?>" value="<?php echo $status ?>" <?php checked($data->medium_post->status, $status) ?> />
+			<label for="medium-status-radio-<?php echo $status ?>" class="selectit"><?php echo $label ?></label><br />
+			<?php
+		}
+		?>
+		<p>
+			<a href="#medium-status" class="save-post-medium-status hide-if-no-js button"><?php _e("OK", "medium"); ?></a>
+			<a href="#medium-status" class="cancel-post-medium-status hide-if-no-js button-cancel"><?php _e("Cancel", "medium"); ?></a>
+		</p>
+	</div>
+</div>
+
+<div class="misc-pub-section misc-pub-medium-license <?php echo $data->options_visibility_class ?>">
+	<?php
+	$licenseSpan = '<b><span id="post-medium-license-display">' . $data->medium_post_licenses[$data->medium_post->license] . "</span></b>";
+	?>
+	<span id="medium-license"><?php printf(__("License: %s", "medium"), $licenseSpan) ?>
+		<a href="#edit_medium_license" class="edit-medium-license hide-if-no-js">
+			<span aria-hidden="true"><?php _e("Edit", "medium") ?></span>
+			<span class="screen-reader-text"><?php _e("Edit Medium license", "medium") ?></span>
+		</a>
+	</span>
+
+	<div id="post-medium-license-select" class="hide-if-js">
+		<input type="hidden" id="medium-license-hidden" value="<?php echo $data->medium_post->license ?>" />
+		<?php
+		foreach ($data->medium_post_licenses as $license => $label) {
+			?>
+			<input type="radio" name="medium-license" id="medium-license-radio-<?php echo $license ?>" value="<?php echo $license ?>" <?php checked($data->medium_post->license, $license) ?> />
+			<label for="medium-license-radio-<?php echo $license ?>" class="selectit"><?php echo $label ?></label><br />
+			<?php
+		}
+		?>
+		<p>
+		  <a href="#medium-license" class="save-post-medium-license hide-if-no-js button"><?php _e("OK", "medium"); ?></a>
+		  <a href="#medium-license" class="cancel-post-medium-license hide-if-no-js button-cancel"><?php _e("Cancel", "medium"); ?></a>
+		</p>
+	</div>
+</div>
+
+<div class="misc-pub-section misc-pub-medium-cross-link <?php echo $data->options_visibility_class ?>">
+	<?php
+	$crossLinkSpan = '<b><span id="post-medium-cross-link-display">' . $data->medium_boolean_options[$data->medium_post->cross_link] . "</span></b>";
+	?>
+	<span id="medium-cross-link"><?php printf(__("Cross-link posts: %s", "medium"), $crossLinkSpan) ?>
+		<a href="#edit_medium_cross_link" class="edit-medium-cross-link hide-if-no-js">
+			<span aria-hidden="true"><?php _e("Edit", "medium") ?></span>
+			<span class="screen-reader-text"><?php _e("Edit cross-link status", "medium") ?></span>
+		</a>
+	</span>
+
+	<div id="post-medium-cross-link-select" class="hide-if-js">
+		<input type="hidden" id="medium-cross-link-hidden" value="<?php echo $data->medium_post->cross_link ?>" />
+		<?php
+		foreach ($data->medium_boolean_options as $boolean => $label) {
+			?>
+			<input type="radio" name="medium-cross-link" id="medium-cross-link-radio-<?php echo $boolean ?>" value="<?php echo $boolean ?>" <?php checked($data->medium_post->cross_link, $boolean) ?> />
+			<label for="medium-cross-link-radio-<?php echo $boolean ?>" class="selectit"><?php echo $label ?></label><br />
+			<?php
+		}
+		?>
+		<p>
+		 <a href="#medium-cross-link" class="save-post-medium-cross-link hide-if-no-js button"><?php _e("OK", "medium"); ?></a>
+		 <a href="#medium-cross-link" class="cancel-post-medium-cross-link hide-if-no-js button-cancel"><?php _e("Cancel", "medium"); ?></a>
+		</p>
+	</div>
+</div>
+
+<div class="misc-pub-section misc-pub-medium-follower-notification <?php echo $data->options_visibility_class ?>">
+	<?php
+	$followerNotificationSpan = '<b><span id="post-medium-follower-notification-display">' . $data->medium_boolean_options[$data->medium_post->follower_notification] . "</span></b>";
+	?>
+	<span id="medium-follower-notification"><?php printf(__("Notify Medium followers: %s", "medium"), $followerNotificationSpan) ?>
+		<a href="#edit_medium_follower_notification" class="edit-medium-follower-notification hide-if-no-js">
+			<span aria-hidden="true"><?php _e("Edit", "medium") ?></span>
+			<span class="screen-reader-text"><?php _e("Edit follower notification", "medium") ?></span>
+		</a>
+	</span>
+
+	<div id="post-medium-follower-notification-select" class="hide-if-js">
+		<input type="hidden" id="medium-follower-notification-hidden" value="<?php echo $data->medium_post->follower_notification ?>" />
+		<?php
+		foreach ($data->medium_boolean_options as $boolean => $label) {
+			?>
+			<input type="radio" name="medium-follower-notification" id="medium-follower-notification-radio-<?php echo $boolean ?>" value="<?php echo $boolean ?>" <?php checked($data->medium_post->follower_notification, $boolean) ?> />
+			<label for="medium-follower-notification-radio-<?php echo $boolean ?>" class="selectit"><?php echo $label ?></label><br />
+			<?php
+		}
+		?>
+		<p>
+		 <a href="#medium-follower-notification" class="save-post-medium-follower-notification hide-if-no-js button"><?php _e("OK", "medium"); ?></a>
+		 <a href="#medium-follower-notification" class="cancel-post-medium-follower-notification hide-if-no-js button-cancel"><?php _e("Cancel", "medium"); ?></a>
+		</p>
+	</div>
+</div>
+
+<div class="misc-pub-section misc-pub-medium-publication-id <?php echo $data->options_visibility_class ?>">
+	<?php
+	$publicationIdSpan = '<b><span id="post-medium-publication-id-display">' . $data->medium_publication_options[$data->medium_post->publication_id]->name . "</span></b>";
+	?>
+	<span id="medium-publication-id"><?php printf(__("Create in publication: %s", "medium"), $publicationIdSpan) ?>
+		<a href="#edit_medium_publication_id" class="edit-medium-publication-id hide-if-no-js">
+			<span aria-hidden="true"><?php _e("Edit", "medium") ?></span>
+			<span class="screen-reader-text"><?php _e("Edit target publication", "medium") ?></span>
+		</a>
+	</span>
+
+	<div id="post-medium-publication-id-select" class="hide-if-js">
+		<input type="hidden" id="medium-publication-id-hidden" value="<?php echo $data->medium_post->publication_id ?>" />
+		<?php
+		foreach ($data->medium_publication_options as $publication_id => $publication) {
+			?>
+			<input type="radio" data-publishable="<?php echo $publication->publishable ?>" name="medium-publication-id" id="medium-publication-id-radio-<?php echo $publication_id ?>" value="<?php echo $publication_id ?>" <?php checked($data->medium_post->publication_id, $publication_id) ?> />
+			<label for="medium-publication-id-radio-<?php echo $publication_id ?>" class="selectit"><?php echo $publication->name ?></label><br />
+			<?php
+		}
+		?>
+		<p>
+		 <a href="#medium-publication-id" class="save-post-medium-publication-id hide-if-no-js button"><?php _e("OK", "medium"); ?></a>
+		 <a href="#medium-publication-id" class="cancel-post-medium-publication-id hide-if-no-js button-cancel"><?php _e("Cancel", "medium"); ?></a>
+		</p>
+	</div>
+</div>

@@ -1,0 +1,26 @@
+.post-medium-image {
+  width: 40px;
+  width: 40px;
+}
+.post-medium-image.post-medium-image-logo {
+  float: right;
+}
+.post-medium-image.post-medium-image-avatar {
+  float: left;
+  border-radius: 100%;
+}
+#medium-status {
+  padding-top: 10px;
+  display: block;
+  clear: both;
+}
+#medium-post-link {
+  padding-top: 10px;
+  clear: both;
+}
+#medium-post-link p {
+  margin-bottom: 0;
+}
+.medium-wrapped {
+  width: 500px;
+}

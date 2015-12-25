@@ -1,0 +1,158 @@
+msgid ""
+msgstr "MIME-Version: 1.0\n"
+
+#. Name.
+msgid "Show IDs by 99 Robots"
+msgstr ""
+
+#. Short description.
+msgid "The **Show IDs** plugin displays the ID of all posts, categories, pages, taxonomies, users, tags, and more."
+msgstr ""
+
+#. Screenshot description.
+msgid "IDs on the all posts page"
+msgstr ""
+
+#. Found in description header.
+msgid "Features"
+msgstr ""
+
+#. Found in description list item.
+msgid "Light-weight with no options page required"
+msgstr ""
+
+#. Found in description list item.
+msgid "Adds a new column on admin page to display IDs of all posts, pages, categories, and more"
+msgstr ""
+
+#. Found in description list item.
+msgid "Supports custom post types and custom taxonomies"
+msgstr ""
+
+#. Found in description list item.
+msgid "posts"
+msgstr ""
+
+#. Found in description list item.
+msgid "pages"
+msgstr ""
+
+#. Found in description list item.
+msgid "categories"
+msgstr ""
+
+#. Found in description list item.
+msgid "tags"
+msgstr ""
+
+#. Found in description list item.
+msgid "links"
+msgstr ""
+
+#. Found in description list item.
+msgid "media"
+msgstr ""
+
+#. Found in description list item.
+msgid "users"
+msgstr ""
+
+#. Found in description list item.
+msgid "comments"
+msgstr ""
+
+#. Found in description list item.
+msgid "link categories"
+msgstr ""
+
+#. Found in description list item.
+msgid "custom taxonomies"
+msgstr ""
+
+#. Found in description list item.
+msgid "custom post types"
+msgstr ""
+
+#. Found in description paragraph.
+msgid "<strong>Show IDs</strong> by 99 Robots is super light-weight and does not need any configuration or separate options page. Simply activate the plugin and IDs will be displayed on all admin pages."
+msgstr ""
+
+#. Found in description paragraph.
+msgid "The Show ID plugin will reveal IDs for the following:"
+msgstr ""
+
+#. Found in description paragraph.
+msgid "Also please check out our other <a href=\"https://99robots.com/products/?utm_source=wprepo&amp;utm_medium=show-ids&amp;utm_campaign=desc\">plugins</a> :)"
+msgstr ""
+
+#. Found in installation header.
+msgid "From WordPress Dashboard"
+msgstr ""
+
+#. Found in installation header.
+msgid "Manual Installation"
+msgstr ""
+
+#. Found in installation list item.
+msgid "Upload <code>wpsite-show-ids</code> to the <code>/wp-content/plugins/</code> directory"
+msgstr ""
+
+#. Found in installation list item.
+msgid "Activate the plugin through the 'Plugins' menu in WordPress"
+msgstr ""
+
+#. Found in installation list item.
+msgid "Navigate to 'Plugins -&gt; Add New' from your WordPress dashboard."
+msgstr ""
+
+#. Found in installation list item.
+msgid "Search for <code>Show IDs</code> and install it."
+msgstr ""
+
+#. Found in installation list item.
+msgid "Activate the plugin from Plugins menu."
+msgstr ""
+
+#. Found in installation list item.
+msgid "Thats it! There is no option configuration or page required."
+msgstr ""
+
+#. Found in installation list item.
+msgid "Download the plugin file: <code>wpsite-show-ids.zip</code>"
+msgstr ""
+
+#. Found in installation list item.
+msgid "Unzip the file"
+msgstr ""
+
+#. Found in installation list item.
+msgid "Upload the <code>wpsite-show-ids</code> folder to your <code>/wp-content/plugins</code> directory (do not rename the folder)"
+msgstr ""
+
+#. Found in installation list item.
+msgid "Activate the plugin from Plugins menu. There is no option configuration or page required."
+msgstr ""
+
+#. Found in installation paragraph.
+msgid "You can install the <strong>Show IDs</strong> plugin from your WordPress Dashboard or manually via FTP."
+msgstr ""
+
+#. Found in changelog list item.
+msgid "FIXED: Post and Page taxonomies were not showing IDs properly on multisite installs"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Re-branded to 99 Robots"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Minor Updates"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Compatible with WordPress 4.1"
+msgstr ""
+
+#. Found in changelog list item.
+msgid "Initial Commit"
+msgstr ""

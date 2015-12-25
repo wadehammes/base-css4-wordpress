@@ -1,0 +1,160 @@
+/*
+* Bassplate
+* Boilerplate for Basscss with cssnext
+* http://github.com/basscss/bassplate
+*
+* Remove or comment out unneeded modules and import your own files.
+* Adjust global media queries and custom properties below.
+*
+*/
+
+/* Normalize */
+@import 'normalize.css';
+
+
+/* Basscss Modules */
+@import 'basscss-base-reset';
+@import 'basscss-base-forms';
+@import 'basscss-base-tables';
+@import 'basscss-align';
+@import 'basscss-white-space';
+@import 'basscss-positions';
+@import 'basscss-responsive-states';
+@import 'basscss-utility-layout';
+@import 'basscss-grid';
+@import 'flex-object';
+
+/* Default BASSCSS Not Included */
+/*
+@import 'basscss-borders';
+@import 'basscss-colors';
+@import 'basscss-background-colors';
+@import 'basscss-color-base';
+@import 'basscss-color-forms';
+@import 'basscss-color-tables';
+@import 'basscss-btn';
+@import 'basscss-btn-primary';
+@import 'basscss-btn-outline';
+@import 'basscss-type-scale';
+@import 'basscss-utility-typography';
+@import 'basscss-base-typography';
+*/
+
+
+/* Optional Modules (not included in Basscss by default) */
+/*
+@import 'basscss-base-buttons';
+@import 'basscss-button-sizes';
+@import 'basscss-color-forms-dark';
+@import 'basscss-input-range';
+@import 'basscss-progress';
+@import 'basscss-button-outline';
+@import 'basscss-button-transparent';
+@import 'basscss-background-images';
+@import 'basscss-media-object';
+@import 'basscss-responsive-white-space';
+@import 'basscss-utility-headings';
+@import 'basscss-ui-utility-groups';
+@import 'basscss-table-object';
+@import 'basscss-color-buttons';
+@import 'basscss-button-link';
+@import 'basscss-button-blue';
+@import 'basscss-button-blue-outline';
+@import 'basscss-button-gray';
+@import 'basscss-button-light-gray';
+@import 'basscss-button-red';
+@import 'basscss-button-nav-light';
+@import 'basscss-button-nav-dark';
+@import 'basscss-button-nav-tab';
+@import 'basscss-highlight-dark';
+@import 'basscss-highlight';
+*/
+
+
+/* Custom file import */
+@import 'globals/body';
+@import 'globals/colors';
+@import 'globals/typography';
+@import 'globals/whitespace';
+
+
+/* Default custom properties */
+@import 'basscss-defaults';
+
+
+/* Custom media queries */
+@custom-media --desktop-large (max-width: 70em); /* 1120px */
+@custom-media --desktop (max-width: 63.9375em); /* 1023px */
+@custom-media --tablet-min (min-width: 51.9375em); /* 831px */
+@custom-media --tablet (max-width: 51.9375em); /* 831px */
+@custom-media --phone (max-width: 39.9375em); /* 639px */
+@custom-media --phone-small (max-width: 29.9375em); /* 479px */
+
+
+/* Custom properties */
+:root {
+  --font-family: 'Helvetica Neue', Helvetica, sans-serif;
+  --line-height: 1.5;
+  --heading-font-family: var(--font-family);
+  --heading-font-weight: bold;
+  --heading-line-height: 1.25;
+  --monospace-font-family: 'Source Code Pro', Consolas, monospace;
+
+  --h1: 2rem;
+  --h2: 1.5rem;
+  --h3: 1.25rem;
+  --h4: 1rem;
+  --h5: .875rem;
+  --h6: .75rem;
+
+  --bold-font-weight: bold;
+
+  --space-1: .5rem;
+  --space-2: 1rem;
+  --space-3: 2rem;
+  --space-4: 4rem;
+
+  --form-field-font-size: 1rem;
+  --form-field-height: 2.25rem;
+  --form-field-padding-y: .5rem;
+  --form-field-padding-x: .5rem;
+
+  --button-font-size: inherit;
+  --button-font-weight: bold;
+  --button-line-height: 1.125rem;
+  --button-padding-y: .5rem;
+  --button-padding-x: 1rem;
+
+  --container-width: 72em;
+
+  --black:  #111;
+  --gray:   #aaa;
+  --silver: #ddd;
+  --white:  #fff;
+
+  --vitamin-c: #FF9900;
+  --route-six: #424242;
+  --steady-grey: #E9E9E9;
+  --bc: #BCBCBC;
+  --gamebookers-blue: #3299BB;
+
+  --darken-1: rgba(0,0,0,.0625);
+  --darken-2: rgba(0,0,0,.125);
+  --darken-3: rgba(0,0,0,.25);
+  --darken-4: rgba(0,0,0,.5);
+
+  --border-width: 2px;
+  --border-radius: 4px;
+  --border-color: var(--darken-2);
+  --default-border: var(--border-width) solid var(--bc);
+  --hover-background-color: var(--darken-1);
+
+  --link-color: var(--gamebookers-blue);
+  --button-background-color: var(--gamebookers-blue);
+  --pre-background-color: var(--bc);
+
+  /* Custom Variables Overrides */
+  --body-color: var(--route-six);
+  --body-background-color: var(--steady-grey);
+}
+

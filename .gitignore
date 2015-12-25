@@ -1,5 +1,22 @@
 # Ignore configuration files that may contain sensitive information
 wp-config.php
+wp-content/cache/
+*.log
+.htaccess
+sitemap.xml
+sitemap.xml.gz
+wp-content/advanced-cache.php
+wp-content/backup-db/
+wp-content/backups/
+wp-content/blogs.dir/
+wp-content/upgrade/
+wp-content/wp-cache-config.php
+wp-content/plugins/hello.php
+
+fabfile.pyc
+
+/readme.html
+/license.txt
 
 # Compiled source #
 ###################
@@ -43,13 +60,13 @@ Thumbs.db
 
 # JS #
 ######################
-wordpress/wp-content/themes/base/library/js/*.js
-wordpress/wp-content/themes/base/library/js/
+wp-content/themes/base/library/js/*.js
+wp-content/themes/base/library/js/
 
 # CSS #
 ######################
-wordpress/wp-content/themes/base/library/js/css/
-wordpress/wp-content/themes/base/library/js/css/*.css
+wp-content/themes/base/library/js/css/
+wp-content/themes/base/library/js/css/*.css
 
 # REPO IGNORES #
 ######################

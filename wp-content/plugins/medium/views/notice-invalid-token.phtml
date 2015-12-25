@@ -1,0 +1,8 @@
+<div class="error">
+	<p>
+		<?php
+		$tokenBlock = sprintf('<strong>%s</strong>', $data->token);
+		printf(__("%s is not a valid Medium Integration token.", "medium"), $tokenBlock);
+		?>
+	</p>
+</div>
