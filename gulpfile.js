@@ -1,25 +1,19 @@
 /*=====================================
 =            Gulp Packages            =
 =====================================*/
-var gulp       = require('gulp');
-var concat     = require('gulp-concat');
-var uglify     = require('gulp-uglify');
-var svgmin     = require('gulp-svgmin');
-var imagemin   = require('gulp-imagemin');
-var notify     = require("gulp-notify");
-var utility    = require('gulp-util');
-var watch      = require('gulp-watch');
-var plumber    = require('gulp-plumber');
-var cssnext    = require('gulp-cssnext');
-var source     = require('vinyl-source-stream');
-var gulp       = require('gulp');
-var browserify = require('browserify');
-var babelify   = require('babelify');
-var watchify   = require('watchify');
-var rename     = require('gulp-rename');
-var buffer     = require('vinyl-buffer');
-var livereload = require('gulp-livereload');
-var streamqueue = require('streamqueue');
+var gulp    = require('gulp'),
+concat      = require('gulp-concat'),
+uglify      = require('gulp-uglify'),
+svgmin      = require('gulp-svgmin'),
+imagemin    = require('gulp-imagemin'),
+livereload  = require('gulp-livereload'),
+notify      = require("gulp-notify"),
+utility     = require('gulp-util'),
+watch       = require('gulp-watch'),
+streamqueue = require('streamqueue'),
+plumber     = require('gulp-plumber'),
+shell       = require('gulp-shell'),
+postcss     = require('gulp-postcss');
 
 /*==================================
 =            Base Paths            =
@@ -29,11 +23,11 @@ var themeName        = 'base';
 
 // Style Path
 var stylePathSrc     = themeBase + themeName + '/assets/css/base.css';
-var stylePathWatch   = themeBase + themeName + '/assets/css/**';
+var stylePathWatch   = themeBase + themeName + '/assets/css/**/*.css';
 var stylePathDest    = themeBase + themeName + '/library/css/';
 
 // Script Path
-var scriptsPathSrc   = themeBase + themeName + '/assets/js/';
+var scriptsPathSrc   = [themeBase + themeName + '/assets/js/_lib/**/*.js', themeBase + themeName + '/assets/js/_src/**/*.js', themeBase + themeName + '/assets/js/app.js'];
 var scriptsPathWatch = themeBase + themeName + '/assets/js/**/*.js';
 var scriptsPathDest  = themeBase + themeName + '/library/js/';
 
@@ -51,67 +45,45 @@ var phpPath          = themeBase + themeName + '/**/*.php';
 /*=============================
 =            Tasks            =
 =============================*/
+// Copy bower files into our assets
+gulp.task('copy', function() {
+  gulp.src([
+    /* add bower src files here if you include a bower.json */
+  ])
+  .pipe(gulp.dest(devBase + '/js/_lib/'));
+});
+
 // Compile, prefix, minify and move our SCSS files
-gulp.task("stylesheets", function() {
-  gulp.src(stylePathSrc)
+gulp.task('stylesheets', function () {
+  var processors = [
+    require("postcss-import")(),
+    require("postcss-url")(),
+    require("postcss-cssnext")(),
+    require("cssnano")(),
+    require("postcss-browser-reporter")(),
+    require("postcss-reporter")()
+  ];
+  return gulp.src(stylePathSrc)
     .pipe(plumber())
-    .pipe(cssnext({
-        compress: true
-    }))
-    .pipe(gulp.dest(stylePathDest))
+    .pipe(postcss(processors))
     .pipe(gulp.dest(stylePathDest))
     .pipe(livereload())
     .pipe(notify({ message: 'Styles task complete' }));
 });
 
-// Compile JS
 // Compile (in order), concatenate, minify, rename and move our JS files
-function handleErrors() {
-  var args = Array.prototype.slice.call(arguments);
-  notify.onError({
-    title: 'Compile Error',
-    message: '<%= error.message %>'
-  }).apply(this, args);
-  this.emit('end'); // Keep gulp from hanging on this task
-}
-
-function buildScript(file, watch) {
-  var props = {
-    entries: [scriptsPathSrc + '/app.js'],
-    debug : true,
-    transform:  [babelify.configure({presets: ['es2015']})]
-  };
-
-  // watchify() if watch requested, otherwise run browserify() once
-  var bundler = watch ? watchify(browserify(props)) : browserify(props);
-
-  function rebundle() {
-    var stream = bundler.bundle();
-    return stream
-      .on('error', handleErrors)
-      .pipe(source(file))
-      .pipe(gulp.dest(scriptsPathDest))
-      // If you also want to uglify it
-      .pipe(buffer())
-      .pipe(uglify())
-      .pipe(rename('app.min.js'))
-      .pipe(gulp.dest(scriptsPathDest))
-      .pipe(livereload())
-      .pipe(notify({ message: 'Scripts task complete' }));
-  }
-
-  // listen for an update and run rebundle
-  bundler.on('update', function() {
-    rebundle();
-    utility.log('Rebundle...');
-  });
-
-  // run it once the first time buildScript is called
-  return rebundle();
-}
-
 gulp.task('scripts', function() {
-  return buildScript('app.js', false); // this will run once because we set watch to false
+  return streamqueue({ objectMode: true },
+    gulp.src(themeBase + themeName + '/assets/js/_lib/**/*.js'),
+    gulp.src(themeBase + themeName + '/assets/js/_src/**/*.js'),
+    gulp.src(themeBase + themeName + '/assets/js/app.js')
+  )
+  .pipe(plumber())
+  .pipe(concat('app.js', {newLine: ';'}))
+  .pipe(uglify())
+  .pipe(gulp.dest(scriptsPathDest))
+  .pipe(livereload())
+  .pipe(notify({ message: 'Scripts task complete' }));
 });
 
 /*========================================
