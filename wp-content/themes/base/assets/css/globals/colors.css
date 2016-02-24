@@ -1,0 +1,20 @@
+/*===================================
+=            Font Colors            =
+===================================*/
+.white { color: var(--white); }
+.black { color: var(--black); }
+
+/*=========================================
+=            Background Colors            =
+=========================================*/
+.bg-white { background-color: var(--white); }
+.bg-black { background-color: var(--black); }
+.bg-dark-gray { background-color: var(--dark-gray); }
+.bg-body-black { background-color: var(--body-black); }
+
+/*=============================================>>>>>
+= Opaque Backgrounds =
+===============================================>>>>>*/
+.bg-white-alpha { background-color: rgba(255,255,255,0.9); }
+.bg-black-alpha { background-color: rgba(17,17,17,0.9); }
+.bg-gray-alpha { background-color: rgba(30,30,30,0.9); }

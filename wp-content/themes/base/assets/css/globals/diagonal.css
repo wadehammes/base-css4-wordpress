@@ -1,0 +1,60 @@
+/*========================================
+=            Background Skews            =
+========================================*/
+.diagonal:before,
+.diagonal-reverse:after {
+  content: '';
+  display: block;
+  width: 100%;
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  height: 55pt;
+  bottom: -45px;
+}
+
+.diagonal:before {
+  transform: skewY(var(--diagonal-deg));
+}
+
+.diagonal-reverse:after {
+  transform: skewY(calc(var(--diagonal-deg) * -1));
+}
+
+.diagonal-black:before,
+.diagonal-black-reverse:after {
+  background: var(--black);
+}
+
+.diagonal-dots:before,
+.diagonal-dots-reverse:after {
+  background: radial-gradient(circle,var(--silver) 5%, transparent 5%),
+  radial-gradient(circle,var(--silver) 5%, white 5%) 10px 10px;
+  background-size:20px 20px;
+}
+
+.diagonal-border:before,
+.diagtonal-border:after {
+  border-top: 5px solid var(--black);
+}
+
+/* Responsive */
+@media (--desktop-large-min) {
+  .diagonal:before,
+  .diagonal-reverse:after {
+    height: 50pt;
+    bottom: -29px;
+  }
+}
+
+@media (--tablet) {
+  .diagonal:before,
+  .diagonal-reverse:after {
+    display: none;
+  }
+}
+
+/* Custom Variables */
+:root {
+  --diagonal-deg: -2deg;
+}

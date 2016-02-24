@@ -1,0 +1,35 @@
+button,
+.button {
+  display: inline-block;
+  padding: 1em 2em;
+  text-align: center;
+  transition: background 0.2s ease-in;
+  font-family: var(--header-font-family);
+  font-weight: 300;
+  font-size: var(--text-small);
+  text-transform: uppercase;
+  border-radius: 0 !important;
+  position:relative;
+  z-index: 20;
+}
+
+button,
+.button,
+button:hover,
+.button:hover {
+  color: var(--white) !important;
+  cursor: pointer;
+}
+
+button:before,
+.button:before {
+  display: none;
+}
+
+.button-green {
+  background: var(--mantis) !important;
+}
+
+.button-green:hover {
+  background: color(var(--mantis) shade(10%)) !important;
+}

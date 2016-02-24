@@ -1,0 +1,30 @@
+<?php
+function joints_scripts_and_styles() {
+  global $wp_styles; // Call global $wp_styles variable to add conditional wrapper around ie stylesheet the WordPress way
+  if (!is_admin()) {
+    $theme_version = wp_get_theme()->Version;
+
+  	// Removes WP version of jQuery
+  	wp_deregister_script('jquery');
+
+    // Remove unecessary Wordpress commenting
+    wp_deregister_script('comment-reply');
+
+    // Remove unnecessary WP-Embed script
+    wp_deregister_script( 'wp-embed' );
+
+    // Loads jQuery from CDNJS
+    wp_enqueue_script( 'jquery', 'https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js', array(), '2.1.4', true );
+
+    // Adding scripts file in the footer
+    wp_enqueue_script( 'site-js', get_template_directory_uri() . '/library/js/app.js', array(), '', true );
+
+    // Register main stylesheet
+    wp_enqueue_style( 'site-css', get_template_directory_uri() . '/library/css/base.css', array(), '', 'all' );
+
+    // Add FontAwesome
+    wp_enqueue_style( 'fontAwesome', 'https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css', array(), '', 'all' );
+  }
+}
+add_action('wp_enqueue_scripts', 'joints_scripts_and_styles', 999);
+?>

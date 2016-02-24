@@ -1,0 +1,90 @@
+/*===================================
+=            List Styles            =
+===================================*/
+ul,
+ol {
+  margin-left: var(--list-side-margin);
+}
+
+ul {
+  list-style-type: disc;
+}
+
+li.divider {
+  display: none;
+}
+
+/* Unordered & Ordered Lists */
+.ul-none {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ul-none li {
+  display: inline-block;
+}
+
+.ul-pretty,
+.ol-pretty,
+.article-content ul,
+.article-content ol {
+  padding-left: 2.5em;
+  margin-bottom: 1.5em;
+}
+
+.ul-pretty li {
+  margin-bottom: 10px;
+  display: block;
+  position: relative;
+  padding-left: 2em;
+  font-weight: var(--font-weight-regular);
+  color: var(--black);
+}
+
+.ul-pretty li::before {
+  content: "•";
+  color: var(--mantis);
+  font-size: var(--text-large);
+  line-height: var(--line-height-normal);
+  margin-right: 10px;
+  position: absolute;
+  top: 2px;
+  left: 0;
+}
+
+.ol-pretty {
+  list-style: decimal !important;
+}
+
+.ol-pretty li {
+  display: block;
+  font-weight: var(--font-weight-regular);
+}
+
+/* Bullets */
+.square { list-style-type: square; }
+.circle { list-style-type: circle; }
+.disc { list-style-type: disc; }
+.no-bullet { list-style: none; }
+
+/* Definition Lists */
+dl dt {
+  margin-bottom: var(--definition-list-header-margin-bottom);
+  font-weight: var(--definition-list-header-weight);
+}
+
+dl dd {
+  margin-bottom: var(--definition-list-margin-bottom);
+}
+
+/* Variables for Lists */
+:root {
+  --list-style-position: inside;
+  --list-side-margin: 0;
+  --list-nested-margin: 1.25em;
+
+  --definition-list-header-weight: var(--font-weight-black);
+  --definition-list-header-margin-bottom: 0.3em;
+  --definition-list-margin-bottom: 0.75em;
+}

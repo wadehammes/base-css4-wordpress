@@ -1,0 +1,93 @@
+/*====================================
+=            Anchor Links            =
+====================================*/
+.click {
+  color: var(--white);
+
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+.site a,
+.anchor {
+  color: var(--mantis);
+  text-decoration: none;
+  transition: color var(--anchor-transition) ease-in;
+  display: inline-block;
+  vertical-align: middle;
+  transform: translateZ(0);
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0);
+  backface-visibility: hidden;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+  top: -2px;
+  overflow: hidden;
+
+  &:hover {
+    color: color(var(--mantis) shade(10%));
+  }
+}
+
+.site a:before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  right: 50%;
+  bottom: 0;
+  background: var(--mantis);
+  height: 1px;
+  transition-property: left, right;
+  transition-duration: var(--anchor-transition);
+  transition-timing-function: ease-out;
+}
+
+.site a:hover:before,
+.site a:focus:before,
+.site a:active:before {
+  left: 0;
+  right: 0;
+}
+
+/* Negate border animation on logos */
+.logo:before {
+  display: none;
+}
+
+h1 a,
+h2 a,
+h3 a,
+h4 a,
+h5 a,
+h6 a {
+  color: var(--black);
+}
+
+h1 a:hover,
+h2 a:hover,
+h3 a:hover,
+h4 a:hover,
+h5 a:hover,
+h6 a:hover {
+  color: var(--mantis);
+}
+
+h1 a,
+h2 a,
+.no-line,
+.date a {
+  top: -1px;
+}
+
+h1 a:before,
+h2 a:before,
+.no-line:before {
+  display: none;
+}
+
+
+/* Custom Anchor Variables */
+:root {
+  --anchor-transition: 0.3s;
+}
