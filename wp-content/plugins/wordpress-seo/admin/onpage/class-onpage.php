@@ -93,6 +93,10 @@ class WPSEO_OnPage {
 	 * Show a notice when the website is not indexable
 	 */
 	public function show_notice() {
+
+		// Just a return, because we want to temporary disable this notice (#3998).
+		return;
+
 		if ( $this->should_show_notice() ) {
 			$notice = sprintf(
 				/* translators: 1: opens a link to a related knowledge base article. 2: closes the link */
@@ -120,8 +124,13 @@ class WPSEO_OnPage {
 	 * @return int(0)|int(1)|false
 	 */
 	protected function request_indexability() {
-		$request  = new WPSEO_OnPage_Request( get_option( 'home' ) );
-		$response = $request->get_response();
+		$parameters = array();
+		if ( $this->wordfence_protection_enabled() ) {
+			$parameters['wf_strict'] = 1;
+		}
+
+		$request  = new WPSEO_OnPage_Request();
+		$response = $request->do_request( get_option( 'home' ), $parameters );
 
 		if ( isset( $response['is_indexable'] ) ) {
 			return (int) $response['is_indexable'];
@@ -201,4 +210,20 @@ class WPSEO_OnPage {
 		}
 	}
 
+	/**
+	 * Checks if WordFence protects the site against 'fake' Google crawlers.
+	 *
+	 * @return boolean
+	 */
+	private function wordfence_protection_enabled() {
+		if ( ! class_exists( 'wfConfig' ) ) {
+			return false;
+		}
+
+		if ( ! method_exists( 'wfConfig', 'get' ) ) {
+			return false;
+		}
+
+		return (bool) wfConfig::get( 'blockFakeBots' );
+	}
 }

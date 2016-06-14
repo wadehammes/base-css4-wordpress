@@ -3,8 +3,8 @@ Contributors: tiguan
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=EH65WAWPEYPXU
 Tags: speed, optimization, performance, scripts to the footer, google libraries, font awesome cdn, defer parsing of javascript, remove query strings, lazy load images, gtmetrix, google pageSpeed, yslow, eliminate external render-blocking javascript and css, compression, async, render-blocking css
 Requires at least: 3.6
-Tested up to: 4.0
-Stable tag: 2.7
+Tested up to: 4.4
+Stable tag: 2.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -44,7 +44,8 @@ https://www.youtube.com/watch?v=u0G6pk2mX4M
 * **Displays the number of executed queries** in the plugin options page.
 * **Displays the Peak Memory Used** in the plugin options page.
 
-For complete usage instructions visit [Plugin Documentation](http://tiguandesign.com/docs/speed-booster/)
+* For complete usage instructions visit [Plugin Documentation](http://tiguandesign.com/docs/speed-booster/)
+* Check out our [Premium Themes](http://tiguandesign.com/category/premium-wordpress-themes/) that use our Speed Booster Pack plugin
 
 = Recommended Plugins =
 
@@ -70,6 +71,9 @@ The following are other recommended plugins by the author of Speed Booster Pack:
 2. The Google Page Speed results on our [testing site](http://tiguandesign.com/testing-speed-booster/) (v2.5)
 
 == Changelog ==
+
+= 2.8 =
+* Fixed plugin options visibility issue
 
 = 2.7 =
 * All important options switched to off by default (on first plugin activation).

@@ -1,0 +1,122 @@
+# Copyright (C) 2014 WP Bitly
+# This file is distributed under the same license as the WP Bitly package.
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Bitly 2.3.1\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/wp-bitly\n"
+"POT-Creation-Date: 2014-06-28 13:52:11+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2014-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: includes/class.wp-bitly-admin.php:80
+msgid "settings page"
+msgstr ""
+
+#: includes/class.wp-bitly-admin.php:82
+msgid "WP Bitly is almost ready! Please visit the %s to add your oauth token."
+msgstr ""
+
+#: includes/class.wp-bitly-admin.php:104
+msgid "Bitly OAuth Token"
+msgstr ""
+
+#: includes/class.wp-bitly-admin.php:105 includes/class.wp-bitly-admin.php:137
+msgid "Post Types"
+msgstr ""
+
+#: includes/class.wp-bitly-admin.php:106 includes/class.wp-bitly-admin.php:153
+msgid "Debug WP Bitly"
+msgstr ""
+
+#: includes/class.wp-bitly-admin.php:109
+msgid ""
+"You will need a Bitly account to use this plugin. Click the link below for "
+"your OAuth Token, and if necessary create a new account."
+msgstr ""
+
+#: includes/class.wp-bitly-admin.php:123
+msgid "Please provide your"
+msgstr ""
+
+#: includes/class.wp-bitly-admin.php:123
+msgid "OAuth Token"
+msgstr ""
+
+#: includes/class.wp-bitly-admin.php:143
+msgid "Automatically generate shortlinks for the selected post types."
+msgstr ""
+
+#: includes/class.wp-bitly-admin.php:154
+msgid "Let's debug!"
+msgstr ""
+
+#: includes/class.wp-bitly-admin.php:155
+msgid ""
+"If you're having issues generating shortlinks, turn this on and create a "
+"thread in the "
+msgstr ""
+
+#: includes/class.wp-bitly-admin.php:156
+msgid "WP Bitly support forums on WordPress.org"
+msgstr ""
+
+#: includes/class.wp-bitly-admin.php:156
+msgid "support forums"
+msgstr ""
+
+#. #-#-#-#-#  plugin.pot (WP Bitly 2.3.1)  #-#-#-#-#
+#. Plugin Name of the plugin/theme
+#: includes/class.wp-bitly-admin.php:221
+msgid "WP Bitly"
+msgstr ""
+
+#: includes/class.wp-bitly-admin.php:252
+msgid "Bitly Statistics"
+msgstr ""
+
+#: includes/class.wp-bitly-admin.php:256
+msgid "Global click through:"
+msgstr ""
+
+#: includes/class.wp-bitly-admin.php:259
+msgid "Your link was shared on"
+msgstr ""
+
+#: includes/class.wp-bitly-admin.php:270
+msgid ""
+"There was a problem retrieving information about your link. There may not be "
+"statistics yet."
+msgstr ""
+
+#: includes/functions.php:53
+msgid "WP Bitly Error: No such API endpoint."
+msgstr ""
+
+#: wp-bitly.php:41
+msgid "WP Bitly Error: No such option %1$s"
+msgstr ""
+
+#: wp-bitly.php:227
+msgid "Settings"
+msgstr ""
+
+#. Plugin URI of the plugin/theme
+msgid "http://wordpress.org/plugins/wp-bitly"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid ""
+"WP Bitly can be used to generate shortlinks for your websites posts, pages, "
+"and custom post types. Extremely lightweight and easy to set up, give it "
+"your Bitly oAuth token and go!"
+msgstr ""
+
+#. Author of the plugin/theme
+msgid ""
+"<a href=\"http://mark.watero.us/\">Mark Waterous</a> & <a href=\"http://www."
+"chipbennett.net/\">Chip Bennett</a>"
+msgstr ""

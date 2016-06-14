@@ -222,8 +222,10 @@ class acf_local {
 		
 		
 		// clear cache
-		wp_cache_delete( "get_field/key={$key}", 'acf' );
-		wp_cache_delete( "get_fields/parent={$parent}", 'acf' );
+		// - delete cache was origional added to ensure changes to JSON / PHP would appear in WP when using memcache
+		// - the downside is that wp_cache_delet is taxing on the system so has been commented out
+		//wp_cache_delete( "get_field/key={$key}", 'acf' );
+		//wp_cache_delete( "get_fields/parent={$parent}", 'acf' );
 		
 	}
 	

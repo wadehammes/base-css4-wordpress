@@ -17,13 +17,6 @@ class WPSEO_Utils {
 	public static $has_filters;
 
 	/**
-	 * Holds the options that, when updated, should cause the transient cache to clear
-	 *
-	 * @var array
-	 */
-	private static $cache_clear = array();
-
-	/**
 	 * Check whether the current user is allowed to access the configuration.
 	 *
 	 * @static
@@ -144,7 +137,8 @@ class WPSEO_Utils {
 	}
 
 	/**
-	 * Strip out the shortcodes with a filthy regex, because people don't properly register their shortcodes.
+	 * First strip out registered and enclosing shortcodes using native WordPress strip_shortcodes function.
+	 * Then strip out the shortcodes with a filthy regex, because people don't properly register their shortcodes.
 	 *
 	 * @static
 	 *
@@ -153,7 +147,7 @@ class WPSEO_Utils {
 	 * @return string $text string without shortcodes
 	 */
 	public static function strip_shortcode( $text ) {
-		return preg_replace( '`\[[^\]]+\]`s', '', $text );
+		return preg_replace( '`\[[^\]]+\]`s', '', strip_shortcodes( $text ) );
 	}
 
 	/**
@@ -431,9 +425,6 @@ class WPSEO_Utils {
 	/**
 	 * Flush W3TC cache after succesfull update/add of taxonomy meta option
 	 *
-	 * @todo [JRF => whomever] check the above and this function to see if they should be combined or really
-	 * do something significantly different
-	 *
 	 * @static
 	 */
 	public static function flush_w3tc_cache() {
@@ -449,78 +440,6 @@ class WPSEO_Utils {
 	 */
 	public static function clear_rewrites() {
 		delete_option( 'rewrite_rules' );
-	}
-
-	/**
-	 * Adds a hook that when given option is updated, the XML sitemap transient cache is cleared
-	 *
-	 * @param string $option Option name.
-	 * @param string $type   Sitemap type.
-	 */
-	public static function register_cache_clear_option( $option, $type = '' ) {
-		self::$cache_clear[ $option ] = $type;
-		add_action( 'update_option', array( 'WPSEO_Utils', 'clear_transient_cache' ) );
-	}
-
-	/**
-	 * Clears the transient cache when a given option is updated, if that option has been registered before
-	 *
-	 * @param string $option The option that's being updated.
-	 */
-	public static function clear_transient_cache( $option ) {
-		if ( isset( self::$cache_clear[ $option ] ) ) {
-			if ( '' !== self::$cache_clear[ $option ] ) {
-				wpseo_invalidate_sitemap_cache( self::$cache_clear[ $option ] );
-			}
-			else {
-				self::clear_sitemap_cache();
-			}
-		}
-	}
-
-	/**
-	 * Clear entire XML sitemap cache
-	 *
-	 * @param array $types Set of sitemap types to invalidate cache for.
-	 */
-	public static function clear_sitemap_cache( $types = array() ) {
-		global $wpdb;
-
-		if ( wp_using_ext_object_cache() ) {
-			return;
-		}
-
-		if ( ! apply_filters( 'wpseo_enable_xml_sitemap_transient_caching', true ) ) {
-			return;
-		}
-
-		// Not sure about efficiency, but that's what code elsewhere does R.
-		$options = WPSEO_Options::get_all();
-
-		if ( true !== $options['enablexmlsitemap'] ) {
-			return;
-		}
-
-		$query = "DELETE FROM $wpdb->options WHERE";
-
-		if ( ! empty( $types ) ) {
-			$first = true;
-
-			foreach ( $types as $sitemap_type ) {
-				if ( ! $first ) {
-					$query .= ' OR ';
-				}
-
-				$query .= " option_name LIKE '_transient_wpseo_sitemap_cache_" . $sitemap_type . "_%' OR option_name LIKE '_transient_timeout_wpseo_sitemap_cache_" . $sitemap_type . "_%'";
-
-				$first = false;
-			}
-		}
-		else {
-			$query .= " option_name LIKE '_transient_wpseo_sitemap_%' OR option_name LIKE '_transient_timeout_wpseo_sitemap_%'";
-		}
-
-		$wpdb->query( $query );
 	}
 
 	/**
@@ -612,7 +531,7 @@ class WPSEO_Utils {
 			case 'mod':
 			case 'modulus':
 				if ( $bc ) {
-					$result = bcmod( $number1, $number2, $precision ); // String, or NULL if modulus is 0.
+					$result = bcmod( $number1, $number2 ); // String, or NULL if modulus is 0.
 				}
 				elseif ( $number2 != 0 ) {
 					$result = ( $number1 % $number2 );
@@ -653,23 +572,6 @@ class WPSEO_Utils {
 		}
 
 		return false;
-	}
-
-	/**
-	 * Wrapper for the PHP filter input function.
-	 *
-	 * This is used because stupidly enough, the `filter_input` function is not available on all hosts...
-	 *
-	 * @deprecated Passes through to PHP call, no longer used in code.
-	 *
-	 * @param int    $type          Input type constant.
-	 * @param string $variable_name Variable name to get.
-	 * @param int    $filter        Filter to apply.
-	 *
-	 * @return mixed
-	 */
-	public static function filter_input( $type, $variable_name, $filter = FILTER_DEFAULT ) {
-		return filter_input( $type, $variable_name, $filter );
 	}
 
 	/**
@@ -776,7 +678,7 @@ class WPSEO_Utils {
 		$replacement = WPSEO_Options::get_default( 'wpseo_titles', 'separator' );
 
 		// Get the titles option and the separator options.
-		$titles_options    = get_option( 'wpseo_titles' );
+		$titles_options    = WPSEO_Options::get_option( 'wpseo_titles' );
 		$seperator_options = WPSEO_Option_Titles::get_instance()->get_separator_options();
 
 		// This should always be set, but just to be sure.
@@ -856,4 +758,57 @@ class WPSEO_Utils {
 		return apply_filters( 'yoast_seo_development_mode', $development_mode );
 	}
 
+	/**
+	 * Wrapper for the PHP filter input function.
+	 *
+	 * This is used because stupidly enough, the `filter_input` function is not available on all hosts...
+	 *
+	 * @deprecated Passes through to PHP call, no longer used in code.
+	 *
+	 * @param int    $type          Input type constant.
+	 * @param string $variable_name Variable name to get.
+	 * @param int    $filter        Filter to apply.
+	 *
+	 * @return mixed
+	 */
+	public static function filter_input( $type, $variable_name, $filter = FILTER_DEFAULT ) {
+		return filter_input( $type, $variable_name, $filter );
+	}
+
+	/**
+	 * Adds a hook that when given option is updated, the XML sitemap transient cache is cleared
+	 *
+	 * @deprecated
+	 * @see WPSEO_Sitemaps_Cache::register_clear_on_option_update()
+	 *
+	 * @param string $option Option name.
+	 * @param string $type   Sitemap type.
+	 */
+	public static function register_cache_clear_option( $option, $type = '' ) {
+		WPSEO_Sitemaps_Cache::register_clear_on_option_update( $option, $type );
+	}
+
+	/**
+	 * Clears the transient cache when a given option is updated, if that option has been registered before
+	 *
+	 * @deprecated
+	 * @see WPSEO_Sitemaps_Cache::clear_on_option_update()
+	 *
+	 * @param string $option The option that's being updated.
+	 */
+	public static function clear_transient_cache( $option ) {
+		WPSEO_Sitemaps_Cache::clear_on_option_update( $option );
+	}
+
+	/**
+	 * Clear entire XML sitemap cache
+	 *
+	 * @deprecated
+	 * @see WPSEO_Sitemaps_Cache::clear()
+	 *
+	 * @param array $types Set of sitemap types to invalidate cache for.
+	 */
+	public static function clear_sitemap_cache( $types = array() ) {
+		WPSEO_Sitemaps_Cache::clear( $types );
+	}
 } /* End of class WPSEO_Utils */

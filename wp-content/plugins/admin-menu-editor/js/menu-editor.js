@@ -38,8 +38,6 @@
  * @property {string|null} wsEditorData.selectedActor
  *
  * @property {object} wsEditorData.actors
- * @property {object} wsEditorData.roles
- * @property {object} wsEditorData.users
  * @property {string[]} wsEditorData.visibleUsers
  *
  * @property {object} wsEditorData.postTypes
@@ -69,299 +67,7 @@ jQuery.each(['grant_access', 'hidden_from_actor'], function(unused, key) {
 	}
 });
 
-var AmeCapabilityManager = (function(roles, users, _) {
-	'use strict';
-
-	/**
-	 * A user.
-	 *
-	 * @typedef {Object} AmeUserActor
-	 *
-	 * @property {string} user_login
-	 * @property {string} display_name
-	 *
-	 * @property {Object}   capabilities    A dictionary of ["capability" => boolean].
-	 * @property {string[]} roles
-	 * @property {boolean}  is_super_admin
-	 */
-
-	var me = {};
-	/**
-	 * @type {Object.<String, AmeUserActor>}
-	 */
-	users = users || {};
-
-	var defaultCapabilities = {},
-		grantedCapabilities = {},
-
-		emptyObject = {},
-		cachedContextList = [emptyObject, grantedCapabilities, defaultCapabilities];
-
-	me.setRoles = function(newRoles) {
-		roles = newRoles;
-		_.forEach(roles, function(role, name) {
-			defaultCapabilities['role:' + name] = role.capabilities;
-		});
-	};
-
-	me.addUsers = function(newUsers) {
-		_.forEach(newUsers, function(user) {
-			users[user.user_login] = user;
-			defaultCapabilities['user:' + user.user_login] = user.capabilities;
-		});
-	};
-
-	me.getUsers = function() {
-		return users;
-	};
-
-	me.setRoles(roles);
-	me.addUsers(users);
-
-	function parseActorString(actor) {
-		var separator = actor.indexOf(':');
-		if (separator === -1) {
-			throw {
-				name: 'InvalidActorException',
-				message: "Actor string does not contain a colon.",
-				value: actor
-			};
-		}
-
-		return {
-			'type': actor.substring(0, separator),
-			'id': actor.substring(separator + 1)
-		};
-	}
-
-	function actorHasCap(actor, capability, contextList) {
-		//Check for explicit settings first.
-		var result = null, actorValue, len = contextList.length;
-		for (var i = 0; i < len; i++) {
-			if (contextList[i].hasOwnProperty(actor)) {
-				actorValue = contextList[i][actor];
-				if (typeof actorValue === 'boolean') {
-					return actorValue;
-				} else if (actorValue.hasOwnProperty(capability)) {
-					result = actorValue[capability];
-					return (typeof result === 'boolean') ? result : result[0];
-				}
-			}
-		}
-
-		//Super admins have access to everything by default, unless specifically denied.
-		if (actor === 'special:super_admin') {
-			return (capability !== 'do_not_allow');
-		}
-
-		//Roles only have the capabilities that they actually have.
-		if (actor.lastIndexOf('role:', 0) === 0) {
-			return false;
-		}
-
-		//Users can have a capability through their roles or the "super admin" flag.
-		if (actor.lastIndexOf('user:', 0) === 0) {
-			var user = users[actor.substr('user:'.length)];
-			if (user.is_super_admin) {
-				return actorHasCap('special:super_admin', capability, contextList);
-			}
-
-			//Check if any of the user's roles have the capability.
-			result = false;
-			for(var index = 0; index < user.roles.length; index++) {
-				result = result || actorHasCap('role:' + user.roles[index], capability, contextList);
-			}
-			return result;
-
-		} else {
-			throw {
-				name: 'InvalidActorTypeException',
-				message: "The specified actor type is not supported",
-				value: actor
-			};
-		}
-	}
-
-    me.hasCap = function(actor, capability, context) {
-		cachedContextList[0] = context || emptyObject;
-		return actorHasCap(actor, capability, cachedContextList);
-    };
-
-	me.hasCapByDefault = function(actor, capability) {
-		return actorHasCap(actor, capability, [defaultCapabilities]);
-	};
-
-	/**
-	 *
-	 * @param {string} login
-	 * @param {boolean} skipLoginActor
-	 * @returns {Array} Caution: Do not modify the returned array. Returns a reference to an internal array.
-	 */
-	me.getUserActors = function(login, skipLoginActor) {
-		if (!users.hasOwnProperty(login)) {
-			throw {
-				name: 'UnknownUserException',
-				message: 'Can not get actors of an unknown user',
-				value: login
-			};
-		}
-
-		//Check the cache first.
-		var user = users[login];
-		if (skipLoginActor && user.hasOwnProperty('actorsWithoutSelf')) {
-			return user.actorsWithoutSelf;
-		}
-		if (!skipLoginActor && user.hasOwnProperty('actors')) {
-			return user.actors;
-		}
-
-		//Generate the list and cache it.
-		var actors = [], actorsWithoutSelf = [];
-		actors.push('user:' + login);
-		if (user.is_super_admin) {
-			actorsWithoutSelf.push('special:super_admin');
-		}
-		for (var i = 0; i < user.roles.length; i++) {
-			actorsWithoutSelf.push('role:' + user.roles[i]);
-		}
-		actors = actors.concat(actorsWithoutSelf);
-
-		user.actors = actors;
-		user.actorsWithoutSelf = actorsWithoutSelf;
-
-		return skipLoginActor ? actorsWithoutSelf : actors;
-	};
-
-	me.getUser = function(login) {
-		if (!users.hasOwnProperty(login)) {
-			throw {
-				name: 'UnknownUserException',
-				message: 'User not found',
-				value: login
-			};
-		}
-		return users[login];
-	};
-
-	me.roleExists = function(roleId) {
-		return (typeof roleId === 'string') && roles.hasOwnProperty(roleId);
-	};
-
-	/**
-	 * Compare the specificity of two actors.
-	 *
-	 * Returns 1 if the first actor is more specific than the second, 0 if they're both
-	 * equally specific, and -1 if the second actor is more specific.
-	 *
-	 * @param {String} actor1
-	 * @param {String} actor2
-	 * @return {Number}
-	 */
-    me.compareActorSpecificity = function(actor1, actor2) {
-		var delta = me.getActorSpecificity(actor1) - me.getActorSpecificity(actor2);
-		if (delta !== 0) {
-			delta = (delta > 0) ? 1 : -1;
-		}
-		return delta;
-    };
-
-    me.getActorSpecificity = function(actorString) {
-        var actor = parseActorString(actorString);
-		var specificity = 0;
-        switch(actor.type) {
-            case 'role':
-                specificity = 1;
-				break;
-			case 'special':
-				specificity = 2;
-				break;
-			case 'user':
-				specificity = 10;
-				break;
-			default:
-				specificity = 0;
-        }
-		return specificity;
-    };
-
-	me.setCap = function(actor, capability, hasCap, sourceType, sourceName) {
-		me.setCapInContext(grantedCapabilities, actor, capability, hasCap, sourceType, sourceName);
-	};
-
-	/**
-	 * Grant or deny a capability to an actor.
-	 *
-	 * @param {Object} context
-	 * @param {string} actor
-	 * @param {string} capability
-	 * @param {boolean} hasCap
-	 * @param {string} [sourceType]
-	 * @param {string} [sourceName]
-	 */
-	me.setCapInContext = function(context, actor, capability, hasCap, sourceType, sourceName) {
-		var grant = sourceType ? [hasCap, sourceType, sourceName || null] : hasCap;
-		_.set(context, [actor, capability], grant);
-	};
-
-	me.resetCap = function(actor, capability) {
-		me.resetCapInContext(grantedCapabilities, actor, capability);
-	};
-
-	me.resetCapInContext = function(context, actor, capability) {
-		if (_.has(context, [actor, capability])) {
-			delete context[actor][capability];
-		}
-	};
-
-	me.setGrantedCapabilities = function(newGrants) {
-		grantedCapabilities = _.cloneDeep(newGrants);
-		cachedContextList[1] = grantedCapabilities;
-	};
-
-	me.getGrantedCapabilities = function() {
-		return grantedCapabilities;
-	};
-
-	/**
-	 * Remove redundant granted capabilities.
-	 *
-	 * For example, if user "jane" has been granted the "edit_posts" capability both directly and via the Editor role,
-	 * the direct grant is redundant. We can remove it. Jane will still have "edit_posts" because she's an editor.
-	 */
-	me.pruneGrantedCapabilities = function(actorType) {
-		actorType = actorType || null;
-		var pruned = _.cloneDeep(grantedCapabilities),
-			context = [pruned, defaultCapabilities];
-
-		var actorKeys = _(pruned).keys().filter(function(actor) {
-			var parsed = parseActorString(actor);
-			//Skip users that are not loaded.
-			if (parsed.type === 'user' && !users.hasOwnProperty(actor.id)) {
-				return false;
-			}
-			return !(actorType && parsed.type !== actorType);
-		}).value();
-
-		_.forEach(actorKeys, function(actor) {
-			_.forEach(_.keys(pruned[actor]), function(capability) {
-				var grant = pruned[actor][capability];
-				delete pruned[actor][capability];
-
-				var hasCap = _.isArray(grant) ? grant[0] : grant,
-					hasCapWhenPruned = actorHasCap(actor, capability, context);
-
-				if (hasCap !== hasCapWhenPruned) {
-					pruned[actor][capability] = grant; //Restore.
-				}
-			});
-		});
-
-		me.setGrantedCapabilities(pruned);
-		return pruned;
-	};
-
-	return me;
-})(wsEditorData.roles, wsEditorData.users, wsAmeLodash);
+AmeCapabilityManager = AmeActors;
 
 /**
  * A utility for retrieving post and page titles.
@@ -437,7 +143,7 @@ window.AmeEditorApi = AmeEditorApi;
 (function ($, _){
 'use strict';
 
-var selectedActor = null;
+var actorSelectorWidget = new AmeActorSelector(AmeActors, wsEditorData.wsMenuEditorPro);
 
 var itemTemplates = {
 	templates: wsEditorData.itemTemplates,
@@ -682,7 +388,7 @@ function buildMenuItem(itemData, isTopLevel) {
 	//the editors themselves are created later, when the user tries to access them
 	//for the first time).
 	var contents = [];
-	var menuTitle = ((itemData.menu_title !== null) ? itemData.menu_title : itemData.defaults.menu_title);
+	var menuTitle = getFieldValue(itemData, 'menu_title', '');
 	if (menuTitle === '') {
 		menuTitle = '&nbsp;';
 	}
@@ -1181,6 +887,7 @@ var knownMenuFields = {
 AmeEditorApi.getItemDisplayUrl = function(menuItem) {
 	var url = getFieldValue(menuItem, 'file', '');
 	if (menuItem.template_id !== '') {
+		//Use the template URL. It's a preset that can't be overridden.
 		var defaultUrl = itemTemplates.getDefaultValue(menuItem.template_id, 'url');
 		if (defaultUrl) {
 			url = defaultUrl;
@@ -1334,7 +1041,7 @@ function buildEditboxField(entry, field_name, field_settings){
  * Get the parent menu of a menu item.
  *
  * @param containerNode A DOM element as a jQuery object.
- * @return {jQuery} Parent container node, or an empty jQuery set.
+ * @return {JQuery} Parent container node, or an empty jQuery set.
  */
 function getParentMenuNode(containerNode) {
 	var submenu = containerNode.closest('.ws_submenu', '#ws_menu_editor'),
@@ -1349,8 +1056,8 @@ function getParentMenuNode(containerNode) {
 /**
  * Get all submenu items of a menu item.
  *
- * @param {jQuery} containerNode
- * @return {jQuery} A list of submenu item container nodes, or an empty set.
+ * @param {JQuery} containerNode
+ * @return {JQuery} A list of submenu item container nodes, or an empty set.
  */
 function getSubmenuItemNodes(containerNode) {
 	var subMenuId = containerNode.data('submenu_id');
@@ -1384,9 +1091,9 @@ function walkMenuTree(containerNode, callback) {
 function updateActorAccessUi(containerNode) {
 	//Update the permissions checkbox & UI
 	var menuItem = containerNode.data('menu_item');
-	if (selectedActor !== null) {
-		var hasAccess = actorCanAccessMenu(menuItem, selectedActor);
-		var hasCustomPermissions = actorHasCustomPermissions(menuItem, selectedActor);
+	if (actorSelectorWidget.selectedActor !== null) {
+		var hasAccess = actorCanAccessMenu(menuItem, actorSelectorWidget.selectedActor);
+		var hasCustomPermissions = actorHasCustomPermissions(menuItem, actorSelectorWidget.selectedActor);
 
 		var isOverrideActive = !hasAccess && getFieldValue(menuItem, 'restrict_access_to_items', false);
 
@@ -1398,7 +1105,7 @@ function updateActorAccessUi(containerNode) {
 			if (
 				parentItem
 				&& getFieldValue(parentItem, 'restrict_access_to_items', false)
-				&& !actorCanAccessMenu(parentItem, selectedActor)
+				&& !actorCanAccessMenu(parentItem, actorSelectorWidget.selectedActor)
 			) {
 				hasAccess = false;
 				isOverrideActive = true;
@@ -1423,7 +1130,7 @@ function updateActorAccessUi(containerNode) {
 				if ( !item ) { //Skip placeholder items created by drag & drop operations.
 					return true;
 				}
-				var hasSubmenuAccess = actorCanAccessMenu(item, selectedActor);
+				var hasSubmenuAccess = actorCanAccessMenu(item, actorSelectorWidget.selectedActor);
 				if (hasSubmenuAccess !== hasAccess) {
 					differentPermissions = true;
 					return false;
@@ -1455,7 +1162,7 @@ function updateActorAccessUi(containerNode) {
 	}
 
 	//Update the "hidden" flag.
-	setMenuFlag(containerNode, 'hidden', itemHasHiddenFlag(menuItem, selectedActor));
+	setMenuFlag(containerNode, 'hidden', itemHasHiddenFlag(menuItem, actorSelectorWidget.selectedActor));
 }
 
 /**
@@ -1481,7 +1188,7 @@ function updateParentAccessUi(containerNode) {
 /**
  * Update an edit widget with the current menu item settings.
  *
- * @param containerNode
+ * @param {JQuery} containerNode
  */
 function updateItemEditor(containerNode) {
 	var menuItem = containerNode.data('menu_item');
@@ -1502,7 +1209,7 @@ function updateItemEditor(containerNode) {
 		var input = field.find('.ws_field_value').first();
 
 		var hasADefaultValue = itemTemplates.hasDefaultValue(menuItem.template_id, fieldName);
-		var defaultValue = itemTemplates.getDefaultValue(menuItem.template_id, fieldName);
+		var defaultValue = getDefaultValue(menuItem, fieldName, null, containerNode);
 		var isDefault = hasADefaultValue && ((typeof menuItem[fieldName] === 'undefined') || (menuItem[fieldName] === null));
 
         if (fieldName === 'access_level') {
@@ -1551,33 +1258,60 @@ function isEmptyObject(obj) {
  * @param {Object} entry
  * @param {string} fieldName
  * @param {*} [defaultValue]
- * @param {jQuery} [containerNode]
+ * @param {JQuery} [containerNode]
  * @return {*}
  */
 function getFieldValue(entry, fieldName, defaultValue, containerNode){
 	if ( (typeof entry[fieldName] === 'undefined') || (entry[fieldName] === null) ) {
-
-		//By default, a submenu item has the same icon as its parent.
-		if ((fieldName === 'icon_url') && containerNode && (wsEditorData.submenuIconsEnabled !== 'never')) {
-			var parentContainerNode = getParentMenuNode(containerNode),
-				parentMenuItem = parentContainerNode.data('menu_item');
-			if (parentMenuItem) {
-				return getFieldValue(parentMenuItem, fieldName, defaultValue, parentContainerNode);
-			}
-		}
-
-		var hasDefault = (typeof entry.defaults !== 'undefined') && (typeof entry.defaults[fieldName] !== 'undefined');
-		if (hasDefault){
-			return entry.defaults[fieldName];
-		} else {
-			return defaultValue;
-		}
+		return getDefaultValue(entry, fieldName, defaultValue, containerNode);
 	} else {
 		return entry[fieldName];
 	}
 }
 
 AmeEditorApi.getFieldValue = getFieldValue;
+
+/**
+ * Get the default value of a menu field.
+ *
+ * @param {Object} entry
+ * @param {String} fieldName
+ * @param {*} [defaultValue]
+ * @param {JQuery} [containerNode]
+ * @returns {*}
+ */
+function getDefaultValue(entry, fieldName, defaultValue, containerNode) {
+	//By default, a submenu item has the same icon as its parent.
+	if ((fieldName === 'icon_url') && containerNode && (wsEditorData.submenuIconsEnabled !== 'never')) {
+		var parentContainerNode = getParentMenuNode(containerNode),
+			parentMenuItem = parentContainerNode.data('menu_item');
+		if (parentMenuItem) {
+			return getFieldValue(parentMenuItem, fieldName, defaultValue, parentContainerNode);
+		}
+	}
+
+	if (typeof defaultValue === 'undefined') {
+		defaultValue = null;
+	}
+
+	//Known templates take precedence.
+	if ((entry.template_id === '') || (typeof itemTemplates.templates[entry.template_id] !== 'undefined')) {
+		var templateDefault = itemTemplates.getDefaultValue(entry.template_id, fieldName);
+		return (templateDefault !== null) ? templateDefault : defaultValue;
+	}
+
+	if (fieldName === 'template_id') {
+		return null;
+	}
+
+	//Separators can have their own defaults, independent of templates.
+	var hasDefault = (typeof entry.defaults !== 'undefined') && (typeof entry.defaults[fieldName] !== 'undefined');
+	if (hasDefault){
+		return entry.defaults[fieldName];
+	}
+
+	return defaultValue;
+}
 
 /*
  * Make a menu container sortable
@@ -1644,6 +1378,11 @@ function encodeMenuAsJSON(tree){
 		name: wsEditorData.menuFormatName,
 		version: wsEditorData.menuFormatVersion
 	};
+
+	//Compress the admin menu.
+	tree = compressMenu(tree);
+	console.log(tree); //xxxx debugging code
+
 	return $.toJSON(tree);
 }
 
@@ -1658,7 +1397,7 @@ function readMenuTreeState(){
 		var menu = readItemState(containerNode, menuPosition++);
 
 		//Attach the current menu to the main structure.
-		var filename = (menu.file !== null) ? menu.file : menu.defaults.file;
+		var filename = getFieldValue(menu, 'file');
 
 		//Give unclickable items unique keys.
 		if (menu.template_id === wsEditorData.unclickableTemplateId) {
@@ -1684,13 +1423,72 @@ function readMenuTreeState(){
 		itemsByFilename[filename] = containerNode;
 	});
 
-	AmeCapabilityManager.pruneGrantedCapabilities('user');
+	AmeCapabilityManager.pruneGrantedUserCapabilities();
 
 	return {
 		tree: tree,
 		color_presets: $.extend(true, {}, colorPresets),
 		granted_capabilities: AmeCapabilityManager.getGrantedCapabilities()
 	};
+}
+
+/**
+ * Losslessly compress the admin menu configuration.
+ * 
+ * This is a JS port of the ameMenu::compress() function defined in /includes/menu.php.
+ * 
+ * @param {Object} adminMenu
+ * @returns {Object}
+ */
+function compressMenu(adminMenu) {
+	var common = {
+		properties: _.omit(wsEditorData.blankMenuItem, ['defaults']),
+		basic_defaults: _.clone(_.get(wsEditorData.blankMenuItem, 'defaults', {})),
+		custom_item_defaults: _.clone(itemTemplates.getTemplateById('').defaults)
+	};
+
+	adminMenu.format.compressed = true;
+	adminMenu.format.common = common;
+
+	function compressItem(item) {
+		//These empty arrays can be dropped.
+		if ( _.isEmpty(item['grant_access']) ) {
+			delete item['grant_access'];
+		}
+		if ( _.isEmpty(item['items']) ) {
+			delete item['items'];
+		}
+
+		//Normal and custom menu items have different defaults.
+		//Remove defaults that are the same for all items of that type.
+		var defaults = _.get(item, 'custom', false) ? common['custom_item_defaults'] : common['basic_defaults'];
+		if ( _.has(item, 'defaults') ) {
+			_.forEach(defaults, function(value, key) {
+				if (_.has(item['defaults'], key) && (item['defaults'][key] === value)) {
+					delete item['defaults'][key];
+				}
+			});
+		}
+
+		//Remove properties that match the common values.
+		_.forEach(common['properties'], function(value, key) {
+			if (_.has(item, key) && (item[key] === value)) {
+				delete item[key];
+			}
+		});
+
+		return item;
+	}
+
+	adminMenu.tree = _.mapValues(adminMenu.tree, function(topMenu) {
+		topMenu = compressItem(topMenu);
+		if (typeof topMenu.items !== 'undefined') {
+			topMenu.items = _.map(topMenu.items, compressItem);
+		}
+		return topMenu;
+	});
+
+	return adminMenu;
 }
 
 AmeEditorApi.readMenuTreeState = readMenuTreeState;
@@ -1852,8 +1650,8 @@ function itemHasHiddenFlag(menuItem, actor) {
 			isHidden = menuItem.hidden_from_actor[actor];
 		} else {
 			//Otherwise the item is hidden only if it is hidden from all of the user's roles.
-			userLogin = selectedActor.substr(userPrefix.length);
-			userActors = AmeCapabilityManager.getUserActors(userLogin, true);
+			userLogin = actorSelectorWidget.selectedActor.substr(userPrefix.length);
+			userActors = AmeCapabilityManager.getGroupActorsFor(userLogin);
 			for (var i = 0; i < userActors.length; i++) {
 				if (menuItem.hidden_from_actor.hasOwnProperty(userActors[i]) && menuItem.hidden_from_actor[userActors[i]]) {
 					isHidden = true;
@@ -1876,7 +1674,7 @@ function itemHasHiddenFlag(menuItem, actor) {
  *
  * Applies to the selected actor, or all actors if no actor is selected.
  *
- * @param {jQuery} selection A menu container node.
+ * @param {JQuery} selection A menu container node.
  * @param {boolean} [isHidden] Optional. True = hide the menu, false = show the menu.
  */
 function toggleItemHiddenFlag(selection, isHidden) {
@@ -1884,24 +1682,24 @@ function toggleItemHiddenFlag(selection, isHidden) {
 
 	//By default, invert the current state.
 	if (typeof isHidden === 'undefined') {
-		isHidden = !itemHasHiddenFlag(menuItem, selectedActor);
+		isHidden = !itemHasHiddenFlag(menuItem, actorSelectorWidget.selectedActor);
 	}
 
 	//Mark the menu as hidden/visible
-	if (selectedActor === null) {
+	if (actorSelectorWidget.selectedActor === null) {
 		//For ALL roles and users.
 		menuItem.hidden = isHidden;
 		menuItem.hidden_from_actor = {};
 	} else {
 		//Just for the current role.
 		if (isHidden) {
-			menuItem.hidden_from_actor[selectedActor] = true;
+			menuItem.hidden_from_actor[actorSelectorWidget.selectedActor] = true;
 		} else {
-			if (selectedActor.indexOf('user:') === 0) {
+			if (actorSelectorWidget.selectedActor.indexOf('user:') === 0) {
 				//User-specific exception. Lets you can hide a menu from all admins but leave it visible to yourself.
-				menuItem.hidden_from_actor[selectedActor] = false;
+				menuItem.hidden_from_actor[actorSelectorWidget.selectedActor] = false;
 			} else {
-				delete menuItem.hidden_from_actor[selectedActor];
+				delete menuItem.hidden_from_actor[actorSelectorWidget.selectedActor];
 			}
 		}
 
@@ -1910,7 +1708,7 @@ function toggleItemHiddenFlag(selection, isHidden) {
 		if (!isHidden && menuItem.hidden) {
 			menuItem.hidden = false;
 			$.each(wsEditorData.actors, function(otherActor) {
-				if (otherActor !== selectedActor) {
+				if (otherActor !== actorSelectorWidget.selectedActor) {
 					menuItem.hidden_from_actor[otherActor] = true;
 				}
 			});
@@ -1978,38 +1776,6 @@ function setActorAccess(containerNode, actor, allowAccess) {
 	}
 }
 
-function setSelectedActor(actor) {
-	//Check if the specified actor really exists. The actor ID
-	//could be invalid if it was supplied by the user.
-	if (actor !== null) {
-		var newSelectedItem = $('a[href$="#'+ actor +'"]');
-		if (newSelectedItem.length === 0) {
-			return;
-		}
-	}
-
-	selectedActor = actor;
-
-	//Highlight the actor.
-	var actorSelector = $('#ws_actor_selector');
-	$('.current', actorSelector).removeClass('current');
-
-	if (selectedActor === null) {
-		$('a.ws_no_actor').addClass('current');
-	} else {
-		newSelectedItem.addClass('current');
-	}
-
-	//There are some UI elements that can be visible or hidden depending on whether an actor is selected.
-	var editorNode = $('#ws_menu_editor');
-	editorNode.toggleClass('ws_is_actor_view', (selectedActor !== null));
-
-	//Update the menu item states to indicate whether they're accessible.
-	editorNode.find('.ws_container').each(function() {
-		updateActorAccessUi($(this));
-	});
-}
-
 /**
  * Make a menu item inaccessible to everyone except a particular actor.
  *
@@ -2030,7 +1796,7 @@ function denyAccessForAllExcept(menuItem, actor) {
 
 	$.each(wsEditorData.actors, function(otherActor) {
 		//If the input actor is more or equally specific...
-		if ((actor === null) || (AmeCapabilityManager.compareActorSpecificity(actor, otherActor) >= 0)) {
+		if ((actor === null) || (AmeActorManager.compareActorSpecificity(actor, otherActor) >= 0)) {
 			menuItem.grant_access[otherActor] = false;
 		}
 	});
@@ -2053,7 +1819,12 @@ var ws_paste_count = 0;
 var colorPresets = {},
 	wasPresetDropdownPopulated = false;
 
-$(document).ready(function(){
+//Combined DOM-ready event handler.
+var isDomReadyDone = false;
+
+function ameOnDomReady() {
+	isDomReadyDone = true;
+
 	//Some editor elements are only available in the Pro version.
 	if (wsEditorData.wsMenuEditorPro) {
 		knownMenuFields.open_in.visible = true;
@@ -2229,7 +2000,7 @@ $(document).ready(function(){
 
 	    var oldValue = menuItem[fieldName];
 	    var value = getInputValue(input);
-	    var defaultValue = itemTemplates.getDefaultValue(menuItem.template_id, fieldName);
+	    var defaultValue = getDefaultValue(menuItem, fieldName, null, containerNode);
         var hasADefaultValue = (defaultValue !== null);
 
 	    //Some fields/templates have no default values.
@@ -2279,7 +2050,7 @@ $(document).ready(function(){
 
 	//Allow/forbid items in actor-specific views
 	menuEditorNode.on('click', 'input.ws_actor_access_checkbox', function() {
-		if (selectedActor === null) {
+		if (actorSelectorWidget.selectedActor === null) {
 			return;
 		}
 
@@ -2292,11 +2063,11 @@ $(document).ready(function(){
 			updateItemEditor(containerNode); //Resets the checkbox back to the old value.
 			confirmDashboardHiding(function(ok) {
 				if (ok) {
-					setActorAccessForTreeAndUpdateUi(containerNode, selectedActor, checked);
+					setActorAccessForTreeAndUpdateUi(containerNode, actorSelectorWidget.selectedActor, checked);
 				}
 			});
 		} else {
-			setActorAccessForTreeAndUpdateUi(containerNode, selectedActor, checked);
+			setActorAccessForTreeAndUpdateUi(containerNode, actorSelectorWidget.selectedActor, checked);
 		}
 	});
 
@@ -2447,7 +2218,7 @@ $(document).ready(function(){
 		AmeItemAccessEditor.open({
 			menuItem: menuItem,
 			containerNode: containerNode,
-			selectedActor: selectedActor,
+			selectedActor: actorSelectorWidget.selectedActor,
 			itemHasSubmenus: (!!(containerNode.data('submenu_id')) &&
 				$('#' + containerNode.data('submenu_id')).find('.ws_item').length > 0)
 		});
@@ -2996,7 +2767,8 @@ $(document).ready(function(){
 	}
 
 	var colorDialogState = {
-		menuItem: null
+		menuItem: null,
+		editingGlobalColors: false
 	};
 
 	var menuColorVariables = [
@@ -3036,9 +2808,8 @@ $(document).ready(function(){
 		$(this).text(showAdvancedColors ? 'Hide advanced options' : 'Show advanced options');
 	});
 
-	//"Edit.." color schemes.
 	var colorPickersInitialized = false;
-	menuEditorNode.on('click', '.ws_open_color_editor, .ws_color_scheme_display', function() {
+	function setUpColorDialog(dialogTitle) {
 		//Initializing the color pickers takes a while, so we only do it when needed instead of on document ready.
 		if ( !colorPickersInitialized ) {
 			menuColorDialog.find('.ame-color-picker').wpColorPicker({
@@ -3049,20 +2820,6 @@ $(document).ready(function(){
 			colorPickersInitialized = true;
 		}
 
-		var containerNode = $(this).parents('.ws_container').first();
-		var menuItem = containerNode.data('menu_item');
-
-		colorDialogState.containerNode = containerNode;
-		colorDialogState.menuItem = menuItem;
-
-		var colors = getFieldValue(menuItem, 'colors', {}) || {};
-		var customColorCount = displayColorSettingsInDialog(colors);
-		if ( customColorCount > 0 ) {
-			menuItem.colors = colors;
-		} else {
-			menuItem.colors = null;
-		}
-
 		//Populate presets and deselect the previously selected option.
 		colorPresetDropdown.val('');
 		if (!wasPresetDropdownPopulated) {
@@ -3070,13 +2827,56 @@ $(document).ready(function(){
 			wasPresetDropdownPopulated = true;
 		}
 
+		//Update the dialog title.
+		menuColorDialog.dialog('option', 'title', dialogTitle);
+	}
+
+	//"Edit.." color schemes.
+	menuEditorNode.on('click', '.ws_open_color_editor, .ws_color_scheme_display', function() {
+		var containerNode = $(this).parents('.ws_container').first();
+		var menuItem = containerNode.data('menu_item');
+
+		colorDialogState.containerNode = containerNode;
+		colorDialogState.menuItem = menuItem;
+		colorDialogState.editingGlobalColors = false;
+
 		//Add menu title to the dialog caption.
 		var title = getFieldValue(menuItem, 'menu_title', null);
-		menuColorDialog.dialog(
-			'option',
-			'title',
-			title ? ('Colors: ' + title.substring(0, 30)) : 'Colors'
-		);
+		setUpColorDialog(title ? ('Colors: ' + title.substring(0, 30)) : 'Colors');
+
+		//Show the [global] preset only if the user has set it up.
+		var globalPresetExists = colorPresets.hasOwnProperty('[global]');
+		menuColorDialog.find('#ame-global-colors-preset').toggle(globalPresetExists);
+
+		var colors = getFieldValue(menuItem, 'colors', {}),
+			colorsToDisplay = colors || {};
+		if (_.isEmpty(colors)) {
+			//Normalization. No custom colors = use default colors, and null is used to indicate default settings.
+			menuItem.colors = null;
+			//If no custom colors, select and display the global preset.
+			if (globalPresetExists) {
+				colorsToDisplay = colorPresets['[global]'];
+				colorPresetDropdown.val('[global]');
+				colorPresetDeleteButton.hide();
+			}
+		}
+		displayColorSettingsInDialog(colorsToDisplay);
+
+		menuColorDialog.dialog('open');
+	});
+
+	//The "Colors" button in the main sidebar.
+	$('#ws_edit_global_colors').click(function() {
+		colorDialogState.editingGlobalColors = true;
+		colorDialogState.menuItem = null;
+		colorDialogState.containerNode = null;
+
+		setUpColorDialog('Default menu colors');
+		displayColorSettingsInDialog(_.get(colorPresets, '[global]', {}));
+
+		//Hide the [global] preset. We'll be editing it.
+		menuColorDialog.find('#ame-global-colors-preset').hide();
+
 		menuColorDialog.dialog('open');
 	});
 
@@ -3123,15 +2923,28 @@ $(document).ready(function(){
 	//The "Save Changes" button in the color dialog.
 	$('#ws-ame-save-menu-colors').click(function() {
 		menuColorDialog.dialog('close');
-		if ( !colorDialogState.menuItem ) {
-			return;
+		var colors = getColorSettingsFromDialog();
+
+		if ( colorDialogState.editingGlobalColors ) {
+			if (colors === null) {
+				delete colorPresets['[global]'];
+			} else {
+				colorPresets['[global]'] = colors;
+			}
+		} else if ( colorDialogState.menuItem ) {
+			var menuItem = colorDialogState.menuItem;
+			//If colors match the global settings, reset them to null. Using the [global] preset is the default.
+			if (_.has(colorPresets, '[global]') && _.isEqual(colors, colorPresets['[global]'])) {
+				menuItem.colors = null;
+			} else {
+				menuItem.colors = colors;
+			}
+			updateItemEditor(colorDialogState.containerNode);
 		}
-		var menuItem = colorDialogState.menuItem;
-		menuItem.colors = getColorSettingsFromDialog();
-		updateItemEditor(colorDialogState.containerNode);
 
 		colorDialogState.containerNode = null;
 		colorDialogState.menuItem = null;
+		colorDialogState.editingGlobalColors = false;
 	});
 
 	//The "Apply to All" button in the same dialog.
@@ -3140,12 +2953,18 @@ $(document).ready(function(){
 			return;
 		}
 
+		//Set this as the global preset and remove custom settings from all items.
 		var newColors = getColorSettingsFromDialog();
+		if (newColors === null) {
+			delete colorPresets['[global]'];
+		} else {
+			colorPresets['[global]'] = newColors;
+		}
 		$('#ws_menu_box').find('.ws_menu').each(function() {
 			var containerNode = $(this),
 				menuItem = containerNode.data('menu_item');
 			if (!menuItem.separator) {
-				menuItem.colors = newColors;
+				menuItem.colors = null;
 				updateItemEditor(containerNode);
 			}
 		});
@@ -3185,6 +3004,10 @@ $(document).ready(function(){
 		//Add them all to the dropdown.
 		var newOptions = jQuery([]);
 		$.each(presetNames, function(unused, name) {
+			if (name === '[global]') {
+				return;
+			}
+
 			newOptions = newOptions.add($('<option>', {
 				val: name,
 				text: name
@@ -3205,7 +3028,7 @@ $(document).ready(function(){
 		var dropdown = $(this),
 			presetName = dropdown.val();
 
-		colorPresetDeleteButton.toggleClass('hidden', (presetName === '') || (presetName === '[save_preset]'));
+		colorPresetDeleteButton.toggleClass('hidden', _.includes(['[save_preset]', '[global]', '', null], presetName));
 
 		if ((presetName === '[save_preset]') && menuColorDialog.dialog('isOpen')) {
 			//Create a new preset.
@@ -3232,7 +3055,7 @@ $(document).ready(function(){
 
 	colorPresetDeleteButton.click(function() {
 		var presetName = $('#ame-menu-color-presets').val();
-		if ((presetName === '[save_preset]') || (presetName === '') || (presetName === null)) {
+		if ( _.includes(['[save_preset]', '[global]', '', null], presetName) ) {
 			return false;
 		}
 		if (!confirm('Are you sure you want to delete the preset "' + presetName + '"?')) {
@@ -3279,7 +3102,7 @@ $(document).ready(function(){
 			return result;
 		}
 
-		if (selectedActor === null) {
+		if (actorSelectorWidget.selectedActor === null) {
 			//Hide from everyone except Super Admin and the current user.
 			var menuItem = selection.data('menu_item'),
 				validActors = _.keys(wsEditorData.actors),
@@ -3357,12 +3180,27 @@ $(document).ready(function(){
 		}
 
 		function hideRecursively(containerNode, exceptActor) {
+			var otherActors = _(actorSelectorWidget.getVisibleActors())
+				.pluck('id')
+				.without(exceptActor)
+				.value();
+
 			applyCallbackRecursively(containerNode, function(menuItem) {
+				//Remember which actors had access to this item so that it
+				//can be un-hidden by the toolbar button.
+				var actorsWithAccess = _.filter(otherActors, function(actor) {
+					return actorCanAccessMenu(menuItem, actor);
+				});
+				if ((actorsWithAccess.length) > 0) {
+					menuItem.had_access_before_hiding = actorsWithAccess;
+				}
+
 				denyAccessForAllExcept(menuItem, exceptActor);
 			});
 			updateParentAccessUi(containerNode);
 		}
 
+		//TODO: Write had_access_before_hiding so that it can be un-hidden using the toolbar button.
 		if (hide === 'all') {
 			if (wsEditorData.wsMenuEditorPro) {
 				hideRecursively(selection, null);
@@ -3401,7 +3239,7 @@ $(document).ready(function(){
 	/**
 	 * Check if it's possible to delete a menu item.
 	 *
-	 * @param {jQuery} containerNode
+	 * @param {JQuery} containerNode
 	 * @returns {boolean}
 	 */
 	function canDeleteItem(containerNode) {
@@ -3436,7 +3274,7 @@ $(document).ready(function(){
 	 * Attempt to delete a menu item. Will check if the item can actually be deleted and ask the user for confirmation.
 	 * UI callback.
 	 *
-	 * @param {jQuery} selection The selected menu item (DOM node).
+	 * @param {JQuery} selection The selected menu item (DOM node).
 	 */
 	function tryDeleteItem(selection) {
 		var menuItem = selection.data('menu_item');
@@ -3448,7 +3286,7 @@ $(document).ready(function(){
 		} else {
 			//Non-custom items can not be deleted, but they can be hidden. Ask the user if they want to do that.
 			menuDeletionDialog.find('#ws-ame-menu-type-desc').text(
-				_.get(menuItem.defaults, 'is_plugin_page') ? 'an item added by another plugin' : 'a built-in menu item'
+				getDefaultValue(menuItem, 'is_plugin_page') ? 'an item added by another plugin' : 'a built-in menu item'
 			);
 			menuDeletionDialog.data('selected_menu', selection);
 
@@ -3547,9 +3385,9 @@ $(document).ready(function(){
 
 		//Paste the menu after the specified one, or at the end of the list.
 		if (afterMenu) {
-			outputTopMenu(menu, afterMenu);
+			return outputTopMenu(menu, afterMenu);
 		} else {
-			outputTopMenu(menu);
+			return outputTopMenu(menu);
 		}
 	}
 
@@ -3587,8 +3425,8 @@ $(document).ready(function(){
 		});
 
 		//Make it accessible only to the current actor if one is selected.
-		if (selectedActor !== null) {
-			denyAccessForAllExcept(menu, selectedActor);
+		if (actorSelectorWidget.selectedActor !== null) {
+			denyAccessForAllExcept(menu, actorSelectorWidget.selectedActor);
 		}
 
 		//Insert the new menu
@@ -3634,18 +3472,18 @@ $(document).ready(function(){
 	$('#ws_toggle_all_menus').click(function(event) {
 		event.preventDefault();
 
-		if ( selectedActor === null ) {
+		if ( actorSelectorWidget.selectedActor === null ) {
 			alert("This button enables/disables all menus for the selected role. To use it, click a role and then click this button again.");
 			return;
 		}
 
 		var topMenuNodes = $('.ws_menu', '#ws_menu_box');
 		//Look at the first menu's permissions and set everything to the opposite.
-		var allow = ! actorCanAccessMenu(topMenuNodes.eq(0).data('menu_item'), selectedActor);
+		var allow = ! actorCanAccessMenu(topMenuNodes.eq(0).data('menu_item'), actorSelectorWidget.selectedActor);
 
 		topMenuNodes.each(function() {
 			var containerNode = $(this);
-			setActorAccessForTreeAndUpdateUi(containerNode, selectedActor, allow);
+			setActorAccessForTreeAndUpdateUi(containerNode, actorSelectorWidget.selectedActor, allow);
 		});
 	});
 
@@ -3675,8 +3513,8 @@ $(document).ready(function(){
 		});
 
 		//Pre-select the current actor as the destination.
-		if (selectedActor !== null) {
-			destinationActorList.val(selectedActor);
+		if (actorSelectorWidget.selectedActor !== null) {
+			destinationActorList.val(actorSelectorWidget.selectedActor);
 		}
 
 		//Restore the previous source selection.
@@ -3720,10 +3558,10 @@ $(document).ready(function(){
 
 		//If the user is currently looking at the destination actor, force the UI to refresh
 		//so that they can see the new permissions.
-		if (selectedActor === destinationActor) {
+		if (actorSelectorWidget.selectedActor === destinationActor) {
 			//This is a bit of a hack, but right now there's no better way to refresh all items at once.
-			setSelectedActor(null);
-			setSelectedActor(destinationActor);
+			actorSelectorWidget.setSelectedActor(null);
+			actorSelectorWidget.setSelectedActor(destinationActor);
 		}
 
 		//All done.
@@ -3872,7 +3710,7 @@ $(document).ready(function(){
 	});
 
 	//Paste item
-	function pasteItem(item) {
+	function pasteItem(item, targetSubmenu) {
 		//We're pasting this item into a sub-menu, so it can't have a sub-menu of its own.
 		//Instead, any sub-menu items belonging to this item will be pasted after the item.
 		var newItems = [];
@@ -3885,23 +3723,24 @@ $(document).ready(function(){
 
 		newItems.unshift(buildMenuItem(item, false));
 
+		//Paste into the currently visible submenu by default.
+		targetSubmenu = targetSubmenu || $('#ws_submenu_box').find('.ws_submenu:visible');
 		//Get the selected menu
-		var visibleSubmenu = $('#ws_submenu_box').find('.ws_submenu:visible');
-		var selection = visibleSubmenu.find('.ws_active');
+		var selection = targetSubmenu.find('.ws_active');
 		for(var i = 0; i < newItems.length; i++) {
 			if (selection.length > 0) {
 				//If an item is selected add the pasted items after it
 				selection.after(newItems[i]);
 			} else {
 				//Otherwise add the pasted items at the end
-				visibleSubmenu.append(newItems[i]);
+				targetSubmenu.append(newItems[i]);
 			}
 
 			updateItemEditor(newItems[i]);
 			newItems[i].show();
 		}
 
-		updateParentAccessUi(visibleSubmenu);
+		updateParentAccessUi(targetSubmenu);
 	}
 
 	$('#ws_paste_item').click(function (event) {
@@ -3942,8 +3781,8 @@ $(document).ready(function(){
 		});
 
 		//Make it accessible to only the currently selected actor.
-		if (selectedActor !== null) {
-			denyAccessForAllExcept(entry, selectedActor);
+		if (actorSelectorWidget.selectedActor !== null) {
+			denyAccessForAllExcept(entry, actorSelectorWidget.selectedActor);
 		}
 
 		var menu = buildMenuItem(entry);
@@ -4026,8 +3865,7 @@ $(document).ready(function(){
 		var data = encodeMenuAsJSON(tree);
 		$('#ws_data').val(data);
 		$('#ws_data_length').val(data.length);
-		$('#ws_selected_actor').val(selectedActor === null ? '' : selectedActor);
-		$('#ws_visible_users_json').val($.toJSON(wsEditorData.visibleUsers || []));
+		$('#ws_selected_actor').val(actorSelectorWidget.selectedActor === null ? '' : actorSelectorWidget.selectedActor);
 		$('#ws_main_form').submit();
 	});
 
@@ -4249,7 +4087,26 @@ $(document).ready(function(){
 
 			'drop' : (function(event, ui){
 				var droppedItemData = readItemState(ui.draggable);
-				pasteMenu(droppedItemData);
+				var newItemNodes = pasteMenu(droppedItemData);
+
+				//If the item was originally a top level menu, also move its original submenu items.
+				if (getFieldValue(droppedItemData, 'parent') === null) {
+					var droppedItemFile = getFieldValue(droppedItemData, 'file');
+					var nearbyItems = $(ui.draggable).siblings('.ws_item');
+					nearbyItems.each(function() {
+						var containerNode = $(this),
+							submenuItem = containerNode.data('menu_item');
+
+						//Was this item originally a child of the dragged menu?
+						if (getFieldValue(submenuItem, 'parent') === droppedItemFile) {
+							pasteItem(submenuItem, newItemNodes.submenu);
+							if ( !event.ctrlKey ) {
+								containerNode.remove();
+							}
+						}
+					});
+				}
+
 				if ( !event.ctrlKey ) {
 					ui.draggable.remove();
 				}
@@ -4352,124 +4209,50 @@ $(document).ready(function(){
 	                           Actor views
 	 ******************************************************************/
 
-	var actorSelector = $('#ws_actor_selector');
-
-	function rebuildActorIndex() {
-		var actors = {};
-		//Include all roles.
-		_.forEach(wsEditorData.roles, function(role, id) {
-			actors['role:' + id] = role.name;
-		});
-		//Include the Super Admin (multisite only).
-		if (wsEditorData.users[wsEditorData.currentUserLogin].is_super_admin) {
-			actors['special:super_admin'] = 'Super Admin';
-		}
-		//Include the current user.
-		actors['user:' + wsEditorData.currentUserLogin] = 'Current user (' + wsEditorData.currentUserLogin + ')';
-
-		//Include other visible users.
-		_(_.get(wsEditorData, 'visibleUsers', []))
-			.without(wsEditorData.currentUserLogin)
-			.sortBy()
-			.forEach(function(login) {
-				var user = AmeCapabilityManager.getUser(login);
-				actors['user:' + login] = user.display_name + ' (' + login + ')';
-			})
-			.value();
-
-		//Keep the same object, but replace all keys/values.
-		_.forEach(_.keys(wsEditorData.actors), function(oldActor) {
-			delete wsEditorData.actors[oldActor];
-		});
-		_.assign(wsEditorData.actors, actors);
-	}
-
-
-	function populateActorSelector() {
-		if (!wsEditorData.wsMenuEditorPro) {
-			return;
-		}
-
-		rebuildActorIndex();
-
-		//Build the list of available actors.
-		actorSelector.empty();
-		actorSelector.append('<li><a href="#" class="current ws_actor_option ws_no_actor" data-text="All">All</a></li>');
-
-		for(var actor in wsEditorData.actors) {
-			if (!wsEditorData.actors.hasOwnProperty(actor)) {
-				continue;
-			}
-			actorSelector.append(
-				$('<li></li>').append(
-					$('<a></a>')
-						.attr('href', '#' + actor)
-						.attr('data-text', wsEditorData.actors[actor])
-						.text(wsEditorData.actors[actor])
-						.addClass('ws_actor_option')
-				)
-			);
-		}
-
-		var moreUsersText = 'Choose users\u2026';
-		actorSelector.append(
-			$('<li>').append(
-				$('<a></a>')
-					.attr('id', 'ws_show_more_users')
-					.attr('href', '#more-users')
-					.attr('data-text', moreUsersText)
-					.text(moreUsersText)
-			)
-		);
-
-		actorSelector.show();
-
-		if (selectedActor && !wsEditorData.actors.hasOwnProperty(selectedActor)) {
-			selectedActor = null;
-		}
-		setSelectedActor(selectedActor);
-	}
-
-	AmeEditorApi.populateActorSelector = populateActorSelector;
-
 	if (wsEditorData.wsMenuEditorPro) {
-		populateActorSelector();
+		actorSelectorWidget.onChange(function() {
+			//There are some UI elements that can be visible or hidden depending on whether an actor is selected.
+			var editorNode = $('#ws_menu_editor');
+			editorNode.toggleClass('ws_is_actor_view', (actorSelectorWidget.selectedActor !== null));
+
+			//Update the menu item states to indicate whether they're accessible.
+			editorNode.find('.ws_container').each(function() {
+				updateActorAccessUi($(this));
+			});
+		});
 
 		if (wsEditorData.hasOwnProperty('selectedActor') && wsEditorData.selectedActor) {
-			setSelectedActor(wsEditorData.selectedActor);
+			actorSelectorWidget.setSelectedActor(wsEditorData.selectedActor);
 		} else {
-			setSelectedActor(null);
+			actorSelectorWidget.setSelectedActor(null);
 		}
 	}
-
-	actorSelector.on('click', 'li a.ws_actor_option', function(event) {
-		var actor = $(this).attr('href').substring(1);
-		if (actor === '') {
-			actor = null;
-		}
-
-		setSelectedActor(actor);
-		event.preventDefault();
-	});
-
-	actorSelector.on('click', '#ws_show_more_users', function(event) {
-		event.preventDefault();
-		AmeVisibleUserDialog.open({
-			currentUserLogin : wsEditorData.currentUserLogin,
-			users            : AmeCapabilityManager.getUsers(),
-			visibleUsers     : _.get(wsEditorData, 'visibleUsers', []),
-
-			save: function(userDetails, selectedUsers) {
-				AmeCapabilityManager.addUsers(userDetails);
-				wsEditorData.visibleUsers = selectedUsers;
-				populateActorSelector();
-			}
-		});
-	});
 
 	//Finally, show the menu
 	loadMenuConfiguration(customMenu);
-  });
+
+	//... and make the UI visible now that it's fully rendered.
+	menuEditorNode.css('visibility', 'visible');
+}
+
+$(document).ready(ameOnDomReady);
+
+//Compatibility workaround: If another plugin or theme throws an exception in its jQuery.ready() handler,
+//our callback might never get run. As a backup, set a timer and manually check if the DOM is ready.
+var domCheckAttempts = 0,
+	maxDomCheckAttempts = 30;
+var domCheckIntervalId = window.setInterval(function () {
+	if (isDomReadyDone || (domCheckAttempts >= maxDomCheckAttempts)) {
+		window.clearInterval(domCheckIntervalId);
+		return;
+	}
+	domCheckAttempts++;
+
+	if ($ && $.isReady) {
+		isDomReadyDone = true;
+		ameOnDomReady();
+	}
+}, 1000);
 
 })(jQuery, wsAmeLodash);
 

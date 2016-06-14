@@ -14,6 +14,7 @@ require $thisDirectory . '/role-utils.php';
 require $thisDirectory . '/menu-item.php';
 require $thisDirectory . '/menu.php';
 require $thisDirectory . '/auto-versioning.php';
+require $thisDirectory . '/ajax-helper.php';
 
 class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 	const WPML_CONTEXT = 'admin-menu-editor menu texts';
@@ -91,6 +92,16 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 	 * @var array An index of URLs relative to /wp-admin/. Any menus that match the index will be ignored.
 	 */
 	private $menu_url_blacklist = array();
+
+	/**
+	 * @var array Menu editor page tabs.
+	 */
+	private $tabs = array();
+
+	/**
+	 * @var string The slug of the current settings tab, if any.
+	 */
+	private $current_tab = '';
 
 	function init(){
 		$this->sitewide_options = true;
@@ -172,6 +183,15 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 			//BuddyPress 2.3.4
 			'index.php?page=bp-about' => true,
 			'index.php?page=bp-credits' => true,
+			//DW Question Answer 1.3.8.1
+			'index.php?page=dwqa-about' => true,
+			'index.php?page=dwqa-changelog' => true,
+			'index.php?page=dwqa-credits' => true,
+			//Ninja Forms 2.9.41
+			'index.php?page=nf-about' => true,
+			'index.php?page=nf-changelog' => true,
+			'index.php?page=nf-getting-started' => true,
+			'index.php?page=nf-credits' => true,
 		);
 		
 		//AJAXify screen options
@@ -216,6 +236,32 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 		add_action('deleted_user_meta', array($this, 'clear_user_role_cache'), 10, 2);
 		//There's also a "set_user_role" hook, but it's only called by WP_User::set_role and not WP_User::add_role.
 		//It's also redundant - WP_User::set_role updates user meta, so the above hooks already cover it.
+
+		//Multisite: Clear role and capability caches when switching to another site.
+		add_action('switch_blog', array($this, 'clear_site_specific_caches'), 10, 0);
+
+		add_action('admin_menu_editor-display_tabs', array($this, 'display_editor_tabs'));
+
+		//Modules
+		include dirname(__FILE__) . '/../modules/actor-selector/actor-selector.php';
+		new ameActorSelector($this);
+
+		$proModuleDirectory = AME_ROOT_DIR . '/extras/modules';
+		if ( @is_dir($proModuleDirectory) ) {
+			//The widget module requires PHP 5.3.
+			if (
+				version_compare(phpversion(), '5.3', '>=')
+				&&  is_file($proModuleDirectory . '/dashboard-widget-editor/load.php')
+			) {
+				require_once $proModuleDirectory . '/dashboard-widget-editor/load.php';
+				new ameWidgetEditor($this);
+			}
+		}
+
+		//Set up the tabs for the menu editor page.
+		$this->tabs = apply_filters('admin_menu_editor-tabs', array( 'editor' => 'Admin Menu', ));
+		//The "Settings" tab is always last.
+		$this->tabs['settings'] = 'Settings';
 	}
 	
 	function init_finish() {
@@ -307,12 +353,19 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 		if ( $this->current_user_can_edit_menu() ){
 			$this->log_security_note('Current user can edit the admin menu.');
 
+			//Determine the current menu editor page tab.
+			$this->current_tab = isset($this->get['sub_section']) ? strval($this->get['sub_section']) : 'editor';
+			$tab_title = '';
+			if ($this->current_tab !== 'editor' && isset($this->tabs[$this->current_tab])) {
+				$tab_title = ' - ' . $this->tabs[$this->current_tab];
+			}
+
 			$page = add_options_page(
-				apply_filters('admin_menu_editor-self_page_title', 'Menu Editor'), 
+				apply_filters('admin_menu_editor-self_page_title', 'Menu Editor') . $tab_title,
 				apply_filters('admin_menu_editor-self_menu_title', 'Menu Editor'), 
 				apply_filters('admin_menu_editor-capability', 'manage_options'),
 				'menu_editor', 
-				array(&$this, 'page_menu_editor')
+				array($this, 'page_menu_editor')
 			);
 			//Output our JS & CSS on that page only
 			add_action("admin_print_scripts-$page", array($this, 'enqueue_scripts'), 1);
@@ -350,7 +403,7 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 		}
 
 		//Generate item templates from the default menu.
-		$templateBuilder = new AmeMenuTemplateBuilder();
+		$templateBuilder = new ameMenuTemplateBuilder();
 		$this->item_templates = $templateBuilder->build(
 			$this->default_wp_menu,
 			$this->default_wp_submenu,
@@ -558,7 +611,7 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 	  *
 	  * @return void
 	  */
-	function enqueue_scripts(){
+	function enqueue_scripts() {
 		//Optimization: Remove wp-emoji.js from the plugin page. wpEmoji makes DOM manipulation slow because
 		//it tracks *all* DOM changes using MutationObserver.
 		remove_action('admin_print_scripts', 'print_emoji_detection_script');
@@ -572,10 +625,26 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 		//jQuery Form plugin. This is a more recent version than the one included with WP.
 		wp_register_auto_versioned_script('ame-jquery-form', plugins_url('js/jquery.form.js', $this->plugin_file), array('jquery'));
 		//jQuery cookie plugin
-		wp_register_auto_versioned_script('jquery-cookie', plugins_url('js/jquery.cookie.js', $this->plugin_file), array('jquery'));
+		wp_register_auto_versioned_script('jquery-cookie', plugins_url('js/jquery.biscuit.js', $this->plugin_file), array('jquery'));
 
 		//Lodash library
 		wp_register_auto_versioned_script('ame-lodash', plugins_url('js/lodash.min.js', $this->plugin_file));
+
+		//Move admin notices (e.g. "Settings saved") below editor tabs.
+		//This is a separate script because it has to run after common.js which is loaded in the page footer.
+		wp_enqueue_auto_versioned_script(
+			'ame-editor-tab-fix',
+			plugins_url('js/editor-tab-fix.js', $this->plugin_file),
+			array('jquery', 'common'),
+			true
+		);
+
+		//Actor manager.
+		wp_register_auto_versioned_script(
+			'ame-actor-manager',
+			plugins_url('js/actor-manager.js', $this->plugin_file),
+			array('ame-lodash')
+		);
 
 		//Modules
 		wp_register_auto_versioned_script(
@@ -592,7 +661,8 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 			'jquery', 'jquery-ui-sortable', 'jquery-ui-dialog', 'jquery-ui-tabs',
 			'ame-jquery-form', 'jquery-ui-droppable', 'jquery-qtip',
 			'jquery-sort', 'jquery-json', 'jquery-cookie',
-			'wp-color-picker', 'ame-lodash', 'ame-access-editor',
+			'wp-color-picker', 'ame-lodash', 'ame-access-editor', 'ame-actor-manager',
+			'ame-actor-selector',
 		);
 		wp_register_auto_versioned_script(
 			'menu-editor',
@@ -600,27 +670,7 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 			apply_filters('admin_menu_editor-editor_script_dependencies', $editor_dependencies)
 		);
 
-		//Add only certain scripts to the settings sub-section.
-		if ( $this->is_settings_page() ) {
-			wp_enqueue_script('jquery-qtip');
-			return;
-		}
-
-		//Add all scripts to our editor page, but not the settings sub-section
-		//that shares the same page slug. Some of the scripts would crash otherwise.
-		if ( !$this->is_editor_page() ) {
-			return;
-		}
-
-		wp_enqueue_script('menu-editor');
-
-		//We use WordPress media uploader to let the user upload custom menu icons (WP 3.5+).
-		if ( function_exists('wp_enqueue_media') ) {
-			wp_enqueue_media();
-		}
-
-		//Remove the default jQuery Form plugin to prevent conflicts with our custom version.
-		wp_dequeue_script('jquery-form');
+		do_action('admin_menu_editor-enqueue_scripts-' . $this->current_tab);
 
 		//Actors (roles and users) are used in the permissions UI, so we need to pass them along.
 		$actors = array();
@@ -666,14 +716,39 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 		//Compatibility workaround: Get the real roles of the current user even if other plugins corrupt the list.
 		$users[$current_user->get('user_login')]['roles'] = array_values($this->get_user_roles($current_user));
 
-		//Keep only those visible users that were successfully loaded.
-		//(array_values reindexes the array and gets rid of gaps.)
-		$visible_users = array_values(array_intersect($visible_users, array_keys($users)));
+		$actors['user:' . $current_user->get('user_login')] = sprintf(
+			'Current user (%s)',
+			$current_user->get('user_login')
+		);
 
-        $actors['user:' . $current_user->get('user_login')] = sprintf(
-            'Current user (%s)',
-            $current_user->get('user_login')
-        );
+		$actor_data = array(
+			'roles' => $roles,
+			'users' => $users,
+			'isMultisite' => is_multisite(),
+		);
+		wp_localize_script('ame-actor-manager', 'wsAmeActorData', $actor_data);
+
+		//Add only certain scripts to the settings sub-section.
+		if ( $this->is_settings_page() ) {
+			wp_enqueue_script('jquery-qtip');
+			return;
+		}
+
+		//Add all scripts to our editor page, but not the settings sub-section
+		//that shares the same page slug. Some of the scripts would crash otherwise.
+		if ( !$this->is_editor_page() ) {
+			return;
+		}
+
+		wp_enqueue_script('menu-editor');
+
+		//We use WordPress media uploader to let the user upload custom menu icons (WP 3.5+).
+		if ( function_exists('wp_enqueue_media') ) {
+			wp_enqueue_media();
+		}
+
+		//Remove the default jQuery Form plugin to prevent conflicts with our custom version.
+		wp_dequeue_script('jquery-form');
 
 		$showExtraIcons = (boolean)$this->options['show_extra_icons'];
 		if ( isset($_COOKIE['ame-show-extra-icons']) && is_numeric($_COOKIE['ame-show-extra-icons']) ) {
@@ -692,7 +767,7 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 			'dashiconsAvailable' => wp_style_is('dashicons', 'registered'),
 			'captionShowAdvanced' => 'Show advanced options',
 			'captionHideAdvanced' => 'Hide advanced options',
-			'wsMenuEditorPro' => false, //Will be overwritten if extras are loaded
+			'wsMenuEditorPro' => $this->is_pro_version(), //Will be overwritten if extras are loaded
 			'menuFormatName' => ameMenu::format_name,
 			'menuFormatVersion' => ameMenu::format_version,
 
@@ -709,11 +784,8 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 			'embeddedPageTemplateId' => ameMenuItem::embeddedPageTemplateId,
 
 			'actors' => $actors,
-			'roles' => $roles,
-			'users' => $users,
 			'currentUserLogin' => $current_user->get('user_login'),
 			'selectedActor' => isset($this->get['selected_actor']) ? strval($this->get['selected_actor']) : null,
-			'visibleUsers' => $visible_users,
 
 			'postTypes' => $this->get_post_type_details(),
 			'taxonomies' => $this->get_taxonomy_details(),
@@ -863,6 +935,8 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 		$scheme = $this->options['ui_colour_scheme'];
 		wp_enqueue_style('menu-editor-colours-' . $scheme);
 		wp_enqueue_style('wp-color-picker');
+
+		do_action('admin_menu_editor-enqueue_styles-' . $this->current_tab);
 	}
 
 	/**
@@ -1006,21 +1080,21 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 			'defaults' => $unclickableDefaults,
 		);
 
-		$templates[ameMenuItem::embeddedPageTemplateId] = array(
-			'name' => '< Embed WP page >',
-			'used' => true,
-			'defaults' => array_merge(
-				$itemDefaults,
-				array(
-					'file' => '#automatically-generated',
-					'url' => '#automatically-generated',
-					'menu_title' => 'Embedded Page',
-					'page_heading' => ameMenuItem::embeddedPagePlaceholderHeading,
-				)
-			)
-		);
-
 		if ( $this->is_pro_version() ) {
+			$templates[ameMenuItem::embeddedPageTemplateId] = array(
+				'name' => '< Embed WP page >',
+				'used' => true,
+				'defaults' => array_merge(
+					$itemDefaults,
+					array(
+						'file' => '#automatically-generated',
+						'url' => '#automatically-generated',
+						'menu_title' => 'Embedded Page',
+						'page_heading' => ameMenuItem::embeddedPagePlaceholderHeading,
+					)
+				)
+			);
+
 			//The Pro version has a [wp-logout-url] shortcode. Lets make it easier o use
 			//by adding it to the "Target page" dropdown.
 			$logoutDefaults = array_merge(
@@ -1185,8 +1259,8 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 			$positions_by_template[$template_id] = ameMenuItem::get($entry, 'position', 0);
 
 			//Add the new entry to the menu tree
-			if ( !empty($template['defaults']['parent']) ) {
-				if (isset($tree[$template['defaults']['parent']])) {
+			if ( isset($template['defaults']['parent']) ) {
+				if ( isset($tree[$template['defaults']['parent']]) ) {
 					//Okay, insert the item.
 					$tree[$template['defaults']['parent']]['items'][] = $entry;
 				} else {
@@ -1200,7 +1274,7 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 
 		//Move orphaned items back to their original parents.
 		foreach($orphans as $item) {
-			$defaultParent = !empty($item['defaults']['parent']) ? $item['defaults']['parent'] : null;
+			$defaultParent = $item['defaults']['parent'];
 			if ( isset($defaultParent) && isset($tree[$defaultParent]) ) {
 				$tree[$defaultParent]['items'][] = $item;
 			} else {
@@ -1441,7 +1515,7 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 	 * @return array Menu item in the internal format.
 	 */
 	private function prepare_for_output($item, $item_type = 'menu', $parent = array()) {
-		$parent_file = isset($parent['file']) ? $parent['file'] : '';
+		$parent_file = isset($parent['file']) ? $parent['file'] : null;
 
 		// Special case : plugin pages that have been moved from a sub-menu to a different
 		// menu or the top level. We'll need to adjust the file field to point to the correct URL.
@@ -1494,6 +1568,9 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 			}
 		}
 
+		//WPML support: Translate only custom titles. See further below.
+		$hasCustomMenuTitle = isset($item['menu_title']);
+
 		//Apply defaults & filters
 		$item = ameMenuItem::apply_defaults($item);
 		$item = ameMenuItem::apply_filters($item, $item_type, $parent_file); //may cause side-effects
@@ -1531,7 +1608,7 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 
 		//Used later to determine the current page based on URL.
 		if ( empty($item['url']) ) {
-			$original_parent = !empty($item['defaults']['parent']) ? $item['defaults']['parent'] : $parent_file;
+			$original_parent = isset($item['defaults']['parent']) ? $item['defaults']['parent'] : $parent_file;
 			$item['url'] = ameMenuItem::generate_url($item['file'], $original_parent);
 		}
 
@@ -1550,7 +1627,7 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 		}
 
 		//WPML support: Use translated menu titles where available.
-		if ( !$item['separator'] && function_exists('icl_t') ) {
+		if ( !$item['separator'] && $hasCustomMenuTitle && function_exists('icl_t') ) {
 			$item['menu_title'] = icl_t(
 				self::WPML_CONTEXT,
 				$this->get_wpml_name_for($item, 'menu_title'),
@@ -1674,7 +1751,7 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 		}
 
 		$action = isset($this->post['action']) ? $this->post['action'] : (isset($this->get['action']) ? $this->get['action'] : '');
-		do_action('admin_menu_editor-header', $action);
+		do_action('admin_menu_editor-header', $action, $this->post);
 
 		if ( !empty($action) ) {
 			$this->handle_form_submission($this->post, $action);
@@ -1692,14 +1769,19 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 			}
 		}
 
-		$sub_section = isset($this->get['sub_section']) ? $this->get['sub_section'] : null;
-		if ( $sub_section === 'settings' ) {
+		if ( $this->current_tab === 'settings' ) {
 			$this->display_plugin_settings_ui();
-		} else if ($sub_section == 'generate-menu-dashicons') {
+		} else if ( $this->current_tab == 'generate-menu-dashicons' ) {
 			require dirname(__FILE__) . '/generate-menu-dashicons.php';
-		} else {
+		} else if ( $this->current_tab === 'editor' ) {
 			$this->display_editor_ui();
+		} else {
+			do_action('admin_menu_editor-section-' . $this->current_tab);
 		}
+
+		//Let the Pro version script output it's extra HTML & scripts.
+		do_action('admin_menu_editor-footer');
+		do_action('admin_menu_editor-footer-' . $this->current_tab, $action);
 	}
 
 	private function handle_form_submission($post, $action = '') {
@@ -1744,15 +1826,6 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 
 				//Save the custom menu
 				$this->set_custom_menu($menu);
-
-				//Save the list of visible users.
-				if ( isset($this->post['visible_users']) && is_string($this->post['visible_users']) ) {
-					$visible_users = json_decode($this->post['visible_users']);
-					if ( is_array($visible_users) ) {
-						$this->options['visible_users'] = array_unique(array_map('strval', $visible_users));
-						$this->save_options();
-					}
-				}
 
 				//Redirect back to the editor and display the success message.
 				//Also, automatically select the last selected actor (convenience feature).
@@ -1918,6 +1991,24 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 	}
 
 	/**
+	 * Display the tabs for the settings page.
+	 */
+	public function display_editor_tabs() {
+		echo '<h2 class="nav-tab-wrapper">';
+		foreach($this->tabs as $slug => $title) {
+			printf(
+				'<a href="%s" id="%s" class="nav-tab%s">%s</a>',
+				esc_attr(add_query_arg('sub_section', $slug, admin_url($this->settings_link))),
+				esc_attr('ws_ame_' . $slug . '_tab'),
+				$slug === $this->current_tab ? ' nav-tab-active' : '',
+				$title
+			);
+		}
+		echo '</h2>';
+		echo '<div class="clear"></div>';
+	}
+
+	/**
 	 * Display the plugin settings page.
 	 */
 	private function display_plugin_settings_ui() {
@@ -1949,7 +2040,7 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 	protected function is_editor_page() {
 		return is_admin()
 		&& isset($this->get['page']) && ($this->get['page'] == 'menu_editor')
-		&& ( !isset($this->get['sub_section']) || empty($this->get['sub_section']) );
+		&& ($this->current_tab === 'editor');
 	}
 
 	/**
@@ -1959,7 +2050,7 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 	 */
 	protected function is_settings_page() {
 		return is_admin()
-		&& isset($this->get['sub_section']) && ($this->get['sub_section'] == 'settings')
+		&& ($this->current_tab === 'settings')
 		&& isset($this->get['page']) && ($this->get['page'] == 'menu_editor');
 	}
 	
@@ -2009,6 +2100,12 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 
 		if ( $item['template_id'] !== '' ) {
 			$required_cap = ameMenuItem::get($item, 'access_level');
+
+			$required_cap = self::map_basic_meta_cap($required_cap);
+			//Why not just call map_meta_cap? Because it needs a user ID and we may be working on a role.
+			//Also, map_meta_cap is complex and filter-able, so it's hard to verify that it will work reliably
+			//in a non-standard context.
+
 			foreach ($item['grant_access'] as $grant => $has_access) {
 				if ( $has_access ) {
 					if ( !isset($caps[$grant]) ) {
@@ -2037,6 +2134,31 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 			$array1[$key] = $value;
 		}
 		return $array1;
+	}
+
+	private static function map_basic_meta_cap($capability) {
+		if ( $capability === 'customize' ) {
+			return 'edit_theme_options';
+		} elseif ( $capability === 'delete_site' ) {
+			return 'manage_options';
+		}
+		return $capability;
+	}
+
+	/**
+	 * Clear all internal caches that can vary depending on the current site.
+	 *
+	 * For example, the same user can have different roles on different sites,
+	 * so we must clear the role cache when WordPress switches the active site.
+	 */
+	public function clear_site_specific_caches() {
+		$this->cached_virtual_caps = null;
+		$this->cached_user_caps = array();
+		$this->cached_user_roles = array();
+
+		if ($this->options['menu_config_scope'] === 'site') {
+			$this->cached_custom_menu = null;
+		}
 	}
 
 	/**
@@ -2249,6 +2371,11 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 		//Even multisite super admins do not have this cap. We can return early here.
 		if ( $capability === 'do_not_allow' ) {
 			return false;
+		}
+
+		//Everybody has the "exist" cap.
+		if ( $capability === 'exist' ) {
+			return true;
 		}
 
 		if ( $this->user_cap_cache_enabled && isset($this->cached_user_caps[$capability]) ) {
@@ -2581,12 +2708,30 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 		}
 	}
 
+	/**
+	 * Get POST parameters for the current request.
+	 *
+	 * @return array
+	 */
+	public function get_post_params() {
+		return $this->post;
+	}
+
+	/**
+	 * Get query parameters for the current request.
+	 *
+	 * @return array
+	 */
+	public function get_query_params() {
+		return $this->get;
+	}
+
 	public function enqueue_helper_scripts() {
 		wp_enqueue_script(
 			'ame-helper-script',
 			plugins_url('js/admin-helpers.js', $this->plugin_file),
 			array('jquery'),
-			'20140312'
+			'20160407-2'
 		);
 
 		//The helper script needs to know the custom page heading (if any) to apply it.
@@ -2626,6 +2771,16 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 		return null;
 	}
 
+	/**
+	 * Update a plugin configuration value. Saves immediately.
+	 *
+	 * @param string $name
+	 * @param mixed $value
+	 */
+	public function set_plugin_option($name, $value) {
+		$this->options[$name] = $value;
+		$this->save_options();
+	}
 
 	/**
 	 * Log a security-related message.
@@ -2697,7 +2852,7 @@ class WPMenuEditor extends MenuEd_ShadowPluginFramework {
 
 	/**
 	 * Prepare WPML translation strings for all menu and page titles
-	 * in the specified menu.
+	 * in the specified menu. Includes only custom titles.
 	 *
 	 * @param array $custom_menu
 	 * @return array Associative array of strings that can be translated, indexed by unique name.
@@ -3158,9 +3313,9 @@ class ameMenuTemplateBuilder {
 	 *
 	 * @param array $wpItem
 	 * @param int $position
-	 * @param string $parent
+	 * @param string|null $parent
 	 */
-	private function addItem($wpItem, $position, $parent = '') {
+	private function addItem($wpItem, $position, $parent = null) {
 		$item = ameMenuItem::fromWpItem($wpItem, $position, $parent);
 
 		//Skip separators.
@@ -3175,7 +3330,7 @@ class ameMenuTemplateBuilder {
 		}
 
 		$name = $this->sanitizeMenuTitle($item['menu_title']);
-		if ( empty($parent) ) {
+		if ( $parent === null ) {
 			$this->parentNames[$item['file']] = $name;
 		} else {
 			$name = $this->parentNames[$parent] . ' -> ' . $name;

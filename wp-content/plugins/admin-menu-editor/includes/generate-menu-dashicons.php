@@ -49,7 +49,7 @@ foreach($blocks as $block) {
 			foreach($rules as $rule) {
 				/** @var Sabberworm\CSS\Rule\Rule $rule */
 				$value = $rule->getValue();
-				if ($value instanceof Sabberworm\CSS\Value\String) {
+				if ($value instanceof Sabberworm\CSS\Value\CSSString) {
 					//The parser defaults to UTF-8. Convert the char to a hexadecimal escape code
 					//so we don't have to worry about our CSS charset.
 					$char = ltrim(bin2hex(iconv('UTF-8', 'UCS-4', $value->getString())), '0');

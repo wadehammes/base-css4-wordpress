@@ -111,8 +111,9 @@ class acf_admin_field_group {
 		
 		
 		// actions
-		add_action('admin_enqueue_scripts',		array($this,'admin_enqueue_scripts'));
-		add_action('admin_head', 				array($this,'admin_head'));
+		add_action('admin_enqueue_scripts',		array($this,'admin_enqueue_scripts'), 20);
+		add_action('admin_head', 				array($this,'admin_head'), 20);
+		add_action('admin_footer', 				array($this,'admin_footer'), 20);
 		
 	}
 	
@@ -167,8 +168,48 @@ class acf_admin_field_group {
 		global $post, $field_group;
 		
 		
-		// vars
+		// set global var
 		$field_group = acf_get_field_group( $post );
+		
+		
+		// metaboxes
+		add_meta_box('acf-field-group-fields', __("Fields",'acf'), array($this, 'mb_fields'), 'acf-field-group', 'normal', 'high');
+		add_meta_box('acf-field-group-locations', __("Location",'acf'), array($this, 'mb_locations'), 'acf-field-group', 'normal', 'high');
+		add_meta_box('acf-field-group-options', __("Settings",'acf'), array($this, 'mb_options'), 'acf-field-group', 'normal', 'high');
+		
+		
+		// actions
+		add_action('post_submitbox_misc_actions',	array($this, 'post_submitbox_misc_actions'), 10, 0);
+		add_action('edit_form_after_title',			array($this, 'edit_form_after_title'), 10, 0);
+		
+		
+		// filters
+		add_filter('screen_settings',				array($this, 'screen_settings'), 10, 1);
+		
+		
+		// action for 3rd party customisation
+		do_action('acf/field_group/admin_head');
+		
+	}
+	
+	
+	/*
+	*  admin_footer
+	*
+	*  description
+	*
+	*  @type	function
+	*  @date	11/01/2016
+	*  @since	5.3.2
+	*
+	*  @param	$post_id (int)
+	*  @return	$post_id (int)
+	*/
+	
+	function admin_footer() {
+		
+		// global
+		global $post;
 		
 		
 		// vars
@@ -197,34 +238,26 @@ class acf_admin_field_group {
 			'validation'			=> 0,
 		);
 		
+		
 		?>
 		<script type="text/javascript">
-		(function($) {
-			
-			acf.o = <?php echo json_encode( $o ); ?>;
-			acf.l10n = <?php echo json_encode( $l10n ); ?>;
-			
-		})(jQuery);	
+			acf = acf || {};
+			acf.o = <?php echo json_encode($o); ?>;
+			acf.l10n = <?php echo json_encode($l10n); ?>;
+			<?php do_action('acf/field_group/admin_footer_js'); ?>
 		</script>
 		<?php
 		
 		
-		// metaboxes
-		add_meta_box('acf-field-group-fields', __("Fields",'acf'), array($this, 'mb_fields'), 'acf-field-group', 'normal', 'high');
-		add_meta_box('acf-field-group-locations', __("Location",'acf'), array($this, 'mb_locations'), 'acf-field-group', 'normal', 'high');
-		add_meta_box('acf-field-group-options', __("Settings",'acf'), array($this, 'mb_options'), 'acf-field-group', 'normal', 'high');
+		// action
+		do_action('acf/field_group/admin_footer');
 		
 		
-		// actions
-		add_action('post_submitbox_misc_actions',	array($this, 'post_submitbox_misc_actions'), 10, 0);
-		add_action('edit_form_after_title',			array($this, 'edit_form_after_title'), 10, 0);
-		
-		// filters
-		add_filter('screen_settings',				array($this, 'screen_settings'), 10, 1);
-		
-		
-		// action for 3rd party customisation
-		do_action('acf/field_group/admin_head');
+		?>
+		<script type="text/javascript">
+			acf.do_action('prepare');
+		</script>
+		<?php
 		
 	}
 	
@@ -605,14 +638,18 @@ class acf_admin_field_group {
 			*/
 			
 			case "post_type" :
+			
+				// get post types
+				$choices = acf_get_pretty_post_types();
 				
-				// all post types except attachment
-				$exclude = array('attachment');
-				$choices = acf_get_post_types( $exclude );
-				$choices = acf_get_pretty_post_types( $choices );
-
+				
+				// remove attachments
+				unset( $choices['attachment'] );
+				
+				
+				// end
 				break;
-				
+
 				
 			case "post" :
 				
@@ -769,8 +806,9 @@ class acf_admin_field_group {
 			case "page_template" :
 				
 				$choices = array(
-					'default'	=>	__("Default Template",'acf'),
+					'default' => apply_filters( 'default_page_template_title',  __('Default Template', 'acf') ),
 				);
+				
 				
 				$templates = get_page_templates();
 				
@@ -867,8 +905,17 @@ class acf_admin_field_group {
 				
 			case "comment" :
 				
-				$choices = array('all' => __('All', 'acf'));
-			
+				// vars
+				$choices = array(
+					'all'	=> __('All', 'acf')
+				);
+				
+				
+				// append post types
+				$choices = array_merge( $choices, acf_get_pretty_post_types() );
+				
+				
+				// end
 				break;
 			
 			
@@ -1067,7 +1114,7 @@ class acf_admin_field_group {
 			echo '<p><strong>' . __('Move Complete.', 'acf') . '</strong></p>';
 			echo '<p>' . sprintf( __('The %s field can now be found in the %s field group', 'acf'), $v1, $v2 ). '</p>';
 			
-			echo '<a href="#" class="acf-button blue acf-close-popup">' . __("Close Window",'acf') . '</a>';
+			echo '<a href="#" class="button button-primary acf-close-popup">' . __("Close Window",'acf') . '</a>';
 			
 			die();
 			
@@ -1109,7 +1156,7 @@ class acf_admin_field_group {
 			// render
 			acf_render_field_wrap( $field );
 			
-			echo '<button type="submit" class="acf-button blue">' . __("Move Field",'acf') . '</button>';
+			echo '<button type="submit" class="button button-primary">' . __("Move Field",'acf') . '</button>';
 			
 		echo '</form>';
 		

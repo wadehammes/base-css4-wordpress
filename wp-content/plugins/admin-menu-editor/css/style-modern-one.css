@@ -13,6 +13,7 @@ $hiddenItemBorder: #f1acb1;
   padding: 0;
   margin-top: 0;
   margin-bottom: 9px;
+  margin-left: 10px;
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04); }
   .ws_container .ws_item_title {
     color: #23282D;
@@ -116,7 +117,7 @@ $hiddenItemBorder: #f1acb1;
 #ws_menu_editor #ws_toggle_editor_layout {
   display: block; }
 
-#ws_icon_selector {
+#ws_icon_selector, #ws_embedded_page_selector {
   z-index: 3; }
 
 .ws_container.ui-sortable-helper {

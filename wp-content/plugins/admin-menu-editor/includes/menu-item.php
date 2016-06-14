@@ -35,12 +35,12 @@ abstract class ameMenuItem {
 	 *
 	 * @param array $item An menu item.
 	 * @param int $position The position (index) of the the menu item.
-	 * @param string $parent The slug of the parent menu that owns this item. Blank for top level menus.
+	 * @param string|null $parent The slug of the parent menu that owns this item. Null for top level menus.
 	 * @return array
 	 */
-	public static function fromWpItem($item, $position = 0, $parent = '') {
+	public static function fromWpItem($item, $position = 0, $parent = null) {
 		static $separator_count = 0;
-		$default_css_class = empty($parent) ? 'menu-top' : '';
+		$default_css_class = ($parent === null) ? 'menu-top' : '';
 		$item = array(
 			'menu_title'   => strval($item[0]),
 			'access_level' => strval($item[1]), //= required capability
@@ -58,8 +58,8 @@ abstract class ameMenuItem {
 			$item['access_level'] = $dummyUser->translate_level_to_cap($item['access_level']);
 		}
 
-		if ( empty($parent) ) {
-			$item['separator'] = empty($item['file']) || (strpos($item['css_class'], 'wp-menu-separator') !== false);
+		if ( $parent === null ) {
+			$item['separator'] = (strpos($item['css_class'], 'wp-menu-separator') !== false);
 			//WP 3.0 in multisite mode has two separators with the same filename. Fix by reindexing separators.
 			if ( $item['separator'] ) {
 				$item['file'] = 'separator_' . ($separator_count++);
@@ -70,10 +70,10 @@ abstract class ameMenuItem {
 		}
 
 		//Flag plugin pages
-		$item['is_plugin_page'] = (get_plugin_page_hook($item['file'], $parent) != null);
+		$item['is_plugin_page'] = (get_plugin_page_hook($item['file'], strval($parent)) != null);
 
 		if ( !$item['separator'] ) {
-			$item['url'] = self::generate_url($item['file'], $parent);
+			$item['url'] = self::generate_url($item['file'], strval($parent));
 		}
 
 		$item['template_id'] = self::template_id($item, $parent);
@@ -96,7 +96,7 @@ abstract class ameMenuItem {
 			'file' => '',
 			'page_heading' => '',
 	        'position' => 0,
-	        'parent' => '',
+	        'parent' => null,
 
 	        //Fields that apply only to top level menus.
 	        'css_class' => 'menu-top',
@@ -204,12 +204,12 @@ abstract class ameMenuItem {
 	  * in the same sub-menu, this combination is not necessarily unique.
 	  *
 	  * @param array|string $item The menu item in question.
-	  * @param string $parent_file The parent menu. If omitted, $item['defaults']['parent'] will be used.
+	  * @param string|null $parent_file The parent menu. If omitted, $item['defaults']['parent'] will be used.
 	  * @return string Template ID, or an empty string if this is a custom item.
 	  */
-	public static function template_id($item, $parent_file = ''){
+	public static function template_id($item, $parent_file = null){
 		if (is_string($item)) {
-			return $parent_file . '>' . $item;
+			return strval($parent_file) . '>' . $item;
 		}
 
 		if ( self::get($item, 'custom') ) {
@@ -228,7 +228,7 @@ abstract class ameMenuItem {
 			$item_file = self::get($item, 'file');
 		}
 
-		if ( empty($parent_file) ) {
+		if ( $parent_file === null ) {
 			if ( isset($item['defaults']['parent']) ) {
 				$parent_file = $item['defaults']['parent'];
 			} else {
@@ -248,7 +248,19 @@ abstract class ameMenuItem {
 			$item_file = remove_query_arg('return', $item_file);
 		}
 
-		return $parent_file . '>' . $item_file;
+		//Special case: A menu item can have an empty slug. This is technically very wrong, but it works (sort of)
+		//as long as the item has at least one submenu. This has happened at least once in practice. A user had
+		//a theme based on the Redux framework, and inexplicably the framework was configured to use an empty page slug.
+		if ( empty($item['separator']) ) {
+			if ( $item_file === '' ) {
+				$item_file = '[ame-no-slug]';
+			}
+			if ( $parent_file === '' ) {
+				$parent_file = '[ame-no-slug]';
+			}
+		}
+
+		return strval($parent_file) . '>' . $item_file;
 	}
 
   /**

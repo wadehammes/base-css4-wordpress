@@ -27,7 +27,12 @@ $hiddenItemBackground: darken($itemBackground, 9);
 $hiddenItemBorder: $itemBorder;
 $hiddenItemText: #888; //#9a9ea5; //#82878C; //#999
 
+$columnPadding: 10px;
+$mainContainerWidth: $itemWidth + $columnPadding * 2;
+
 .ws_container {
+	$itemHorizontalMargin: ($mainContainerWidth - $itemWidth) / 2;
+
 	border: 0 solid transparent;
 	background: $itemBackground;
 
@@ -40,6 +45,7 @@ $hiddenItemText: #888; //#9a9ea5; //#82878C; //#999
 
 	margin-top: 0;
 	margin-bottom: $itemMarginBottom;
+	margin-left: $itemHorizontalMargin;
 
 	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
 
@@ -231,12 +237,11 @@ $hiddenItemText: #888; //#9a9ea5; //#82878C; //#999
 	display: block;
 }
 
-//==============================================
-//              Icon selector
-//==============================================
+//====================================================
+//  Dropdowns should appear above the selected item.
+//====================================================
 
-#ws_icon_selector {
-	//Appear above the selected item.
+#ws_icon_selector, #ws_embedded_page_selector {
 	z-index: 3;
 }
 
@@ -252,10 +257,8 @@ $hiddenItemText: #888; //#9a9ea5; //#82878C; //#999
 //           Columns / containers
 //==============================================
 
-$columnPadding: 10px;
-
 .ws_main_container {
-	width: $itemWidth + $columnPadding * 2;
+	width: $mainContainerWidth;
 
 	.ws_toolbar {
 		padding: $columnPadding $columnPadding 0;

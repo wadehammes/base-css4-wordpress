@@ -16,11 +16,11 @@ $isProVersion = apply_filters('admin_menu_editor_is_pro', false);
 ?>
 
 <div class="wrap">
-	<<?php echo WPMenuEditor::$admin_heading_tag; ?>>
-		<?php echo apply_filters('admin_menu_editor-self_page_title', 'Menu Editor'); ?> Settings
-		<a href="<?php echo esc_attr($editor_page_url); ?>" class="add-new-h2"
-		   title="Back to Admin Menu Editor">Editor</a>
+	<<?php echo WPMenuEditor::$admin_heading_tag; ?> id="ws_ame_editor_heading">
+		<?php echo apply_filters('admin_menu_editor-self_page_title', 'Menu Editor'); ?>
 	</<?php echo WPMenuEditor::$admin_heading_tag; ?>>
+
+	<?php do_action('admin_menu_editor-display_tabs'); ?>
 
 	<form method="post" action="<?php echo esc_attr($formActionUrl); ?>" id="ws_plugin_settings_form">
 

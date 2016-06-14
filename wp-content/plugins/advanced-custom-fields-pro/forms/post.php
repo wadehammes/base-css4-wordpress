@@ -130,11 +130,7 @@ class acf_form_post {
 	function admin_enqueue_scripts() {
 		
 		// validate page
-		if( ! $this->validate_page() ) {
-			
-			return;
-			
-		}
+		if( !$this->validate_page() ) return;
 
 		
 		// load acf scripts

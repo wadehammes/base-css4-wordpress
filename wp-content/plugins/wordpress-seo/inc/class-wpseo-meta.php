@@ -100,9 +100,10 @@ class WPSEO_Meta {
 	public static $meta_fields = array(
 		'general'  => array(
 			'snippetpreview' => array(
-				'type'  => 'snippetpreview',
-				'title' => '', // Translation added later.
-				'help'  => '', // Translation added later.
+				'type'         => 'snippetpreview',
+				'title'        => '', // Translation added later.
+				'help'         => '', // Translation added later.
+				'help-button'  => '', // Translation added later.
 			),
 			'focuskw_text_input' => array(
 				'type'          => 'text',
@@ -111,6 +112,7 @@ class WPSEO_Meta {
 				'autocomplete'  => false,
 				'help'          => '', // Translation added later.
 				'description'   => '<div id="focuskwresults"></div>',
+				'help-button'   => '', // Translation added later.
 			),
 			'focuskw' => array(
 				'type'  => 'hidden',
@@ -146,9 +148,10 @@ class WPSEO_Meta {
 				'description'   => '', // Translation added later.
 			),
 			'pageanalysis'   => array(
-				'type'  => 'pageanalysis',
-				'title' => '', // Translation added later.
-				'help'  => '', // Translation added later.
+				'type'         => 'pageanalysis',
+				'title'        => '', // Translation added later.
+				'help'         => '', // Translation added later.
+				'help-button'  => '', // Translation added later.
 			),
 		),
 		'advanced' => array(
@@ -180,7 +183,6 @@ class WPSEO_Meta {
 					'-'            => '', // Site-wide default - translation added later.
 					'none'         => '', // Translation added later.
 					'noodp'        => '', // Translation added later.
-					'noydir'       => '', // Translation added later.
 					'noimageindex' => '', // Translation added later.
 					'noarchive'    => '', // Translation added later.
 					'nosnippet'    => '', // Translation added later.
@@ -240,7 +242,6 @@ class WPSEO_Meta {
 	private static $social_networks = array(
 		'opengraph'  => 'opengraph',
 		'twitter'    => 'twitter',
-		'googleplus' => 'google-plus',
 	);
 
 	/**
@@ -262,7 +263,7 @@ class WPSEO_Meta {
 	 */
 	public static function init() {
 
-		$options = WPSEO_Options::get_all();
+		$options = WPSEO_Options::get_option( 'wpseo_social' );
 		foreach ( self::$social_networks as $option => $network ) {
 			if ( true === $options[ $option ] ) {
 				foreach ( self::$social_fields as $box => $type ) {
@@ -352,7 +353,7 @@ class WPSEO_Meta {
 
 
 			case 'general':
-				$options = get_option( 'wpseo_titles' );
+				$options = WPSEO_Options::get_option( 'wpseo_titles' );
 				if ( $options['usemetakeywords'] === true ) {
 					/* Adjust the link in the keywords description text string based on the post type */
 					$field_defs['metakeywords']['description'] = sprintf( $field_defs['metakeywords']['description'], '<a target="_blank" href="' . esc_url( admin_url( 'admin.php?page=wpseo_titles#top#post_types' ) ) . '">', '</a>' );
@@ -379,7 +380,7 @@ class WPSEO_Meta {
 			case 'advanced':
 				global $post;
 
-				$options = WPSEO_Options::get_all();
+				$options = WPSEO_Options::get_options( array( 'wpseo', 'wpseo_titles', 'wpseo_internallinks' ) );
 
 				if ( ! current_user_can( 'manage_options' ) && $options['disableadvanced_meta'] ) {
 					return array();
@@ -397,15 +398,12 @@ class WPSEO_Meta {
 				$field_defs['meta-robots-noindex']['options']['0'] = sprintf( $field_defs['meta-robots-noindex']['options']['0'], ( ( isset( $options[ 'noindex-' . $post_type ] ) && $options[ 'noindex-' . $post_type ] === true ) ? 'noindex' : 'index' ) );
 
 				/* Adjust the robots advanced 'site-wide default' text string based on those settings */
-				if ( $options['noodp'] !== false || $options['noydir'] !== false ) {
+				if ( $options['noodp'] !== false ) {
 					$robots_adv = array();
-					foreach ( array( 'noodp', 'noydir' ) as $robot ) {
-						if ( $options[ $robot ] === true ) {
-							// Use translation from field def options - mind that $options and $field_def['options'] keys should be the same!
-							$robots_adv[] = $field_defs['meta-robots-adv']['options'][ $robot ];
-						}
+					if ( $options['noodp'] === true ) {
+						// Use translation from field def options - mind that $options and $field_def['options'] keys should be the same!
+						$robots_adv[] = $field_defs['meta-robots-adv']['options']['noodp'];
 					}
-					unset( $robot );
 					$robots_adv = implode( ', ', $robots_adv );
 				}
 				else {
@@ -416,7 +414,7 @@ class WPSEO_Meta {
 
 
 				/* Don't show the breadcrumb title field if breadcrumbs aren't enabled */
-				if ( $options['breadcrumbs-enable'] !== true ) {
+				if ( $options['breadcrumbs-enable'] !== true && ! current_theme_supports( 'yoast-seo-breadcrumbs' ) ) {
 					unset( $field_defs['bctitle'] );
 				}
 

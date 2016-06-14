@@ -84,6 +84,31 @@ class acf_field_date_picker extends acf_field {
 	
 	
 	/*
+	*  input_admin_enqueue_scripts
+	*
+	*  description
+	*
+	*  @type	function
+	*  @date	16/12/2015
+	*  @since	5.3.2
+	*
+	*  @param	$post_id (int)
+	*  @return	$post_id (int)
+	*/
+	
+	function input_admin_enqueue_scripts() {
+		
+		// script
+		wp_enqueue_script('jquery-ui-datepicker');
+		
+		
+		// style
+		wp_enqueue_style('acf-datepicker', acf_get_dir('assets/inc/datepicker/jquery-ui-1.10.4.custom.min.css'), '', '1.10.4' );
+		
+	}
+	
+	
+	/*
 	*  render_field()
 	*
 	*  Create the HTML interface for your field
@@ -146,7 +171,7 @@ class acf_field_date_picker extends acf_field {
 		
 		// display_format
 		acf_render_field_setting( $field, array(
-			'label'			=> __('Display format','acf'),
+			'label'			=> __('Display Format','acf'),
 			'instructions'	=> __('The format displayed when editing a post','acf'),
 			'type'			=> 'radio',
 			'name'			=> 'display_format',
@@ -161,7 +186,7 @@ class acf_field_date_picker extends acf_field {
 		
 		// return_format
 		acf_render_field_setting( $field, array(
-			'label'			=> __('Return format','acf'),
+			'label'			=> __('Return Format','acf'),
 			'instructions'	=> __('The format returned via template functions','acf'),
 			'type'			=> 'radio',
 			'name'			=> 'return_format',

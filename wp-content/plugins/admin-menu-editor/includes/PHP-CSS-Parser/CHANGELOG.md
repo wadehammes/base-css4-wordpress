@@ -1,5 +1,36 @@
 # Revision History
 
+## 7.0
+
+### 7.0.0 (2015-08-24)
+
+* Compatibility with PHP 7. Well timed, eh?
+
+#### Deprecations
+
+* The `Sabberworm\CSS\Value\String` class has been renamed to `Sabberworm\CSS\Value\CSSString`.
+
+### 7.0.1 (2015-12-25)
+
+* No more suppressed `E_NOTICE`
+* *No deprecations*
+
+## 6.0
+
+### 6.0.0 (2014-07-03)
+
+* Format output using Sabberworm\CSS\OutputFormat
+* *No backwards-incompatible changes*
+
+#### Deprecations
+
+* The parse() method replaces __toString with an optional argument (instance of the OutputFormat class)
+
+### 6.0.1 (2015-08-24)
+
+* Remove some declarations in interfaces incompatible with PHP 5.3 (< 5.3.9)
+* *No deprecations*
+
 ## 5.0
 
 ### 5.0.0 (2013-03-20)
@@ -73,6 +104,23 @@
 * Updated CHANGELOG.md to reflect changes since 5.0.4
 * *No backwards-incompatible changes*
 * *No deprecations*
+
+### 5.1.2 (2013-10-30)
+
+* Remove the use of consumeUntil in comment parsing. This makes it possible to parse comments such as “/** Perfectly valid **/”
+* *No backwards-incompatible changes*
+* *No deprecations*
+
+### 5.2.0 (2014-06-30)
+
+* Support removing a selector from a declaration block using `$oBlock->removeSelector($mSelector)`
+* Introduce a specialized exception (Sabberworm\CSS\Parsing\OuputException) for exceptions during output rendering
+
+* *No deprecations*
+
+#### Backwards-incompatible changes
+
+* Outputting a declaration block that has no selectors throws an OuputException instead of outputting an invalid ` {…}` into the CSS document.
 
 ## 4.0
 

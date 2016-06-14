@@ -35,13 +35,32 @@ st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
 
 ### Server Commands ###
 @task
-def update():
-    """ Updates NPM modules with new packages """
+def server_update():
+    """ Updates server with new packages """
     with settings(warn_only=True):
         with cd(env.work_dir):
-            run('rm -rf node_modules')
-            run('npm install')
-            run('gulp build')
+            check = raw_input('\nWarning you are about to deploy code to {}.\n'.format(
+                env.environment) + 'Please confirm the environment that you wish to '
+                'push to if you want continue: ')
+
+            if check == env.environment:
+                run('sudo apt-get -y update')
+                run('sudo apt-get -y upgrade')
+                run('sudo apt-get -y dist-upgrade')
+
+@task
+def update():
+    """ Updates NPM modules with new packages """
+    with cd(env.work_dir):
+        run('rm -rf node_modules')
+        run('npm install')
+        run('gulp build')
+
+@task
+def install():
+    """ Updates NPM modules with new packages """
+    with cd(env.work_dir):
+        run('npm install')
 
 @task
 def status():
@@ -73,21 +92,17 @@ def deploy(branch='master'):
                 'push to if you want continue: ')
 
             if check == env.environment:
-                if env.environment == 'dev':
-                    run('git checkout -f')
-                    run('git checkout master')
-                    run('git reset --hard origin/master')
-                    run('git pull')
-                    if branch != 'master':
-                        run('git checkout {}'.format(branch))
-                    run('git pull origin {}'.format(branch))
-                    run('gulp build')
-                else:
-                    run('git add -A')
-                    run('git commit -m "Production Commit on {}"'.format(st))
-                    run('git pull origin master')
-                    run('gulp build')
-                    run('git push origin master')
+                run('sudo chown -R www-data:www-data /var/www/html/')
+                run('sudo find /var/www/html/ -type f -exec chmod 664 {} \;')
+                run('sudo find /var/www/html/ -type d -exec chmod 775 {} \;')
+                run('git add -A')
+                run('git commit -m "Production Commit on {}"'.format(st))
+                run('git pull origin master')
+                run('gulp build')
+                run('git push origin master')
+                run('sudo chown -R www-data:www-data /var/www/html/')
+                run('sudo find /var/www/html/ -type f -exec chmod 664 {} \;')
+                run('sudo find /var/www/html/ -type d -exec chmod 775 {} \;')
 
 @task
 def revert(commit):

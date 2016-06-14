@@ -3,9 +3,9 @@ if ( class_exists( 'Bbpp_Animated_Gif' ) ) {
 	class EWWWIO_GD_Editor extends Bbpp_Animated_Gif {
 		public function save( $filename = null, $mime_type = null ) {
 			global $ewww_defer;
-			if (!defined('EWWW_IMAGE_OPTIMIZER_CLOUD'))
+			if ( ! defined( 'EWWW_IMAGE_OPTIMIZER_CLOUD' ) )
 				ewww_image_optimizer_init();
-			$saved = parent::save($filename, $mimetype);
+			$saved = parent::save( $filename, $mimetype );
 			if ( ! is_wp_error( $saved ) ) {
 				if ( ! $filename ) {
 					$filename = $saved['path'];
@@ -57,9 +57,9 @@ if ( class_exists( 'Bbpp_Animated_Gif' ) ) {
 	class EWWWIO_GD_Editor extends WP_Thumb_Image_Editor_GD {
 		protected function _save( $image, $filename = null, $mime_type = null ) {
 			global $ewww_defer;
-			if (!defined('EWWW_IMAGE_OPTIMIZER_CLOUD'))
+			if ( ! defined( 'EWWW_IMAGE_OPTIMIZER_CLOUD' ) )
 				ewww_image_optimizer_init();
-			$saved = parent::_save($image, $filename, $mime_type);
+			$saved = parent::_save( $image, $filename, $mime_type );
 			if ( ! is_wp_error( $saved ) ) {
 				if ( ! $filename ) {
 					$filename = $saved['path'];
@@ -82,11 +82,12 @@ if ( class_exists( 'Bbpp_Animated_Gif' ) ) {
 	}
 } else {
 	class EWWWIO_GD_Editor extends WP_Image_Editor_GD {
-		protected function _save ($image, $filename = null, $mime_type = null) {
+		protected function _save( $image, $filename = null, $mime_type = null ) {
 			global $ewww_defer;
-			if (!defined('EWWW_IMAGE_OPTIMIZER_CLOUD'))
+			if ( ! defined( 'EWWW_IMAGE_OPTIMIZER_CLOUD' ) ) {
 				ewww_image_optimizer_init();
-			$saved = parent::_save($image, $filename, $mime_type);
+			}
+			$saved = parent::_save( $image, $filename, $mime_type );
 			if ( ! is_wp_error( $saved ) ) {
 				if ( ! $filename ) {
 					$filename = $saved['path'];

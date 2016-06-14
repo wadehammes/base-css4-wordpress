@@ -109,11 +109,12 @@ class Akismet_Admin {
 			'post.php',
 			'settings_page_akismet-key-config',
 			'jetpack_page_akismet-key-config',
+			'plugins.php',
 		) ) ) {
-			wp_register_style( 'akismet.css', AKISMET__PLUGIN_URL . '_inc/akismet.css', array(), AKISMET_VERSION );
+			wp_register_style( 'akismet.css', plugin_dir_url( __FILE__ ) . '_inc/akismet.css', array(), AKISMET_VERSION );
 			wp_enqueue_style( 'akismet.css');
 
-			wp_register_script( 'akismet.js', AKISMET__PLUGIN_URL . '_inc/akismet.js', array('jquery','postbox'), AKISMET_VERSION );
+			wp_register_script( 'akismet.js', plugin_dir_url( __FILE__ ) . '_inc/akismet.js', array('jquery','postbox'), AKISMET_VERSION );
 			wp_enqueue_script( 'akismet.js' );
 			wp_localize_script( 'akismet.js', 'WPAkismet', array(
 				'comment_author_url_nonce' => wp_create_nonce( 'comment_author_url_nonce' ),
@@ -365,6 +366,12 @@ class Akismet_Admin {
 		}
 		$moderation = $wpdb->get_results( "SELECT * FROM {$wpdb->comments} WHERE comment_approved = '0'{$paginate}", ARRAY_A );
 
+		$result_counts = array(
+			'spam' => 0,
+			'ham' => 0,
+			'error' => 0,
+		);
+
 		foreach ( (array) $moderation as $c ) {
 			$c['user_ip']      = $c['comment_author_IP'];
 			$c['user_agent']   = $c['comment_agent'];
@@ -391,14 +398,15 @@ class Akismet_Admin {
 				delete_comment_meta( $c['comment_ID'], 'akismet_error' );
 				delete_comment_meta( $c['comment_ID'], 'akismet_delayed_moderation_email' );
 				Akismet::update_comment_history( $c['comment_ID'], '', 'recheck-spam' );
-
+				++$result_counts['spam'];
 			} elseif ( 'false' == $response[1] ) {
 				update_comment_meta( $c['comment_ID'], 'akismet_result', 'false' );
 				delete_comment_meta( $c['comment_ID'], 'akismet_error' );
 				delete_comment_meta( $c['comment_ID'], 'akismet_delayed_moderation_email' );
 				Akismet::update_comment_history( $c['comment_ID'], '', 'recheck-ham' );
-			// abnormal result: error
+				++$result_counts['ham'];
 			} else {
+				// abnormal result: error
 				update_comment_meta( $c['comment_ID'], 'akismet_result', 'error' );
 				Akismet::update_comment_history(
 					$c['comment_ID'],
@@ -406,6 +414,7 @@ class Akismet_Admin {
 					'recheck-error',
 					array( 'response' => substr( $response[1], 0, 50 ) )
 				);
+				++$result_counts['error'];
 			}
 
 			delete_comment_meta( $c['comment_ID'], 'akismet_rechecking' );
@@ -413,6 +422,7 @@ class Akismet_Admin {
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 			wp_send_json( array(
 				'processed' => count((array) $moderation),
+				'counts' => $result_counts,
 			));
 		}
 		else {
@@ -604,7 +614,7 @@ class Akismet_Admin {
 	}
 
 	public static function plugin_action_links( $links, $file ) {
-		if ( $file == plugin_basename( AKISMET__PLUGIN_URL . '/akismet.php' ) ) {
+		if ( $file == plugin_basename( plugin_dir_url( __FILE__ ) . '/akismet.php' ) ) {
 			$links[] = '<a href="' . esc_url( self::get_page_url() ) . '">'.esc_html__( 'Settings' , 'akismet').'</a>';
 		}
 

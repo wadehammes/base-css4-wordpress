@@ -17,7 +17,7 @@ use Sabberworm\CSS\Value\RuleValueList;
 use Sabberworm\CSS\Value\Size;
 use Sabberworm\CSS\Value\Color;
 use Sabberworm\CSS\Value\URL;
-use Sabberworm\CSS\Value\String;
+use Sabberworm\CSS\Value\CSSString;
 use Sabberworm\CSS\Rule\Rule;
 use Sabberworm\CSS\Parsing\UnexpectedTokenException;
 
@@ -139,13 +139,13 @@ class Parser {
 			if ($sPrefix !== null && !is_string($sPrefix)) {
 				throw new \Exception('Wrong namespace prefix '.$sPrefix);
 			}
-			if (!($mUrl instanceof String || $mUrl instanceof URL)) {
+			if (!($mUrl instanceof CSSString || $mUrl instanceof URL)) {
 				throw new \Exception('Wrong namespace url of invalid type '.$mUrl);
 			}
 			return new CSSNamespace($mUrl, $sPrefix);
 		} else {
 			//Unknown other at rule (font-face or such)
-			$sArgs = $this->consumeUntil('{', false, true);
+			$sArgs = trim($this->consumeUntil('{', false, true));
 			$this->consumeWhiteSpace();
 			$bUseRuleSet = true;
 			foreach($this->blockRules as $sBlockRuleName) {
@@ -214,7 +214,7 @@ class Parser {
 			}
 			$this->consume($sQuote);
 		}
-		return new String($sResult);
+		return new CSSString($sResult);
 	}
 
 	private function parseCharacter($bIsForIdentifier) {
@@ -414,9 +414,12 @@ class Parser {
 
 		$sUnit = null;
 		foreach ($this->aSizeUnits as $iLength => &$aValues) {
-			if(($sUnit = @$aValues[strtolower($this->peek($iLength))]) !== null) {
-				$this->consume($iLength);
-				break;
+			$sKey = strtolower($this->peek($iLength));
+			if(array_key_exists($sKey, $aValues)) {
+				if (($sUnit = $aValues[$sKey]) !== null) {
+					$this->consume($iLength);
+					break;
+				}
 			}
 		}
 		return new Size(floatval($sSize), $sUnit, $bForColor);
@@ -518,7 +521,7 @@ class Parser {
 	}
 
 	private function consumeExpression($mExpression) {
-		$aMatches;
+		$aMatches = null;
 		if (preg_match($mExpression, $this->inputLeft(), $aMatches, PREG_OFFSET_CAPTURE) === 1) {
 			return $this->consume($aMatches[0][0]);
 		}
@@ -546,10 +549,10 @@ class Parser {
 
 	private function consumeComment() {
 		if ($this->comes('/*')) {
-			$this->consume(2);
-			while ($this->consumeUntil('*', false, true)) {
-				if ($this->comes('/')) {
-					$this->consume(1);
+			$this->consume(1);
+			while ($this->consume(1) !== '') {
+				if ($this->comes('*/')) {
+					$this->consume(2);
 					return true;
 				}
 			}
@@ -567,6 +570,7 @@ class Parser {
 		$start = $this->iCurrentPosition;
 
 		while (($char = $this->consume(1)) !== '') {
+			$this->consumeComment();
 			if (in_array($char, $aEnd)) {
 				if ($bIncludeEnd) {
 					$out .= $char;

@@ -31,6 +31,10 @@ See the [screenshots tab](http://wordpress.org/extend/plugins/regenerate-thumbna
 
 == ChangeLog ==
 
+= Version 2.2.6 =
+
+* PHP 7 compatibility.
+
 = Version 2.2.5 =
 
 * Updates relating to plugin language pack support.

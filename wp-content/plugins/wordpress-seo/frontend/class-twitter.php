@@ -41,7 +41,7 @@ class WPSEO_Twitter {
 	 * Class constructor
 	 */
 	public function __construct() {
-		$this->options = WPSEO_Options::get_all();
+		$this->options = WPSEO_Options::get_option( 'wpseo_social' );
 		$this->twitter();
 	}
 
@@ -86,6 +86,7 @@ class WPSEO_Twitter {
 	private function determine_card_type() {
 		$this->type = $this->options['twitter_card_type'];
 
+		// TODO this should be reworked to use summary_large_image for any fitting image R.
 		if ( is_singular() && has_shortcode( $GLOBALS['post']->post_content, 'gallery' ) ) {
 
 			$this->images = get_post_gallery_images();
@@ -142,7 +143,7 @@ class WPSEO_Twitter {
 		$metatag_key = apply_filters( 'wpseo_twitter_metatag_key', 'name' );
 
 		// Output meta.
-		echo '<meta ', esc_attr( $metatag_key ), '="twitter:', esc_attr( $name ), '" content="', $value, '"/>', "\n";
+		echo '<meta ', esc_attr( $metatag_key ), '="twitter:', esc_attr( $name ), '" content="', $value, '" />', "\n";
 	}
 
 	/**
@@ -339,10 +340,8 @@ class WPSEO_Twitter {
 	 * Only used when OpenGraph is inactive or Summary Large Image card is chosen.
 	 */
 	protected function image() {
-		if ( count( $this->images ) > 0 ) {
-			$this->gallery_images_output();
-		}
-		elseif ( is_category() || is_tax() || is_tag() ) {
+
+		if ( is_category() || is_tax() || is_tag() ) {
 			$this->taxonomy_image_output();
 		}
 		else {
@@ -389,7 +388,17 @@ class WPSEO_Twitter {
 			if ( $this->image_from_meta_values_output() ) {
 				return;
 			}
+
+			$post_id = get_the_ID();
+
+			if ( $this->image_of_attachment_page_output( $post_id ) ) {
+				return;
+			}
 			if ( $this->image_thumbnail_output() ) {
+				return;
+			}
+			if ( count( $this->images ) > 0 ) {
+				$this->gallery_images_output();
 				return;
 			}
 			if ( $this->image_from_content_output() ) {
@@ -464,6 +473,28 @@ class WPSEO_Twitter {
 				$this->image_output( $img );
 
 				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Retrieve an attachment page's attachment
+	 *
+	 * @param string $attachment_id The ID of the attachment for which to retrieve the image.
+	 *
+	 * @return bool
+	 */
+	private function image_of_attachment_page_output( $attachment_id ) {
+		if ( get_post_type( $attachment_id ) === 'attachment' ) {
+			$mime_type = get_post_mime_type( $attachment_id );
+			switch ( $mime_type ) {
+				case 'image/jpeg':
+				case 'image/png':
+				case 'image/gif':
+					$this->image_output( wp_get_attachment_url( $attachment_id ) );
+					return true;
 			}
 		}
 

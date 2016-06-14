@@ -1,6 +1,11 @@
 /* Admin Menu Editor CSS file */
 #ws_menu_editor {
   min-width: 780px; }
+  #ws_menu_editor #ws_actor_selector {
+    margin-top: 6px; }
+
+.ame-is-free-version #ws_menu_editor {
+  margin-top: 9px; }
 
 .ws_main_container {
   margin: 2px;
@@ -117,11 +122,20 @@
 #ws_menu_editor #ws_save_menu {
   margin-bottom: 20px; }
 
-#ws_menu_editor #ws_export_menu {
-  margin-top: 12px; }
-
 #ws_menu_editor #ws_toggle_editor_layout {
   display: none; }
+
+#ws_menu_editor .ws_sidebar_button_separator {
+  display: block;
+  height: 4px;
+  margin: 0;
+  padding: 0; }
+
+/*
+ * Page heading and tabs
+ */
+#ws_ame_editor_heading {
+  float: left; }
 
 /*
  * Menu components and widgets
@@ -130,7 +144,7 @@
   display: block;
   width: 290px;
   padding: 3px;
-  margin: 2px auto; }
+  margin: 2px 0 2px 6px; }
 
 .ws_submenu {
   min-height: 2em; }
@@ -511,7 +525,7 @@ select.ws_dropdown optgroup option {
   position: absolute; }
 
 #ws_icon_selector.ws_with_more_icons {
-  width: 504px; }
+  width: 540px; }
 
 #ws_icon_selector .ws_icon_extra {
   display: none; }

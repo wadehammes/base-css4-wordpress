@@ -2,15 +2,26 @@
 
 #ws_menu_editor {
 	min-width: 780px;
+
+	#ws_actor_selector {
+		margin-top: 6px;
+	}
 }
+
+.ame-is-free-version #ws_menu_editor {
+	margin-top: 9px;
+}
+
+$mainContainerWidth: 310px;
+$mainContainerBorderWidth: 1px;
 
 .ws_main_container {
 	margin: 2px;
-	width: 310px;
+	width: $mainContainerWidth;
 	float: left;
 	display:block;
 
-	border: 1px solid #cdd5d5;
+	border: $mainContainerBorderWidth solid #cdd5d5;
 	background-color: #FFFFFF;
 
 	border-radius: 3px;
@@ -172,12 +183,23 @@
 	margin-bottom: 20px;
 }
 
-#ws_menu_editor #ws_export_menu {
-	margin-top: 12px;
-}
-
 #ws_menu_editor #ws_toggle_editor_layout {
 	display: none;
+}
+
+#ws_menu_editor .ws_sidebar_button_separator {
+	display: block;
+	height: 4px;
+	margin: 0;
+	padding: 0;
+}
+
+/*
+ * Page heading and tabs
+ */
+
+#ws_ame_editor_heading {
+	float: left;
 }
 
 /*
@@ -185,11 +207,16 @@
  */
 
 .ws_container {
+	$itemWidth: 290px;
+	$itemPadding: 3px;
+	$itemBorderWidth: 1px;
+	$itemHorizontalMargin: ($mainContainerWidth - $itemWidth - $itemPadding * 2 - $itemBorderWidth * 2) / 2;
+
 	display: block;
-	width: 290px;
+	width: $itemWidth;
 	
-	padding : 3px;
-	margin: 2px auto;
+	padding : $itemPadding;
+	margin: 2px 0 2px $itemHorizontalMargin;
 }
 
 .ws_active { }
@@ -694,7 +721,7 @@ select.ws_dropdown optgroup option {
 }
 
 #ws_icon_selector.ws_with_more_icons {
-    width: 504px;
+    width: 540px;
 }
 
 #ws_icon_selector .ws_icon_extra {

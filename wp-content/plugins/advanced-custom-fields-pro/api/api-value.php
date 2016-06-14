@@ -21,6 +21,10 @@ function acf_get_metadata( $post_id = 0, $name = '', $hidden = false ) {
 	$value = null;
 	
 	
+	// bail early if no $post_id (acf_form - new_post)
+	if( !$post_id ) return $value;
+	
+	
 	// add prefix for hidden meta
 	if( $hidden ) {
 		
@@ -153,7 +157,7 @@ function acf_update_metadata( $post_id = 0, $name = '', $value = '', $hidden = f
 	
 	
 	// return
-	return $return;
+	return (boolean) $return;
 	
 }
 
@@ -259,8 +263,8 @@ function acf_update_option( $option = '', $value = '', $autoload = null ) {
 	
 	
 	// for some reason, update_option does not use stripslashes_deep.
-	// update_metadata -> http://core.trac.wordpress.org/browser/tags/3.4.2/wp-includes/meta.php#L82: line 101 (does use stripslashes_deep)
-	// update_option -> http://core.trac.wordpress.org/browser/tags/3.5.1/wp-includes/option.php#L0: line 215 (does not use stripslashes_deep)
+	// update_metadata -> https://core.trac.wordpress.org/browser/tags/3.4.2/wp-includes/meta.php#L82: line 101 (does use stripslashes_deep)
+	// update_option -> https://core.trac.wordpress.org/browser/tags/3.5.1/wp-includes/option.php#L0: line 215 (does not use stripslashes_deep)
 	$value = stripslashes_deep($value);
 		
 		
@@ -296,17 +300,16 @@ function acf_update_option( $option = '', $value = '', $autoload = null ) {
 *  @return	(mixed)
 */
 
-function acf_get_value( $post_id, $field ) {
+function acf_get_value( $post_id = 0, $field ) {
 	
-	// try cache
+	// cache
 	$found = false;
-	$cache = wp_cache_get( "load_value/post_id={$post_id}/name={$field['name']}", 'acf', false, $found );
+	$cache_slug = "load_value/post_id={$post_id}/name={$field['name']}";
+	$cache = wp_cache_get($cache_slug, 'acf', false, $found);
 	
-	if( $found ) {
 	
-		return $cache;
-		
-	}
+	// return cache if found
+	if( $found ) return $cache;
 	
 	
 	// load value
@@ -328,12 +331,12 @@ function acf_get_value( $post_id, $field ) {
 	// filter for 3rd party customization
 	$value = apply_filters( "acf/load_value", $value, $post_id, $field );
 	$value = apply_filters( "acf/load_value/type={$field['type']}", $value, $post_id, $field );
-	$value = apply_filters( "acf/load_value/name={$field['name']}", $value, $post_id, $field );
+	$value = apply_filters( "acf/load_value/name={$field['_name']}", $value, $post_id, $field );
 	$value = apply_filters( "acf/load_value/key={$field['key']}", $value, $post_id, $field );
 	
 	
 	// update cache
-	wp_cache_set( "load_value/post_id={$post_id}/name={$field['name']}", $value, 'acf' );
+	wp_cache_set($cache_slug, $value, 'acf');
 
 	
 	// return
@@ -359,11 +362,25 @@ function acf_get_value( $post_id, $field ) {
 
 function acf_format_value( $value, $post_id, $field ) {
 	
+	// try cache
+	$found = false;
+	$cache_slug = "format_value/post_id={$post_id}/name={$field['name']}";
+	$cache = wp_cache_get($cache_slug, 'acf', false, $found);
+	
+	
+	// return cache if found
+	if( $found ) return $cache;
+	
+	
 	// apply filters
 	$value = apply_filters( "acf/format_value", $value, $post_id, $field );
 	$value = apply_filters( "acf/format_value/type={$field['type']}", $value, $post_id, $field );
-	$value = apply_filters( "acf/format_value/name={$field['name']}", $value, $post_id, $field );
+	$value = apply_filters( "acf/format_value/name={$field['_name']}", $value, $post_id, $field );
 	$value = apply_filters( "acf/format_value/key={$field['key']}", $value, $post_id, $field );
+	
+	
+	// update cache
+	wp_cache_set($cache_slug, $value, 'acf');
 	
 	
 	// return

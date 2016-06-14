@@ -6,13 +6,10 @@
  */
  
 //Load JSON functions for PHP < 5.2
-if ( !(function_exists('json_encode') && function_exists('json_decode')) && !(class_exists('Services_JSON') || class_exists('Moxiecode_JSON')) ){
-	$class_json_path = ABSPATH.WPINC.'/class-json.php';
-	$class_moxiecode_json_path = ABSPATH.WPINC.'/js/tinymce/plugins/spellchecker/classes/utils/JSON.php';
+if ( !(function_exists('json_encode') && function_exists('json_decode')) && !class_exists('Services_JSON') ){
+	$class_json_path = ABSPATH . WPINC . '/class-json.php';
 	if ( file_exists($class_json_path) ){
 		require $class_json_path;
-	} elseif ( file_exists($class_moxiecode_json_path) ) {
-		require $class_moxiecode_json_path;
 	}
 }
 
@@ -150,13 +147,39 @@ class MenuEd_ShadowPluginFramework {
 				$stored_options = $this->json_encode($stored_options);
 			}
 			
-			if ( $this->sitewide_options ) {
-				return update_site_option($this->option_name, $stored_options);
+			if ( $this->sitewide_options && is_multisite() ) {
+				return self::atomic_update_site_option($this->option_name, $stored_options);
 			} else {
 				return update_option($this->option_name, $stored_options);
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Like update_site_option, but simulates record locking by using the MySQL GET_LOCK() function.
+	 *
+	 * The goal is to reduce the risk of triggering a race condition in update_site_option.
+	 * It would be better to use real transactions, but many (most?) WordPress sites use storage engines
+	 * that don't support transactions, like MyISAM.
+	 *
+	 * @param string $option_name
+	 * @param mixed $data
+	 * @return bool
+	 */
+	public static function atomic_update_site_option($option_name, $data) {
+		global $wpdb; /** @var wpdb $wpdb */
+		$lock = 'ame.' . (is_multisite() ? $wpdb->sitemeta : $wpdb->options ) . '.' . $option_name;
+
+		//Lock. Note that we're being really optimistic and not checking the return value.
+		$wpdb->query($wpdb->prepare("SELECT GET_LOCK(%s, %d)", $lock, 5));
+		//Update.
+		$updated = update_site_option($option_name, $data);
+		//Unlock.
+		$wpdb->query($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock));
+
+		return $updated;
+
 	}
 	
 	
@@ -175,9 +198,6 @@ class MenuEd_ShadowPluginFramework {
     		$flag = $assoc?SERVICES_JSON_LOOSE_TYPE:0;
 	        $json = new Services_JSON($flag);
 	        return( $json->decode($data) );
-    	} elseif ( class_exists('Moxiecode_JSON') ){
-    		$json = new Moxiecode_JSON();
-    		return $json->decode($data);
     	} else {
     		trigger_error('No JSON parser available', E_USER_ERROR);
 		    return null;
@@ -197,9 +217,6 @@ class MenuEd_ShadowPluginFramework {
     	if ( class_exists('Services_JSON') ){
     		$json = new Services_JSON();
         	return( $json->encodeUnsafe($data) );
-    	} elseif ( class_exists('Moxiecode_JSON') ){
-    		$json = new Moxiecode_JSON();
-    		return $json->encode($data);
     	} else {
     		trigger_error('No JSON parser available', E_USER_ERROR);
 		    return '';

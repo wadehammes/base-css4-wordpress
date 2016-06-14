@@ -58,16 +58,16 @@ Thumbs.db
 ######################
 *.sass-cache
 
-# JS #
-######################
-wp-content/themes/base/library/js/*.js
-wp-content/themes/base/library/js/
-
-# CSS #
-######################
-wp-content/themes/base/library/js/css/
-wp-content/themes/base/library/js/css/*.css
-
 # REPO IGNORES #
 ######################
 node_modules/
+
+
+wp-content/plugins/wordfence/tmp/configCache.php
+wp-content/themes/base/library/js/*
+wp-content/w3tc-config/master.php
+wp-content/cache/config/master.php
+wp-content/themes/base/library/css/base.css
+wp-content/plugins/wordfence/tmp/configCache.php
+
+wp-content/wflogs/
