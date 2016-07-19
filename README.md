@@ -40,6 +40,18 @@ Once installed, point your MAMP to the repo, and then visit it in your browser a
 http://localhost:8888/
 ```
 
+You will also need to create a `settings.json` file in the root of your repository, with the following information:
+
+```
+{
+  "devUrl": "localhost:8888"
+}
+```
+
+This allows our browser-sync task to properly proxy so we can use MAMP plus the goodness of Browser-Sync.
+
+**NOTE: if you plan to create a custom hostname for this in MAMP, like `trackmaven-marketing.local:8888`, then you need to update this file to reflect that change**
+
 You will then be asked to start setting up your config files. At this point, you should use MAMP to acces your local databases (click the MySQL tab, and launch PHPMyAdmin, and create a new database), and fill out the respective information into the config setup.
 
 Once you are setup and logged in, upgrade Wordpress to the latest version, and then click Appearance -> Themes, and Activate the Base Joints theme. You should now see a bare website at the url above.

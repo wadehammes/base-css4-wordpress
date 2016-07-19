@@ -85,15 +85,6 @@
 @import 'globals/buttons';
 @import 'globals/carousel';
 
-/* Pages / Components */
-@import 'globals/logo';
-@import 'globals/video';
-@import 'globals/header';
-@import 'globals/nav';
-
-@import 'pages/home';
-
-
 /* Default custom properties */
 @import 'basscss-defaults';
 

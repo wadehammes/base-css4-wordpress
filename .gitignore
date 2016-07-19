@@ -18,6 +18,9 @@ fabfile.pyc
 /readme.html
 /license.txt
 
+settings.js
+settings.json
+
 # Compiled source #
 ###################
 *.com

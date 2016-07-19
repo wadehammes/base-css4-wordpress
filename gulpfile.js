@@ -1,19 +1,26 @@
 /*=====================================
 =            Gulp Packages            =
 =====================================*/
+require('es6-promise').polyfill();
+
 var gulp    = require('gulp'),
+fs          = require('fs'),
 concat      = require('gulp-concat'),
 uglify      = require('gulp-uglify'),
 svgmin      = require('gulp-svgmin'),
 imagemin    = require('gulp-imagemin'),
-livereload  = require('gulp-livereload'),
 notify      = require("gulp-notify"),
 utility     = require('gulp-util'),
 watch       = require('gulp-watch'),
 streamqueue = require('streamqueue'),
 plumber     = require('gulp-plumber'),
 shell       = require('gulp-shell'),
-postcss     = require('gulp-postcss');
+sourcemaps  = require('gulp-sourcemaps'),
+postcss     = require('gulp-postcss'),
+browserSync = require('browser-sync').create();
+
+// Read our Settings Configuration
+var settings = JSON.parse(fs.readFileSync('./settings.json'));
 
 /*==================================
 =            Base Paths            =
@@ -27,7 +34,7 @@ var stylePathWatch   = themeBase + themeName + '/assets/css/**/*.css';
 var stylePathDest    = themeBase + themeName + '/library/css/';
 
 // Script Path
-var scriptsPathSrc   = [themeBase + themeName + '/assets/js/_lib/**/*.js', themeBase + themeName + '/assets/js/_src/**/*.js', themeBase + themeName + '/assets/js/app.js'];
+var scriptsPathSrc   = [themeBase + themeName + '/assets/js/_lib/**/*.js', themeBase + themeName + '/assets/js/_src/**/*.js', themeBase + themeName + '/assets/js/application-new.js'];
 var scriptsPathWatch = themeBase + themeName + '/assets/js/**/*.js';
 var scriptsPathDest  = themeBase + themeName + '/library/js/';
 
@@ -65,9 +72,11 @@ gulp.task('stylesheets', function () {
   ];
   return gulp.src(stylePathSrc)
     .pipe(plumber())
+    .pipe( sourcemaps.init() )
     .pipe(postcss(processors))
+    .pipe( sourcemaps.write('.') )
     .pipe(gulp.dest(stylePathDest))
-    .pipe(livereload())
+    .pipe(browserSync.stream())
     .pipe(notify({ message: 'Styles task complete' }));
 });
 
@@ -82,7 +91,7 @@ gulp.task('scripts', function() {
   .pipe(concat('app.js', {newLine: ';'}))
   .pipe(uglify())
   .pipe(gulp.dest(scriptsPathDest))
-  .pipe(livereload())
+  .pipe(browserSync.stream())
   .pipe(notify({ message: 'Scripts task complete' }));
 });
 
@@ -119,19 +128,21 @@ gulp.task('svg-opt', function () {
   .pipe(notify({ message: 'SVG task complete' }));
 });
 
+// Browser Sync
+gulp.task('serve', ['stylesheets', 'scripts'], function() {
+    browserSync.init({
+        proxy: settings.devUrl
+    });
+
+    gulp.watch(stylePathWatch, ['stylesheets']);
+    gulp.watch(scriptsPathWatch, ['scripts']);
+    gulp.watch(phpPath).on('change', browserSync.reload);
+});
+
 /*===================================
 =            Watch Tasks            =
 ===================================*/
-gulp.task('watch', function() {
-  livereload.listen();
-
-  gulp.watch(phpPath).on('change', function(file) {
-    livereload.changed(file.path);
-    utility.log(utility.colors.blue('PHP file changed:' + ' (' + file.path + ')'));
-  });
-
-  gulp.watch(stylePathWatch, ['stylesheets']);
-  gulp.watch(scriptsPathWatch, ['scripts']);
+gulp.task('watch-images', function() {
   gulp.watch(svgPathWatch, ['svg-opt']);
   gulp.watch(imgPathWatch, ['img-opt']);
 });
@@ -139,7 +150,7 @@ gulp.task('watch', function() {
 /*==========================================
 =            Run the Gulp Tasks            =
 ==========================================*/
-gulp.task('default', ['stylesheets', 'scripts', 'watch']);
+gulp.task('default', ['stylesheets', 'scripts', 'watch-images', 'serve']);
 gulp.task('build', ['stylesheets', 'scripts']);
 gulp.task('images', ['img-opt']);
 gulp.task('svg', ['svg-opt']);
