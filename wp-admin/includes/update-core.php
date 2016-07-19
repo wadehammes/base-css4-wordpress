@@ -292,20 +292,14 @@ $_old_files = array(
 'wp-admin/css/colors-classic-rtl.dev.css',
 'wp-admin/css/colors-fresh-rtl.css',
 'wp-admin/css/colors-fresh-rtl.dev.css',
-'wp-admin/css/dashboard-rtl.css',
 'wp-admin/css/dashboard-rtl.dev.css',
-'wp-admin/css/dashboard.css',
 'wp-admin/css/dashboard.dev.css',
-'wp-admin/css/farbtastic-rtl.css',
 'wp-admin/css/global-rtl.css',
 'wp-admin/css/global-rtl.dev.css',
 'wp-admin/css/global.css',
 'wp-admin/css/global.dev.css',
-'wp-admin/css/install-rtl.css',
 'wp-admin/css/install-rtl.dev.css',
-'wp-admin/css/login-rtl.css',
 'wp-admin/css/login-rtl.dev.css',
-'wp-admin/css/login.css',
 'wp-admin/css/login.dev.css',
 'wp-admin/css/ms.css',
 'wp-admin/css/ms.dev.css',
@@ -317,9 +311,7 @@ $_old_files = array(
 'wp-admin/css/plugin-install-rtl.dev.css',
 'wp-admin/css/plugin-install.css',
 'wp-admin/css/plugin-install.dev.css',
-'wp-admin/css/press-this-rtl.css',
 'wp-admin/css/press-this-rtl.dev.css',
-'wp-admin/css/press-this.css',
 'wp-admin/css/press-this.dev.css',
 'wp-admin/css/theme-editor-rtl.css',
 'wp-admin/css/theme-editor-rtl.dev.css',
@@ -329,9 +321,7 @@ $_old_files = array(
 'wp-admin/css/theme-install-rtl.dev.css',
 'wp-admin/css/theme-install.css',
 'wp-admin/css/theme-install.dev.css',
-'wp-admin/css/widgets-rtl.css',
 'wp-admin/css/widgets-rtl.dev.css',
-'wp-admin/css/widgets.css',
 'wp-admin/css/widgets.dev.css',
 'wp-admin/includes/internal-linking.php',
 'wp-includes/images/admin-bar-sprite-rtl.png',
@@ -603,6 +593,116 @@ $_old_files = array(
 'wp-admin/images/stars-rtl.png',
 'wp-admin/images/wp-logo-vs-2x.png',
 'wp-admin/images/about-updates-2x.png',
+// 3.9
+'wp-admin/css/colors.css',
+'wp-admin/css/colors.min.css',
+'wp-admin/css/colors-rtl.css',
+'wp-admin/css/colors-rtl.min.css',
+// Following files added back in 4.5 see #36083
+// 'wp-admin/css/media-rtl.min.css',
+// 'wp-admin/css/media.min.css',
+// 'wp-admin/css/farbtastic-rtl.min.css',
+'wp-admin/images/lock-2x.png',
+'wp-admin/images/lock.png',
+'wp-admin/js/theme-preview.js',
+'wp-admin/js/theme-install.min.js',
+'wp-admin/js/theme-install.js',
+'wp-admin/js/theme-preview.min.js',
+'wp-includes/js/plupload/plupload.html4.js',
+'wp-includes/js/plupload/plupload.html5.js',
+'wp-includes/js/plupload/changelog.txt',
+'wp-includes/js/plupload/plupload.silverlight.js',
+'wp-includes/js/plupload/plupload.flash.js',
+'wp-includes/js/plupload/plupload.js',
+'wp-includes/js/tinymce/plugins/spellchecker',
+'wp-includes/js/tinymce/plugins/inlinepopups',
+'wp-includes/js/tinymce/plugins/media/js',
+'wp-includes/js/tinymce/plugins/media/css',
+'wp-includes/js/tinymce/plugins/wordpress/img',
+'wp-includes/js/tinymce/plugins/wpdialogs/js',
+'wp-includes/js/tinymce/plugins/wpeditimage/img',
+'wp-includes/js/tinymce/plugins/wpeditimage/js',
+'wp-includes/js/tinymce/plugins/wpeditimage/css',
+'wp-includes/js/tinymce/plugins/wpgallery/img',
+'wp-includes/js/tinymce/plugins/wpfullscreen/css',
+'wp-includes/js/tinymce/plugins/paste/js',
+'wp-includes/js/tinymce/themes/advanced',
+'wp-includes/js/tinymce/tiny_mce.js',
+'wp-includes/js/tinymce/mark_loaded_src.js',
+'wp-includes/js/tinymce/wp-tinymce-schema.js',
+'wp-includes/js/tinymce/plugins/media/editor_plugin.js',
+'wp-includes/js/tinymce/plugins/media/editor_plugin_src.js',
+'wp-includes/js/tinymce/plugins/media/media.htm',
+'wp-includes/js/tinymce/plugins/wpview/editor_plugin_src.js',
+'wp-includes/js/tinymce/plugins/wpview/editor_plugin.js',
+'wp-includes/js/tinymce/plugins/directionality/editor_plugin.js',
+'wp-includes/js/tinymce/plugins/directionality/editor_plugin_src.js',
+'wp-includes/js/tinymce/plugins/wordpress/editor_plugin.js',
+'wp-includes/js/tinymce/plugins/wordpress/editor_plugin_src.js',
+'wp-includes/js/tinymce/plugins/wpdialogs/editor_plugin_src.js',
+'wp-includes/js/tinymce/plugins/wpdialogs/editor_plugin.js',
+'wp-includes/js/tinymce/plugins/wpeditimage/editimage.html',
+'wp-includes/js/tinymce/plugins/wpeditimage/editor_plugin.js',
+'wp-includes/js/tinymce/plugins/wpeditimage/editor_plugin_src.js',
+'wp-includes/js/tinymce/plugins/fullscreen/editor_plugin_src.js',
+'wp-includes/js/tinymce/plugins/fullscreen/fullscreen.htm',
+'wp-includes/js/tinymce/plugins/fullscreen/editor_plugin.js',
+'wp-includes/js/tinymce/plugins/wplink/editor_plugin_src.js',
+'wp-includes/js/tinymce/plugins/wplink/editor_plugin.js',
+'wp-includes/js/tinymce/plugins/wpgallery/editor_plugin_src.js',
+'wp-includes/js/tinymce/plugins/wpgallery/editor_plugin.js',
+'wp-includes/js/tinymce/plugins/tabfocus/editor_plugin.js',
+'wp-includes/js/tinymce/plugins/tabfocus/editor_plugin_src.js',
+'wp-includes/js/tinymce/plugins/wpfullscreen/editor_plugin.js',
+'wp-includes/js/tinymce/plugins/wpfullscreen/editor_plugin_src.js',
+'wp-includes/js/tinymce/plugins/paste/editor_plugin.js',
+'wp-includes/js/tinymce/plugins/paste/pasteword.htm',
+'wp-includes/js/tinymce/plugins/paste/editor_plugin_src.js',
+'wp-includes/js/tinymce/plugins/paste/pastetext.htm',
+'wp-includes/js/tinymce/langs/wp-langs.php',
+// 4.1
+'wp-includes/js/jquery/ui/jquery.ui.accordion.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.autocomplete.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.button.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.core.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.datepicker.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.dialog.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.draggable.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.droppable.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.effect-blind.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.effect-bounce.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.effect-clip.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.effect-drop.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.effect-explode.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.effect-fade.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.effect-fold.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.effect-highlight.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.effect-pulsate.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.effect-scale.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.effect-shake.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.effect-slide.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.effect-transfer.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.effect.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.menu.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.mouse.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.position.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.progressbar.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.resizable.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.selectable.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.slider.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.sortable.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.spinner.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.tabs.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.tooltip.min.js',
+'wp-includes/js/jquery/ui/jquery.ui.widget.min.js',
+'wp-includes/js/tinymce/skins/wordpress/images/dashicon-no-alt.png',
+// 4.3
+'wp-admin/js/wp-fullscreen.js',
+'wp-admin/js/wp-fullscreen.min.js',
+'wp-includes/js/tinymce/wp-mce-help.php',
+'wp-includes/js/tinymce/plugins/wpfullscreen',
+// 4.5
+'wp-includes/theme-compat/comments-popup.php',
 );
 
 /**
@@ -618,6 +718,9 @@ $_old_files = array(
  * Directories should be noted by suffixing it with a trailing slash (/)
  *
  * @since 3.2.0
+ * @since 4.4.0 New themes are not automatically installed on upgrade.
+ *              This can still be explicitly asked for by defining
+ *              CORE_UPGRADE_SKIP_NEW_BUNDLED as false.
  * @global array $_new_bundled_files
  * @var array
  * @name $_new_bundled_files
@@ -631,7 +734,14 @@ $_new_bundled_files = array(
 	'themes/twentytwelve/'   => '3.5',
 	'themes/twentythirteen/' => '3.6',
 	'themes/twentyfourteen/' => '3.8',
+	'themes/twentyfifteen/'  => '4.1',
+	'themes/twentysixteen/'  => '4.4',
 );
+
+// If not explicitly defined as false, don't install new default themes.
+if ( ! defined( 'CORE_UPGRADE_SKIP_NEW_BUNDLED' ) || CORE_UPGRADE_SKIP_NEW_BUNDLED ) {
+	$_new_bundled_files = array( 'plugins/akismet/' => '2.0' );
+}
 
 /**
  * Upgrade the core of WordPress.
@@ -675,8 +785,16 @@ $_new_bundled_files = array(
  *
  * @since 2.7.0
  *
+ * @global WP_Filesystem_Base $wp_filesystem
+ * @global array              $_old_files
+ * @global array              $_new_bundled_files
+ * @global wpdb               $wpdb
+ * @global string             $wp_version
+ * @global string             $required_php_version
+ * @global string             $required_mysql_version
+ *
  * @param string $from New release unzipped path.
- * @param string $to Path to old WordPress installation.
+ * @param string $to   Path to old WordPress installation.
  * @return WP_Error|null WP_Error on failure, null on success.
  */
 function update_core($from, $to) {
@@ -684,8 +802,26 @@ function update_core($from, $to) {
 
 	@set_time_limit( 300 );
 
-	// Sanity check the unzipped distribution
-	apply_filters( 'update_feedback', __('Verifying the unpacked files&#8230;') );
+	/**
+	 * Filter feedback messages displayed during the core update process.
+	 *
+	 * The filter is first evaluated after the zip file for the latest version
+	 * has been downloaded and unzipped. It is evaluated five more times during
+	 * the process:
+	 *
+	 * 1. Before WordPress begins the core upgrade process.
+	 * 2. Before Maintenance Mode is enabled.
+	 * 3. Before WordPress begins copying over the necessary files.
+	 * 4. Before Maintenance Mode is disabled.
+	 * 5. Before the database is upgraded.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param string $feedback The core update feedback messages.
+	 */
+	apply_filters( 'update_feedback', __( 'Verifying the unpacked files&#8230;' ) );
+
+	// Sanity check the unzipped distribution.
 	$distro = '';
 	$roots = array( '/wordpress/', '/wordpress-mu/' );
 	foreach ( $roots as $root ) {
@@ -699,12 +835,21 @@ function update_core($from, $to) {
 		return new WP_Error( 'insane_distro', __('The update could not be unpacked') );
 	}
 
-	// Import $wp_version, $required_php_version, and $required_mysql_version from the new version
-	// $wp_filesystem->wp_content_dir() returned unslashed pre-2.8
+
+	/**
+	 * Import $wp_version, $required_php_version, and $required_mysql_version from the new version
+	 * $wp_filesystem->wp_content_dir() returned unslashed pre-2.8
+	 *
+	 * @global string $wp_version
+	 * @global string $required_php_version
+	 * @global string $required_mysql_version
+	 */
+	global $wp_version, $required_php_version, $required_mysql_version;
+
 	$versions_file = trailingslashit( $wp_filesystem->wp_content_dir() ) . 'upgrade/version-current.php';
 	if ( ! $wp_filesystem->copy( $from . $distro . 'wp-includes/version.php', $versions_file ) ) {
-		 $wp_filesystem->delete( $from, true );
-		 return new WP_Error( 'copy_failed_for_version_file', __( 'The update cannot be installed because we will be unable to copy some files. This is usually due to inconsistent file permissions.' ), 'wp-includes/version.php' );
+		$wp_filesystem->delete( $from, true );
+		return new WP_Error( 'copy_failed_for_version_file', __( 'The update cannot be installed because we will be unable to copy some files. This is usually due to inconsistent file permissions.' ), 'wp-includes/version.php' );
 	}
 
 	$wp_filesystem->chmod( $versions_file, FS_CHMOD_FILE );
@@ -713,7 +858,7 @@ function update_core($from, $to) {
 
 	$php_version    = phpversion();
 	$mysql_version  = $wpdb->db_version();
-	$old_wp_version = $GLOBALS['wp_version']; // The version of WordPress we're updating from
+	$old_wp_version = $wp_version; // The version of WordPress we're updating from
 	$development_build = ( false !== strpos( $old_wp_version . $wp_version, '-' )  ); // a dash in the version indicates a Development release
 	$php_compat     = version_compare( $php_version, $required_php_version, '>=' );
 	if ( file_exists( WP_CONTENT_DIR . '/db.php' ) && empty( $wpdb->is_mysql ) )
@@ -731,10 +876,12 @@ function update_core($from, $to) {
 	elseif ( !$mysql_compat )
 		return new WP_Error( 'mysql_not_compatible', sprintf( __('The update cannot be installed because WordPress %1$s requires MySQL version %2$s or higher. You are running version %3$s.'), $wp_version, $required_mysql_version, $mysql_version ) );
 
+	/** This filter is documented in wp-admin/includes/update-core.php */
 	apply_filters( 'update_feedback', __( 'Preparing to install the latest version&#8230;' ) );
 
 	// Don't copy wp-content, we'll deal with that below
-	$skip = array( 'wp-content' );
+	// We also copy version.php last so failed updates report their old version
+	$skip = array( 'wp-content', 'wp-includes/version.php' );
 	$check_is_writable = array();
 
 	// Check to see which files don't really need updating - only available for 3.7 and higher
@@ -746,7 +893,7 @@ function update_core($from, $to) {
 		if ( is_array( $checksums ) && isset( $checksums[ $wp_version ] ) )
 			$checksums = $checksums[ $wp_version ]; // Compat code for 3.7-beta2
 		if ( is_array( $checksums ) ) {
-			foreach( $checksums as $file => $checksum ) {
+			foreach ( $checksums as $file => $checksum ) {
 				if ( 'wp-content' == substr( $file, 0, 10 ) )
 					continue;
 				if ( ! file_exists( ABSPATH . $file ) )
@@ -781,6 +928,7 @@ function update_core($from, $to) {
 		}
 	}
 
+	/** This filter is documented in wp-admin/includes/update-core.php */
 	apply_filters( 'update_feedback', __( 'Enabling Maintenance mode&#8230;' ) );
 	// Create maintenance file to signal that we are upgrading
 	$maintenance_string = '<?php $upgrading = ' . time() . '; ?>';
@@ -788,11 +936,21 @@ function update_core($from, $to) {
 	$wp_filesystem->delete($maintenance_file);
 	$wp_filesystem->put_contents($maintenance_file, $maintenance_string, FS_CHMOD_FILE);
 
+	/** This filter is documented in wp-admin/includes/update-core.php */
 	apply_filters( 'update_feedback', __( 'Copying the required files&#8230;' ) );
 	// Copy new versions of WP files into place.
 	$result = _copy_dir( $from . $distro, $to, $skip );
 	if ( is_wp_error( $result ) )
 		$result = new WP_Error( $result->get_error_code(), $result->get_error_message(), substr( $result->get_error_data(), strlen( $to ) ) );
+
+	// Since we know the core files have copied over, we can now copy the version file
+	if ( ! is_wp_error( $result ) ) {
+		if ( ! $wp_filesystem->copy( $from . $distro . 'wp-includes/version.php', $to . 'wp-includes/version.php', true /* overwrite */ ) ) {
+			$wp_filesystem->delete( $from, true );
+			$result = new WP_Error( 'copy_failed_for_version_file', __( 'The update cannot be installed because we will be unable to copy some files. This is usually due to inconsistent file permissions.' ), 'wp-includes/version.php' );
+		}
+		$wp_filesystem->chmod( $to . 'wp-includes/version.php', FS_CHMOD_FILE );
+	}
 
 	// Check to make sure everything copied correctly, ignoring the contents of wp-content
 	$skip = array( 'wp-content' );
@@ -853,6 +1011,7 @@ function update_core($from, $to) {
 		}
 	}
 
+	/** This filter is documented in wp-admin/includes/update-core.php */
 	apply_filters( 'update_feedback', __( 'Disabling Maintenance mode&#8230;' ) );
 	// Remove maintenance file, we're done with potential site-breaking changes
 	$wp_filesystem->delete( $maintenance_file );
@@ -923,14 +1082,21 @@ function update_core($from, $to) {
 		$wp_filesystem->delete($old_file, true);
 	}
 
+	// Remove any Genericons example.html's from the filesystem
+	_upgrade_422_remove_genericons();
+
+	// Remove the REST API plugin if its version is Beta 4 or lower
+	_upgrade_440_force_deactivate_incompatible_plugins();
+
 	// Upgrade DB with separate request
-	apply_filters('update_feedback', __('Upgrading database&#8230;'));
+	/** This filter is documented in wp-admin/includes/update-core.php */
+	apply_filters( 'update_feedback', __( 'Upgrading database&#8230;' ) );
 	$db_upgrade_url = admin_url('upgrade.php?step=upgrade_db');
 	wp_remote_post($db_upgrade_url, array('timeout' => 60));
 
 	// Clear the cache to prevent an update_option() from saving a stale db_version to the cache
 	wp_cache_flush();
-	// (Not all cache backends listen to 'flush')
+	// (Not all cache back ends listen to 'flush')
 	wp_cache_delete( 'alloptions', 'options' );
 
 	// Remove working directory
@@ -942,7 +1108,13 @@ function update_core($from, $to) {
 	else
 		delete_option('update_core');
 
-	// If we made it this far:
+	/**
+	 * Fires after WordPress core has been successfully updated.
+	 *
+	 * @since 3.3.0
+	 *
+	 * @param string $wp_version The current WordPress version.
+	 */
 	do_action( '_core_updated_successfully', $wp_version );
 
 	// Clear the option that blocks auto updates after failures, now that we've been successful.
@@ -964,8 +1136,10 @@ function update_core($from, $to) {
  * @since 3.7.0 Updated not to use a regular expression for the skip list
  * @see copy_dir()
  *
- * @param string $from source directory
- * @param string $to destination directory
+ * @global WP_Filesystem_Base $wp_filesystem
+ *
+ * @param string $from     source directory
+ * @param string $to       destination directory
  * @param array $skip_list a list of files/folders to skip copying
  * @return mixed WP_Error on failure, True on success.
  */
@@ -994,7 +1168,10 @@ function _copy_dir($from, $to, $skip_list = array() ) {
 					return new WP_Error( 'mkdir_failed__copy_dir', __( 'Could not create directory.' ), $to . $filename );
 			}
 
-			// generate the $sub_skip_list for the subdirectory as a sub-set of the existing $skip_list
+			/*
+			 * Generate the $sub_skip_list for the subdirectory as a sub-set
+			 * of the existing $skip_list.
+			 */
 			$sub_skip_list = array();
 			foreach ( $skip_list as $skip_item ) {
 				if ( 0 === strpos( $skip_item, $filename . '/' ) )
@@ -1016,6 +1193,11 @@ function _copy_dir($from, $to, $skip_list = array() ) {
  *
  * @since 3.3.0
  *
+ * @global string $wp_version
+ * @global string $pagenow
+ * @global string $action
+ *
+ * @param string $new_version
  */
 function _redirect_to_about_wordpress( $new_version ) {
 	global $wp_version, $pagenow, $action;
@@ -1030,7 +1212,7 @@ function _redirect_to_about_wordpress( $new_version ) {
  	if ( 'do-core-upgrade' != $action && 'do-core-reinstall' != $action )
  		return;
 
-	// Load the updated default text localization domain for new strings
+	// Load the updated default text localization domain for new strings.
 	load_default_textdomain();
 
 	// See do_core_upgrade()
@@ -1046,8 +1228,87 @@ window.location = 'about.php?updated';
 </script>
 	<?php
 
-	// Include admin-footer.php and exit
+	// Include admin-footer.php and exit.
 	include(ABSPATH . 'wp-admin/admin-footer.php');
 	exit();
 }
-add_action( '_core_updated_successfully', '_redirect_to_about_wordpress' );
+
+/**
+ * Cleans up Genericons example files.
+ *
+ * @since 4.2.2
+ *
+ * @global array              $wp_theme_directories
+ * @global WP_Filesystem_Base $wp_filesystem
+ */
+function _upgrade_422_remove_genericons() {
+	global $wp_theme_directories, $wp_filesystem;
+
+	// A list of the affected files using the filesystem absolute paths.
+	$affected_files = array();
+
+	// Themes
+	foreach ( $wp_theme_directories as $directory ) {
+		$affected_theme_files = _upgrade_422_find_genericons_files_in_folder( $directory );
+		$affected_files       = array_merge( $affected_files, $affected_theme_files );
+	}
+
+	// Plugins
+	$affected_plugin_files = _upgrade_422_find_genericons_files_in_folder( WP_PLUGIN_DIR );
+	$affected_files        = array_merge( $affected_files, $affected_plugin_files );
+
+	foreach ( $affected_files as $file ) {
+		$gen_dir = $wp_filesystem->find_folder( trailingslashit( dirname( $file ) ) );
+		if ( empty( $gen_dir ) ) {
+			continue;
+		}
+
+		// The path when the file is accessed via WP_Filesystem may differ in the case of FTP
+		$remote_file = $gen_dir . basename( $file );
+
+		if ( ! $wp_filesystem->exists( $remote_file ) ) {
+			continue;
+		}
+
+		if ( ! $wp_filesystem->delete( $remote_file, false, 'f' ) ) {
+			$wp_filesystem->put_contents( $remote_file, '' );
+		}
+	}
+}
+
+/**
+ * Recursively find Genericons example files in a given folder.
+ *
+ * @ignore
+ * @since 4.2.2
+ *
+ * @param string $directory Directory path. Expects trailingslashed.
+ * @return array
+ */
+function _upgrade_422_find_genericons_files_in_folder( $directory ) {
+	$directory = trailingslashit( $directory );
+	$files     = array();
+
+	if ( file_exists( "{$directory}example.html" ) && false !== strpos( file_get_contents( "{$directory}example.html" ), '<title>Genericons</title>' ) ) {
+		$files[] = "{$directory}example.html";
+	}
+
+	$dirs = glob( $directory . '*', GLOB_ONLYDIR );
+	if ( $dirs ) {
+		foreach ( $dirs as $dir ) {
+			$files = array_merge( $files, _upgrade_422_find_genericons_files_in_folder( $dir ) );
+		}
+	}
+
+	return $files;
+}
+
+/**
+ * @ignore
+ * @since 4.4.0
+ */
+function _upgrade_440_force_deactivate_incompatible_plugins() {
+	if ( defined( 'REST_API_VERSION' ) && version_compare( REST_API_VERSION, '2.0-beta4', '<=' ) ) {
+		deactivate_plugins( array( 'rest-api/plugin.php' ), true );
+	}
+}

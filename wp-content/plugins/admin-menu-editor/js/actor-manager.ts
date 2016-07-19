@@ -213,7 +213,7 @@ class AmeActorManager {
 		}
 	}
 
-	hasCap(actorId, capability, context?: {[actor: string] : any}): boolean {
+	hasCap(actorId: string, capability, context?: {[actor: string] : any}): boolean {
 		context = context || {};
 		return this.actorHasCap(actorId, capability, [context, this.grantedCapabilities]);
 	}

@@ -9,10 +9,7 @@
 		<?php } else { ?>
 
 		<nav class="prev-next">
-		  <ul class="clearfix">
-		    <li class="prev-link"><?php next_posts_link(__('Older Entries', "jointstheme")) ?></li>
-		    <li class="next-link"><?php previous_posts_link(__('Newer Entries', "jointstheme")) ?></li>
-		  </ul>
+		  <?php if ( function_exists( 'wp_pagenavi' ) ) wp_pagenavi(array('query' => $query_post)); ?>
 		</nav>
 		<?php } ?>
 

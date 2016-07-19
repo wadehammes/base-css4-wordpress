@@ -1381,7 +1381,6 @@ function encodeMenuAsJSON(tree){
 
 	//Compress the admin menu.
 	tree = compressMenu(tree);
-	console.log(tree); //xxxx debugging code
 
 	return $.toJSON(tree);
 }
@@ -1505,7 +1504,7 @@ function readItemState(itemDiv, position){
 	position = (typeof position === 'undefined') ? 0 : position;
 
 	itemDiv = $(itemDiv);
-	var item = $.extend({}, wsEditorData.blankMenuItem, itemDiv.data('menu_item'), readAllFields(itemDiv));
+	var item = $.extend(true, {}, wsEditorData.blankMenuItem, itemDiv.data('menu_item'), readAllFields(itemDiv));
 
 	item.defaults = itemDiv.data('menu_item').defaults;
 
@@ -2156,7 +2155,7 @@ function ameOnDomReady() {
 
 	AmeItemAccessEditor.setup({
 		api: AmeEditorApi,
-		actors: wsEditorData.actors,
+		actorSelector: actorSelectorWidget,
 		postTypes: wsEditorData.postTypes,
 		taxonomies: wsEditorData.taxonomies,
 		lodash: _,
@@ -3415,14 +3414,14 @@ function ameOnDomReady() {
 
 		//The new menu starts out rather bare
 		var randomId = randomMenuId();
-		var menu = $.extend({}, wsEditorData.blankMenuItem, {
+		var menu = $.extend(true, {}, wsEditorData.blankMenuItem, {
 			custom: true, //Important : flag the new menu as custom, or it won't show up after saving.
 			template_id : '',
 			menu_title : 'Custom Menu ' + ws_paste_count,
 			file : randomId,
-			items: [],
-			defaults: $.extend({}, itemTemplates.getDefaults(''))
+			items: []
 		});
+		menu.defaults = $.extend(true, {}, itemTemplates.getDefaults(''));
 
 		//Make it accessible only to the current actor if one is selected.
 		if (actorSelectorWidget.selectedActor !== null) {
@@ -3771,14 +3770,14 @@ function ameOnDomReady() {
 
 		ws_paste_count++;
 
-		var entry = $.extend({}, wsEditorData.blankMenuItem, {
+		var entry = $.extend(true, {}, wsEditorData.blankMenuItem, {
 			custom: true,
 			template_id : '',
 			menu_title : 'Custom Item ' + ws_paste_count,
 			file : randomMenuId(),
-			items: [],
-			defaults: $.extend({}, itemTemplates.getDefaults(''))
+			items: []
 		});
+		entry.defaults = $.extend(true, {}, itemTemplates.getDefaults(''));
 
 		//Make it accessible to only the currently selected actor.
 		if (actorSelectorWidget.selectedActor !== null) {

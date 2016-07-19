@@ -68,25 +68,6 @@
   </head>
 
   <body <?php body_class(); ?>>
-    <!-- Begin Mobile Nav Container
-    <div class="nav-container fixed z0">
-      <div class="nav-inner container">
-        <div class="contact">
-          <span class="h5 white mb2">GET IN CONTACT</span>
-          <?php echo do_shortcode('[contact-form-7 id="52" title="Contact Form"]'); ?>
-        </div>
-      </div>
-    </div>
-    End Mobile Nav Container -->
-
-    <!-- Navigatoin -->
-    <header class="header header-nav fixed site-slide px2 z4">
-      <div class="container clearfix">
-        <!-- Home Navigation / Logo -->
-        <?php get_template_part('partials/navigation'); ?>
-      </div>
-    </header>
-    <!-- Navigation -->
 
     <!-- Begin Site Container -->
-    <div class="site-container site-slide relative z4">
+    <div class="site-container site-slide relative p4 z4">

@@ -9,22 +9,93 @@
 class WPSEO_Post_Type_Sitemap_Provider implements WPSEO_Sitemap_Provider {
 
 	/** @var string $home_url Holds the home_url() value to speed up loops. */
-	protected $home_url = '';
+	protected static $home_url;
 
 	/** @var array $options All of plugin options. */
-	protected $options = array();
+	protected static $options;
 
 	/** @var WPSEO_Sitemap_Image_Parser $image_parser Holds image parser instance. */
-	protected $image_parser;
+	protected static $image_parser;
+
+	/** @var int $page_on_front_id Static front page ID.  */
+	protected static $page_on_front_id;
+
+	/** @var int $page_for_posts_id Posts page ID.  */
+	protected static $page_for_posts_id;
 
 	/**
 	 * Set up object properties for data reuse.
 	 */
 	public function __construct() {
+		add_filter( 'save_post', array( $this, 'save_post' ) );
+	}
 
-		$this->home_url     = home_url();
-		$this->options      = WPSEO_Options::get_all();
-		$this->image_parser = new WPSEO_Sitemap_Image_Parser();
+	/**
+	 * Get front page ID
+	 *
+	 * @return int
+	 */
+	protected function get_page_on_front_id() {
+		if ( ! isset( self::$page_on_front_id ) ) {
+			self::$page_on_front_id = (int) get_option( 'page_on_front' );
+		}
+
+		return self::$page_on_front_id;
+	}
+
+	/**
+	 * Get page for posts ID
+	 *
+	 * @return int
+	 */
+	protected function get_page_for_posts_id() {
+		if ( ! isset( self::$page_for_posts_id ) ) {
+			self::$page_for_posts_id = (int) get_option( 'page_for_posts' );
+		}
+
+		return self::$page_for_posts_id;
+	}
+
+	/**
+	 * Get the Image Parser
+	 *
+	 * @return WPSEO_Sitemap_Image_Parser
+	 */
+	protected function get_image_parser() {
+		if ( ! isset( self::$image_parser ) ) {
+			self::$image_parser = new WPSEO_Sitemap_Image_Parser();
+		}
+
+		return self::$image_parser;
+	}
+
+	/**
+	 * Get Home URL
+	 *
+	 * This has been moved from the constructor because wp_rewrite is not available on plugins_loaded in multisite.
+	 * It will now be requested on need and not on initialization.
+	 *
+	 * @return string
+	 */
+	protected function get_home_url() {
+		if ( ! isset( self::$home_url ) ) {
+			self::$home_url = WPSEO_Utils::home_url();
+		}
+
+		return self::$home_url;
+	}
+
+	/**
+	 * Get all the options
+	 *
+	 * @return array
+	 */
+	protected function get_options() {
+		if ( ! isset( self::$options ) ) {
+			self::$options = WPSEO_Options::get_all();
+		}
+
+		return self::$options;
 	}
 
 	/**
@@ -131,6 +202,8 @@ class WPSEO_Post_Type_Sitemap_Provider implements WPSEO_Sitemap_Provider {
 			return $links;
 		}
 
+		$options = $this->get_options();
+
 		$stacked_urls = array();
 
 		while ( $total > $offset ) {
@@ -143,10 +216,7 @@ class WPSEO_Post_Type_Sitemap_Provider implements WPSEO_Sitemap_Provider {
 				continue;
 			}
 
-			$post_ids = wp_list_pluck( $posts, 'ID' );
-			$this->image_parser->cache_attachments( $post_ids );
-
-			$posts_to_exclude = explode( ',', $this->options['excluded-posts'] );
+			$posts_to_exclude = explode( ',', $options['excluded-posts'] );
 
 			foreach ( $posts as $post ) {
 
@@ -173,15 +243,35 @@ class WPSEO_Post_Type_Sitemap_Provider implements WPSEO_Sitemap_Provider {
 				 */
 				$url = apply_filters( 'wpseo_sitemap_entry', $url, 'post', $post );
 
-				if ( ! empty( $url ) ) {
-					$links[]        = $url;
-					$stacked_urls[] = $url['loc'];
+				if ( empty( $url ) ) {
+					continue;
 				}
+
+				$stacked_urls[] = $url['loc'];
+
+				if ( (int) $post->ID === $this->get_page_for_posts_id() || (int) $post->ID === $this->get_page_on_front_id() ) {
+
+					array_unshift( $links, $url );
+					continue;
+				}
+				$links[] = $url;
 			}
 			unset( $post, $url );
 		}
 
 		return $links;
+	}
+
+	/**
+	 * Check for relevant post type before invalidation.
+	 *
+	 * @param int $post_id Post ID to possibly invalidate for.
+	 */
+	public function save_post( $post_id ) {
+
+		if ( $this->is_valid_post_type( get_post_type( $post_id ) ) ) {
+			WPSEO_Sitemaps_Cache::invalidate_post( $post_id );
+		}
 	}
 
 	/**
@@ -193,7 +283,9 @@ class WPSEO_Post_Type_Sitemap_Provider implements WPSEO_Sitemap_Provider {
 	 */
 	public function is_valid_post_type( $post_type ) {
 
-		if ( ! empty( $this->options[ "post_types-{$post_type}-not_in_sitemap" ] ) ) {
+		$options = $this->get_options();
+
+		if ( ! empty( $options[ "post_types-{$post_type}-not_in_sitemap" ] ) ) {
 			return false;
 		}
 
@@ -241,18 +333,17 @@ class WPSEO_Post_Type_Sitemap_Provider implements WPSEO_Sitemap_Provider {
 		 */
 		$where_filter = apply_filters( 'wpseo_typecount_where', '', $post_type );
 
+		$where = $this->get_sql_where_clause( $post_type );
+
 		$sql   = "
-			SELECT COUNT(ID)
+			SELECT COUNT({$wpdb->posts}.ID)
 			FROM {$wpdb->posts}
 			{$join_filter}
-			WHERE post_status IN ('publish','inherit')
-				AND post_password = ''
-				AND post_date != '0000-00-00 00:00:00'
-				AND post_type = %s
+			{$where}
 				{$where_filter}
 		";
 
-		return (int) $wpdb->get_var( $wpdb->prepare( $sql, $post_type ) );
+		return (int) $wpdb->get_var( $sql );
 	}
 
 	/**
@@ -266,27 +357,33 @@ class WPSEO_Post_Type_Sitemap_Provider implements WPSEO_Sitemap_Provider {
 
 		$links = array();
 
-		$front_id       = get_option( 'page_on_front' );
-		$page_for_posts = get_option( 'page_for_posts' );
+		$needs_archive = true;
 
-		if ( ! $front_id && ( $post_type == 'post' || $post_type == 'page' ) ) {
+		if ( ! $this->get_page_on_front_id() && ( $post_type == 'post' || $post_type == 'page' ) ) {
 
 			$links[] = array(
-				'loc' => $this->home_url,
+				'loc' => $this->get_home_url(),
 				'pri' => 1,
-				'chf' => WPSEO_Sitemaps::filter_frequency( 'homepage', 'daily', $this->home_url ),
+				'chf' => WPSEO_Sitemaps::filter_frequency( 'homepage', 'daily', $this->get_home_url() ),
 			);
-		}
-		elseif ( $front_id && $post_type === 'post' && $page_for_posts ) {
 
-			$page_for_posts_url = get_permalink( $page_for_posts );
+			$needs_archive = false;
+		}
+		elseif ( $this->get_page_on_front_id() && $post_type === 'post' && $this->get_page_for_posts_id() ) {
+
+			$page_for_posts_url = get_permalink( $this->get_page_for_posts_id() );
 
 			$links[] = array(
 				'loc' => $page_for_posts_url,
 				'pri' => 1,
 				'chf' => WPSEO_Sitemaps::filter_frequency( 'blogpage', 'daily', $page_for_posts_url ),
 			);
-			unset( $page_for_posts_url );
+
+			$needs_archive = false;
+		}
+
+		if ( ! $needs_archive ) {
+			return $links;
 		}
 
 		$archive_url = get_post_type_archive_link( $post_type );
@@ -355,27 +452,24 @@ class WPSEO_Post_Type_Sitemap_Provider implements WPSEO_Sitemap_Provider {
 
 		$join_filter  = $filters[ $post_type ]['join'];
 		$where_filter = $filters[ $post_type ]['where'];
-		$status       = ( $post_type === 'attachment' ) ? 'inherit' : 'publish';
+		$where        = $this->get_sql_where_clause( $post_type );
 
 		// Optimized query per this thread: http://wordpress.org/support/topic/plugin-wordpress-seo-by-yoast-performance-suggestion.
 		// Also see http://explainextended.com/2009/10/23/mysql-order-by-limit-performance-late-row-lookups/.
 		$sql = "
 			SELECT l.ID, post_title, post_content, post_name, post_parent, post_author, post_modified_gmt, post_date, post_date_gmt
 			FROM (
-				SELECT ID
+				SELECT {$wpdb->posts}.ID
 				FROM {$wpdb->posts}
 				{$join_filter}
-				WHERE post_status = '%s'
-					AND post_password = ''
-					AND post_type = '%s'
-					AND post_date != '0000-00-00 00:00:00'
+				{$where}
 					{$where_filter}
-				ORDER BY post_modified ASC LIMIT %d OFFSET %d
+				ORDER BY {$wpdb->posts}.post_modified ASC LIMIT %d OFFSET %d
 			)
-			o JOIN {$wpdb->posts} l ON l.ID = o.ID ORDER BY l.ID
+			o JOIN {$wpdb->posts} l ON l.ID = o.ID
 		";
 
-		$posts = $wpdb->get_results( $wpdb->prepare( $sql, $status, $post_type, $count, $offset ) );
+		$posts = $wpdb->get_results( $wpdb->prepare( $sql, $count, $offset ) );
 
 		foreach ( $posts as $post ) {
 			$post->post_type   = $post_type;
@@ -387,6 +481,35 @@ class WPSEO_Post_Type_Sitemap_Provider implements WPSEO_Sitemap_Provider {
 		update_meta_cache( 'post', $post_ids );
 
 		return $posts;
+	}
+
+	/**
+	 * @param string $post_type Post type slug.
+	 *
+	 * @return string
+	 */
+	protected function get_sql_where_clause( $post_type ) {
+
+		global $wpdb;
+
+		$join   = '';
+		$status = "{$wpdb->posts}.post_status = 'publish'";
+
+		// Based on WP_Query->get_posts(). R.
+		if ( 'attachment' === $post_type ) {
+			$join   = " LEFT JOIN {$wpdb->posts} AS p2 ON ({$wpdb->posts}.post_parent = p2.ID) ";
+			$status = "p2.post_status = 'publish'";
+		}
+
+		$where_clause = "
+		{$join}
+		WHERE {$status}
+			AND {$wpdb->posts}.post_type = '%s'
+			AND {$wpdb->posts}.post_password = ''
+			AND {$wpdb->posts}.post_date != '0000-00-00 00:00:00'
+		";
+
+		return $wpdb->prepare( $where_clause, $post_type );
 	}
 
 	/**
@@ -415,7 +538,7 @@ class WPSEO_Post_Type_Sitemap_Provider implements WPSEO_Sitemap_Provider {
 		 *
 		 * @see https://wordpress.org/plugins/page-links-to/ can rewrite permalinks to external URLs.
 		 */
-		if ( false === strpos( $url['loc'], $this->home_url ) ) {
+		if ( false === strpos( $url['loc'], $this->get_home_url() ) ) {
 			return false;
 		}
 
@@ -425,7 +548,20 @@ class WPSEO_Post_Type_Sitemap_Provider implements WPSEO_Sitemap_Provider {
 			$url['mod'] = $modified;
 		}
 
-		$url['chf'] = WPSEO_Sitemaps::filter_frequency( $post->post_type . '_single', 'weekly', $url['loc'] );
+		$frequency_filter  = $post->post_type . '_single';
+		$frequency_default = 'weekly';
+
+		if ( (int) $post->ID === $this->get_page_for_posts_id() ) {
+			$frequency_filter  = 'blogpage';
+			$frequency_default = 'daily';
+		}
+
+		if ( (int) $post->ID === $this->get_page_on_front_id() ) {
+			$frequency_filter  = 'homepage';
+			$frequency_default = 'daily';
+		}
+
+		$url['chf']        = WPSEO_Sitemaps::filter_frequency( $frequency_filter, $frequency_default, $url['loc'] );
 
 		$canonical = WPSEO_Meta::get_value( 'canonical', $post->ID );
 
@@ -439,12 +575,13 @@ class WPSEO_Post_Type_Sitemap_Provider implements WPSEO_Sitemap_Provider {
 		}
 		unset( $canonical );
 
-		if ( $this->options['trailingslash'] === true && $post->post_type !== 'post' ) {
+		$options = $this->get_options();
+		if ( $options['trailingslash'] === true && $post->post_type !== 'post' ) {
 			$url['loc'] = trailingslashit( $url['loc'] );
 		}
 
 		$url['pri']    = $this->calculate_priority( $post );
-		$url['images'] = $this->image_parser->get_images( $post );
+		$url['images'] = $this->get_image_parser()->get_images( $post );
 
 		return $url;
 	}
@@ -463,9 +600,7 @@ class WPSEO_Post_Type_Sitemap_Provider implements WPSEO_Sitemap_Provider {
 			$return = 0.8;
 		}
 
-		$front_id = get_option( 'page_on_front' );
-
-		if ( isset( $front_id ) && $post->ID === $front_id ) {
+		if ( $post->ID === $this->get_page_on_front_id() || $post->ID === $this->get_page_for_posts_id() ) {
 			$return = 1.0;
 		}
 

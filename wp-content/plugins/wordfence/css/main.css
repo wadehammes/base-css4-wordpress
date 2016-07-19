@@ -579,8 +579,16 @@ table.block-ranges-table tr td {
 	border: 1px solid #ffd975;
 	border-width: 1px 1px 1px 10px;
 }
+.wf-error {
+	margin: 12px 0;
+	padding: 8px;
+	background-color: #fff0f0;
+	border: 1px solid #dc3232;
+	border-width: 1px 1px 1px 10px;
+}
 .wf-success-text,
-.wf-notice-text {
+.wf-notice-text,
+.wf-error-text {
 	display: inline-block;
 	vertical-align: middle;
 	line-height: 1.3;
@@ -589,6 +597,9 @@ table.block-ranges-table tr td {
 	font-style: italic;
 }
 .wf-notice-text {
+	color: #6d798c;
+}
+.wf-error-text {
 	color: #6d798c;
 }
 .wf-success-text {
@@ -1007,6 +1018,15 @@ table.whitelist-table .edit-mode input.whitelist-edit {
 	font-style: italic;
 	font-size: 14px;
 	line-height: 1.3;
+}
+.wordfence-waiting {
+	line-height: 32px;
+}
+.wordfence-waiting img {
+	vertical-align: middle;
+}
+.wordfence-waiting span {
+	
 }
 
 pre.wf-pre {

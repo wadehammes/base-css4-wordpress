@@ -15,12 +15,7 @@ $formActionUrl = add_query_arg('noheader', 1, $settings_page_url);
 $isProVersion = apply_filters('admin_menu_editor_is_pro', false);
 ?>
 
-<div class="wrap">
-	<<?php echo WPMenuEditor::$admin_heading_tag; ?> id="ws_ame_editor_heading">
-		<?php echo apply_filters('admin_menu_editor-self_page_title', 'Menu Editor'); ?>
-	</<?php echo WPMenuEditor::$admin_heading_tag; ?>>
-
-	<?php do_action('admin_menu_editor-display_tabs'); ?>
+<?php do_action('admin_menu_editor-display_header'); ?>
 
 	<form method="post" action="<?php echo esc_attr($formActionUrl); ?>" id="ws_plugin_settings_form">
 
@@ -282,7 +277,7 @@ $isProVersion = apply_filters('admin_menu_editor_is_pro', false);
 		?>
 	</form>
 
-</div>
+<?php do_action('admin_menu_editor-display_footer'); ?>
 
 <script type="text/javascript">
 	jQuery(function($) {

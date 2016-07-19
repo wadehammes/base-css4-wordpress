@@ -118,12 +118,13 @@ class wfAPI {
 			}
 		}
 		return self::buildQuery(array(
-			'v'        => $this->wordpressVersion,
-			's'        => $siteurl,
-			'k'        => $this->APIKey,
-			'openssl'  => function_exists('openssl_verify') && defined('OPENSSL_VERSION_NUMBER') ? OPENSSL_VERSION_NUMBER : '0.0.0',
-			'phpv'     => phpversion(),
-			'betaFeed' => (int) wfConfig::get('betaThreatDefenseFeed'),
+			'v'         => $this->wordpressVersion,
+			's'         => $siteurl,
+			'k'         => $this->APIKey,
+			'openssl'   => function_exists('openssl_verify') && defined('OPENSSL_VERSION_NUMBER') ? OPENSSL_VERSION_NUMBER : '0.0.0',
+			'phpv'      => phpversion(),
+			'betaFeed'  => (int) wfConfig::get('betaThreatDefenseFeed'),
+			'cacheType' => wfConfig::get('cacheType'),
 		));
 	}
 

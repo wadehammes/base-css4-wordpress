@@ -3,7 +3,7 @@ html * {
 }
 
 body {
-  background-color: var(--body-black);
+  background-color: var(--white);
   font-family: var(--global-font-family);
   font-weight: var(--font-weight-regular);
   text-rendering: optimizeLegibility;

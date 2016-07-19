@@ -1,8 +1,11 @@
 <?php 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 if ( ! class_exists('ewwwflag')) {
 class ewwwflag {
 	/* initializes the flagallery integration functions */
-	function ewwwflag() {
+	function __construct() {
 		add_action('admin_init', array(&$this, 'admin_init'));
 		add_filter('flag_manage_images_columns', array(&$this, 'ewww_manage_images_columns'));
 		add_action('flag_manage_gallery_custom_column', array(&$this, 'ewww_manage_image_custom_column'), 10, 2);
@@ -12,11 +15,9 @@ class ewwwflag {
 			add_action('flag_manage_post_processor_images', array(&$this, 'ewww_flag_bulk'));
 			add_action('flag_manage_post_processor_galleries', array(&$this, 'ewww_flag_bulk'));
 		}
-		if ( ! ewww_image_optimizer_get_option( 'ewww_image_optimizer_noauto' ) ) {
-			add_action('flag_image_optimized', array(&$this, 'ewww_added_new_image'));
-			add_action('flag_image_resized', array(&$this, 'ewww_added_new_image'));
-		}
-		add_action('admin_action_ewww_flag_manual', array(&$this, 'ewww_flag_manual'));
+		add_action( 'flag_image_optimized', array( $this, 'queue_new_image' ) );
+		add_action( 'flag_image_resized', array( $this, 'queue_new_image' ) );
+		add_action( 'admin_action_ewww_flag_manual', array( $this, 'ewww_flag_manual' ) );
 		add_action('admin_menu', array(&$this, 'ewww_flag_bulk_menu'));
 		add_action('admin_enqueue_scripts', array(&$this, 'ewww_flag_bulk_script'));
 		add_action('wp_ajax_bulk_flag_init', array(&$this, 'ewww_flag_bulk_init'));
@@ -67,11 +68,10 @@ class ewwwflag {
 			echo '<p>' . esc_html__('You do not appear to have uploaded any images yet.', EWWW_IMAGE_OPTIMIZER_DOMAIN) . '</p>';
 			return;
 		}
-//		ewww_image_optimizer_cloud_verify(false); 
 		?>
 		<div class="wrap"><h1>GRAND FlAGallery <?php esc_html_e('Bulk Optimize', EWWW_IMAGE_OPTIMIZER_DOMAIN);
 			if ( ewww_image_optimizer_get_option( 'ewww_image_optimizer_cloud_key' ) ) {
-				$verify_cloud = ewww_image_optimizer_cloud_verify( false ); 
+				ewww_image_optimizer_cloud_verify(); 
 				echo '<a id="ewww-bulk-credits-available" target="_blank" class="page-title-action" style="float:right;" href="https://ewww.io/my-account/">' . esc_html__( 'Image credits available:', EWWW_IMAGE_OPTIMIZER_DOMAIN ) . ' ' . ewww_image_optimizer_cloud_quota() . '</a>';
 			}
 		echo '</h1>';
@@ -214,35 +214,46 @@ class ewwwflag {
 			)
 		);
 	}
+
+	function queue_new_image( $image ) {
+		ewwwio_debug_message( '<b>' . __FUNCTION__ . '()</b>' );
+		$image_id = $image->pid;
+		global $ewwwio_flag_background;
+		ewwwio_debug_message( "optimization (flagallery) queued for $image_id" );
+		$ewwwio_flag_background->push_to_queue( array(
+			'id' => $image_id,
+		) );
+		$ewwwio_flag_background->save()->dispatch();
+		set_transient( 'ewwwio-background-in-progress-flag-' . $image_id, true, 24 * HOUR_IN_SECONDS );
+		ewww_image_optimizer_debug_log();
+	}
+
 	/* flag_added_new_image hook - optimize newly uploaded images */
-	function ewww_added_new_image( $image ) {
+	function ewww_added_new_image( $id,  $image ) {
 		ewwwio_debug_message( '<b>' . __FUNCTION__ . '()</b>' );
 		global $ewww_defer;
 		// make sure the image path is set
-		if (isset($image->imagePath)) {
-			// get the image ID
-			$pid = $image->pid;
-			if ( $ewww_defer && ewww_image_optimizer_get_option( 'ewww_image_optimizer_defer' ) ) {
-				ewww_image_optimizer_add_deferred_attachment( "flag,$pid" );
-				return;
-			}
+//		if ( isset( $image->image->imagePath ) ) {
 			// optimize the full size
-			$res = ewww_image_optimizer($image->imagePath, 3, false, false, true);
+			$res = ewww_image_optimizer($image->image->imagePath, 3, false, false, true);
 			// optimize the web optimized version
-			$wres = ewww_image_optimizer($image->webimagePath, 3, false, true);
+			$wres = ewww_image_optimizer($image->image->webimagePath, 3, false, true);
 			// optimize the thumbnail
-			$tres = ewww_image_optimizer($image->thumbPath, 3, false, true);
+			$tres = ewww_image_optimizer($image->image->thumbPath, 3, false, true);
+//			if ( ! class_exists( 'flagMeta' ) ) {
+//				require_once( FLAG_ABSPATH . 'lib/meta.php' );
+//			}
 			// retrieve the metadata for the image ID
-			$meta = new flagMeta( $pid );
-			ewwwio_debug_message( print_r($meta->image->meta_data, TRUE) );
-			$meta->image->meta_data['ewww_image_optimizer'] = $res[1];
-			if ( ! empty( $meta->image->meta_data['webview'] ) ) {
-				$meta->image->meta_data['webview']['ewww_image_optimizer'] = $wres[1];
+//			$meta = new flagMeta( $pid );
+//			ewwwio_debug_message( print_r($meta->image->meta_data, TRUE) );
+			$image->image->meta_data['ewww_image_optimizer'] = $res[1];
+			if ( ! empty( $image->image->meta_data['webview'] ) ) {
+				$image->image->meta_data['webview']['ewww_image_optimizer'] = $wres[1];
 			}
-			$meta->image->meta_data['thumbnail']['ewww_image_optimizer'] = $tres[1];
+			$image->image->meta_data['thumbnail']['ewww_image_optimizer'] = $tres[1];
 			// update the image metadata in the db
-			flagdb::update_image_meta($pid, $meta->image->meta_data);
-		}
+			flagdb::update_image_meta( $id, $image->image->meta_data );
+//		}
 		ewww_image_optimizer_debug_log();
 	}
 
@@ -349,6 +360,7 @@ class ewwwflag {
 			echo json_encode( $output );
 			die();
 		}
+		session_write_close();
 		// find out if our nonce is on it's last leg/tick
 		$tick = wp_verify_nonce( $_REQUEST['ewww_wpnonce'], 'ewww-image-optimizer-bulk' );
 		if ( $tick === 2 ) {
@@ -368,8 +380,8 @@ class ewwwflag {
 		$file_path = $meta->image->imagePath;
 		// optimize the full-size version
 		$fres = ewww_image_optimizer( $file_path, 3, false, false, true );
-		global $ewww_exceed;
-		if ( ! empty ( $ewww_exceed ) ) {
+		$ewww_status = get_transient( 'ewww_image_optimizer_cloud_status' );
+		if ( ! empty ( $ewww_status ) && preg_match( '/exceeded/', $ewww_status ) ) {
 			$output['error'] = esc_html__( 'License Exceeded', EWWW_IMAGE_OPTIMIZER_DOMAIN );
 			echo json_encode( $output );
 			die();
@@ -497,6 +509,8 @@ class ewwwflag {
 						$id,
 						esc_html__( 'Re-optimize', EWWW_IMAGE_OPTIMIZER_DOMAIN ) );
 				}
+			} elseif ( get_transient( 'ewwwio-background-in-progress-flag-' . $id ) ) {
+				esc_html_e( 'In Progress', EWWW_IMAGE_OPTIMIZER_DOMAIN );
 			// otherwise, tell the user that they can optimize the image now
 			} else {
 				esc_html_e('Not processed', EWWW_IMAGE_OPTIMIZER_DOMAIN);

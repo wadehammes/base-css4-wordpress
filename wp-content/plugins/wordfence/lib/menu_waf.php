@@ -2,6 +2,7 @@
 $waf = wfWAF::getInstance();
 $config = $waf->getStorageEngine();
 $wafConfigURL = network_admin_url('admin.php?page=WordfenceWAF&wafAction=configureAutoPrepend');
+$wafRemoveURL = network_admin_url('admin.php?page=WordfenceWAF&wafAction=removeAutoPrepend');
 /** @var array $wafData */
 ?>
 <div class="wrap" id="paidWrap">
@@ -47,9 +48,15 @@ $wafConfigURL = network_admin_url('admin.php?page=WordfenceWAF&wafAction=configu
 	<?php elseif (!empty($wafActionContent)): ?>
 		<?php echo $wafActionContent ?>
 
-		<p class="wf-notice"><em>If you cannot complete the setup process,
+		<?php if (!empty($_REQUEST['wafAction']) && $_REQUEST['wafAction'] == 'removeAutoPrepend'): ?>
+			<p class="wf-notice"><em>If you cannot complete the uninstallation process,
+					<a target="_blank" href="https://docs.wordfence.com/en/Web_Application_Firewall_FAQ#How_can_I_remove_the_firewall_setup_manually.3F">click here for
+						help</a>.</em></p>
+		<?php else: ?>
+			<p class="wf-notice"><em>If you cannot complete the setup process,
 				<a target="_blank" href="https://docs.wordfence.com/en/Web_Application_Firewall_Setup">click here for
 					help</a>.</em></p>
+		<?php endif ?>
 
 	<?php else: ?>
 
@@ -246,6 +253,23 @@ $wafConfigURL = network_admin_url('admin.php?page=WordfenceWAF&wafAction=configu
 				</p>
 
 				<div id="waf-whitelisted-urls-wrapper"></div>
+				
+				<p id="whitelist-monitor">
+					<strong>Monitor Background Requests for False Positives:</strong><br>
+					<label><input type="checkbox" id="monitor-front" name="monitor-front" value="1"<?php echo wfConfig::get('ajaxWatcherDisabled_front') ? '' : ' checked'; ?>>Front</label> &nbsp; <label><input type="checkbox" id="monitor-admin" name="monitor-admin" value="1"<?php echo wfConfig::get('ajaxWatcherDisabled_admin') ? '' : ' checked'; ?>>Admin Panel</label>
+				</p> 
+				<br>
+				
+				<?php if (WFWAF_AUTO_PREPEND) : ?>
+				<h2>Advanced Configuration</h2>
+				
+				<p><strong>Remove Extended Protection<a href="https://docs.wordfence.com/en/Web_Application_Firewall_FAQ#How_can_I_remove_the_firewall_setup_manually.3F" target="_blank"
+										 class="wfhelp"></a></strong><br>
+				
+				<em>If you're moving to a new host or a new installation location, you may need to temporarily disable extended protection to avoid any file not found errors. Use this action to remove the configuration changes that enable extended protection mode or you can <a href="https://docs.wordfence.com/en/Web_Application_Firewall_FAQ#How_can_I_remove_the_firewall_setup_manually.3F" target="_blank">remove them manually</a>.</em></p>
+				
+				<p><a href="<?php echo $wafRemoveURL; ?>" class="button button-small" id="waf-remove-extended">Remove Extended Protection</a></p>
+				<?php endif ?>
 			</div>
 		<?php endif ?>
 	<?php endif ?>
@@ -703,7 +727,16 @@ $wafConfigURL = network_admin_url('admin.php?page=WordfenceWAF&wafAction=configu
 				ruleEnabled: enabled
 			});
 		});
-
+		
+		$('#monitor-front').on('click', function() {
+			var disabled = this.checked ? 0 : 1;
+			WFAD.updateConfig('ajaxWatcherDisabled_front', disabled);
+		})
+		
+		$('#monitor-admin').on('click', function() {
+			var disabled = this.checked ? 0 : 1;
+			WFAD.updateConfig('ajaxWatcherDisabled_admin', disabled); 
+		})
 	})(jQuery);
 </script>
 

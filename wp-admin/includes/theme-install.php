@@ -50,6 +50,8 @@ function install_themes_feature_list() {
  * Display search form for searching themes.
  *
  * @since 2.8.0
+ *
+ * @param bool $type_selector
  */
 function install_theme_search_form( $type_selector = true ) {
 	$type = isset( $_REQUEST['type'] ) ? wp_unslash( $_REQUEST['type'] ) : 'term';
@@ -57,7 +59,7 @@ function install_theme_search_form( $type_selector = true ) {
 	if ( ! $type_selector )
 		echo '<p class="install-help">' . __( 'Search for themes by keyword.' ) . '</p>';
 	?>
-<form id="search-themes" method="get" action="">
+<form id="search-themes" method="get">
 	<input type="hidden" name="tab" value="search" />
 	<?php if ( $type_selector ) : ?>
 	<label class="screen-reader-text" for="typeselector"><?php _e('Type of search'); ?></label>
@@ -99,7 +101,7 @@ function install_themes_dashboard() {
 <h4><?php _e('Feature Filter') ?></h4>
 <p class="install-help"><?php _e( 'Find a theme based on specific features.' ); ?></p>
 
-<form method="get" action="">
+<form method="get">
 	<input type="hidden" name="tab" value="search" />
 	<?php
 	$feature_list = get_theme_feature_list();
@@ -132,29 +134,38 @@ function install_themes_dashboard() {
 </form>
 <?php
 }
-add_action('install_themes_dashboard', 'install_themes_dashboard');
 
-function install_themes_upload($page = 1) {
+/**
+ * @since 2.8.0
+ */
+function install_themes_upload() {
 ?>
-<h4><?php _e('Install a theme in .zip format'); ?></h4>
 <p class="install-help"><?php _e('If you have a theme in a .zip format, you may install it by uploading it here.'); ?></p>
 <form method="post" enctype="multipart/form-data" class="wp-upload-form" action="<?php echo self_admin_url('update.php?action=upload-theme'); ?>">
-	<?php wp_nonce_field( 'theme-upload'); ?>
-	<input type="file" name="themezip" />
+	<?php wp_nonce_field( 'theme-upload' ); ?>
+	<label class="screen-reader-text" for="themezip"><?php _e( 'Theme zip file' ); ?></label>
+	<input type="file" id="themezip" name="themezip" />
 	<?php submit_button( __( 'Install Now' ), 'button', 'install-theme-submit', false ); ?>
 </form>
 	<?php
 }
-add_action('install_themes_upload', 'install_themes_upload', 10, 1);
 
 /**
  * Prints a theme on the Install Themes pages.
  *
  * @deprecated 3.4.0
+ *
+ * @global WP_Theme_Install_List_Table $wp_list_table
+ *
+ * @param object $theme
  */
 function display_theme( $theme ) {
 	_deprecated_function( __FUNCTION__, '3.4' );
 	global $wp_list_table;
+	if ( ! isset( $wp_list_table ) ) {
+		$wp_list_table = _get_list_table('WP_Theme_Install_List_Table');
+	}
+	$wp_list_table->prepare_items();
 	$wp_list_table->single_row( $theme );
 }
 
@@ -162,24 +173,29 @@ function display_theme( $theme ) {
  * Display theme content based on theme list.
  *
  * @since 2.8.0
+ *
+ * @global WP_Theme_Install_List_Table $wp_list_table
  */
 function display_themes() {
 	global $wp_list_table;
 
+	if ( ! isset( $wp_list_table ) ) {
+		$wp_list_table = _get_list_table('WP_Theme_Install_List_Table');
+	}
+	$wp_list_table->prepare_items();
 	$wp_list_table->display();
+
 }
-add_action('install_themes_search', 'display_themes');
-add_action('install_themes_featured', 'display_themes');
-add_action('install_themes_new', 'display_themes');
-add_action('install_themes_updated', 'display_themes');
 
 /**
  * Display theme information in dialog box form.
  *
  * @since 2.8.0
+ *
+ * @global WP_Theme_Install_List_Table $wp_list_table
  */
 function install_theme_information() {
-	global $tab, $themes_allowedtags, $wp_list_table;
+	global $wp_list_table;
 
 	$theme = themes_api( 'theme_information', array( 'slug' => wp_unslash( $_REQUEST['theme'] ) ) );
 
@@ -187,8 +203,10 @@ function install_theme_information() {
 		wp_die( $theme );
 
 	iframe_header( __('Theme Install') );
+	if ( ! isset( $wp_list_table ) ) {
+		$wp_list_table = _get_list_table('WP_Theme_Install_List_Table');
+	}
 	$wp_list_table->theme_installer_single( $theme );
 	iframe_footer();
 	exit;
 }
-add_action('install_themes_pre_theme-information', 'install_theme_information');

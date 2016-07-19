@@ -19,22 +19,19 @@ function is_subdomain_install() {
 	if ( defined('SUBDOMAIN_INSTALL') )
 		return SUBDOMAIN_INSTALL;
 
-	if ( defined('VHOST') && VHOST == 'yes' )
-		return true;
-
-	return false;
+	return ( defined( 'VHOST' ) && VHOST == 'yes' );
 }
 
 /**
  * Returns array of network plugin files to be included in global scope.
  *
  * The default directory is wp-content/plugins. To change the default directory
- * manually, define <code>WP_PLUGIN_DIR</code> and <code>WP_PLUGIN_URL</code>
- * in wp-config.php.
+ * manually, define `WP_PLUGIN_DIR` and `WP_PLUGIN_URL` in `wp-config.php`.
  *
  * @access private
  * @since 3.1.0
- * @return array Files to include
+ *
+ * @return array Files to include.
  */
 function wp_get_active_network_plugins() {
 	$active_plugins = (array) get_site_option( 'active_sitewide_plugins', array() );
@@ -68,7 +65,7 @@ function wp_get_active_network_plugins() {
  *
  * @since 3.0.0
  *
- * @return bool|string Returns true on success, or drop-in file to include.
+ * @return true|string Returns true on success, or drop-in file to include.
  */
 function ms_site_check() {
 	$blog = get_blog_details();
@@ -92,14 +89,21 @@ function ms_site_check() {
 		if ( file_exists( WP_CONTENT_DIR . '/blog-deleted.php' ) )
 			return WP_CONTENT_DIR . '/blog-deleted.php';
 		else
-			wp_die( __( 'This user has elected to delete their account and the content is no longer available.' ), '', array( 'response' => 410 ) );
+			wp_die( __( 'This site is no longer available.' ), '', array( 'response' => 410 ) );
 	}
 
 	if ( '2' == $blog->deleted ) {
-		if ( file_exists( WP_CONTENT_DIR . '/blog-inactive.php' ) )
+		if ( file_exists( WP_CONTENT_DIR . '/blog-inactive.php' ) ) {
 			return WP_CONTENT_DIR . '/blog-inactive.php';
-		else
-			wp_die( sprintf( __( 'This site has not been activated yet. If you are having problems activating your site, please contact <a href="mailto:%1$s">%1$s</a>.' ), str_replace( '@', ' AT ', get_site_option( 'admin_email', 'support@' . get_current_site()->domain ) ) ) );
+		} else {
+			$admin_email = str_replace( '@', ' AT ', get_site_option( 'admin_email', 'support@' . get_current_site()->domain ) );
+			wp_die(
+				/* translators: %s: admin email link */
+				sprintf( __( 'This site has not been activated yet. If you are having problems activating your site, please contact %s.' ),
+					sprintf( '<a href="mailto:%s">%s</a>', $admin_email )
+				)
+			);
+		}
 	}
 
 	if ( $blog->archived == '1' || $blog->spam == '1' ) {
@@ -113,118 +117,147 @@ function ms_site_check() {
 }
 
 /**
- * Sets current site name.
+ * Retrieve the closest matching network for a domain and path.
  *
- * @access private
- * @since 3.0.0
- * @return object $current_site object with site_name
+ * @since 3.9.0
+ * @since 4.4.0 Converted to a wrapper for WP_Network::get_by_path()
+ *
+ * @param string   $domain   Domain to check.
+ * @param string   $path     Path to check.
+ * @param int|null $segments Path segments to use. Defaults to null, or the full path.
+ * @return WP_Network|false Network object if successful. False when no network is found.
  */
-function get_current_site_name( $current_site ) {
-	global $wpdb;
-
-	$current_site->site_name = wp_cache_get( $current_site->id . ':site_name', 'site-options' );
-	if ( ! $current_site->site_name ) {
-		$current_site->site_name = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM $wpdb->sitemeta WHERE site_id = %d AND meta_key = 'site_name'", $current_site->id ) );
-		if ( ! $current_site->site_name )
-			$current_site->site_name = ucfirst( $current_site->domain );
-		wp_cache_set( $current_site->id . ':site_name', $current_site->site_name, 'site-options' );
-	}
-
-	return $current_site;
+function get_network_by_path( $domain, $path, $segments = null ) {
+	return WP_Network::get_by_path( $domain, $path, $segments );
 }
 
 /**
- * Sets current_site object.
+ * Retrieve an object containing information about the requested network.
  *
- * @access private
- * @since 3.0.0
- * @return object $current_site object
+ * @since 3.9.0
+ * @since 4.4.0 Converted to leverage WP_Network
+ *
+ * @param object|int $network The network's database row or ID.
+ * @return WP_Network|false Object containing network information if found, false if not.
  */
-function wpmu_current_site() {
-	global $wpdb, $current_site, $domain, $path, $sites, $cookie_domain;
-
-	if ( empty( $current_site ) )
-		$current_site = new stdClass;
-
-	if ( defined( 'DOMAIN_CURRENT_SITE' ) && defined( 'PATH_CURRENT_SITE' ) ) {
-		$current_site->id = defined( 'SITE_ID_CURRENT_SITE' ) ? SITE_ID_CURRENT_SITE : 1;
-		$current_site->domain = DOMAIN_CURRENT_SITE;
-		$current_site->path   = $path = PATH_CURRENT_SITE;
-		if ( defined( 'BLOG_ID_CURRENT_SITE' ) )
-			$current_site->blog_id = BLOG_ID_CURRENT_SITE;
-		elseif ( defined( 'BLOGID_CURRENT_SITE' ) ) // deprecated.
-			$current_site->blog_id = BLOGID_CURRENT_SITE;
-		if ( DOMAIN_CURRENT_SITE == $domain )
-			$current_site->cookie_domain = $cookie_domain;
-		elseif ( substr( $current_site->domain, 0, 4 ) == 'www.' )
-			$current_site->cookie_domain = substr( $current_site->domain, 4 );
-		else
-			$current_site->cookie_domain = $current_site->domain;
-
-		wp_load_core_site_options( $current_site->id );
-
-		return $current_site;
+function wp_get_network( $network ) {
+	if ( ! is_object( $network ) ) {
+		$network = WP_Network::get_instance( $network );
+	} else {
+		$network = new WP_Network( $network );
 	}
 
-	$current_site = wp_cache_get( 'current_site', 'site-options' );
-	if ( $current_site )
-		return $current_site;
+	return $network;
+}
 
-	$sites = $wpdb->get_results( "SELECT * FROM $wpdb->site" ); // usually only one site
-	if ( 1 == count( $sites ) ) {
-		$current_site = $sites[0];
-		wp_load_core_site_options( $current_site->id );
-		$path = $current_site->path;
-		$current_site->blog_id = $wpdb->get_var( $wpdb->prepare( "SELECT blog_id FROM $wpdb->blogs WHERE domain = %s AND path = %s", $current_site->domain, $current_site->path ) );
-		$current_site = get_current_site_name( $current_site );
-		if ( substr( $current_site->domain, 0, 4 ) == 'www.' )
-			$current_site->cookie_domain = substr( $current_site->domain, 4 );
-		wp_cache_set( 'current_site', $current_site, 'site-options' );
-		return $current_site;
-	}
-	$path = substr( $_SERVER[ 'REQUEST_URI' ], 0, 1 + strpos( $_SERVER[ 'REQUEST_URI' ], '/', 1 ) );
+/**
+ * Retrieve a site object by its domain and path.
+ *
+ * @since 3.9.0
+ *
+ * @global wpdb $wpdb WordPress database abstraction object.
+ *
+ * @param string   $domain   Domain to check.
+ * @param string   $path     Path to check.
+ * @param int|null $segments Path segments to use. Defaults to null, or the full path.
+ * @return object|false Site object if successful. False when no site is found.
+ */
+function get_site_by_path( $domain, $path, $segments = null ) {
+	global $wpdb;
 
-	if ( $domain == $cookie_domain )
-		$current_site = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $wpdb->site WHERE domain = %s AND path = %s", $domain, $path ) );
-	else
-		$current_site = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $wpdb->site WHERE domain IN ( %s, %s ) AND path = %s ORDER BY CHAR_LENGTH( domain ) DESC LIMIT 1", $domain, $cookie_domain, $path ) );
+	$path_segments = array_filter( explode( '/', trim( $path, '/' ) ) );
 
-	if ( ! $current_site ) {
-		if ( $domain == $cookie_domain )
-			$current_site = $wpdb->get_row( $wpdb->prepare("SELECT * FROM $wpdb->site WHERE domain = %s AND path='/'", $domain ) );
-		else
-			$current_site = $wpdb->get_row( $wpdb->prepare("SELECT * FROM $wpdb->site WHERE domain IN ( %s, %s ) AND path = '/' ORDER BY CHAR_LENGTH( domain ) DESC LIMIT 1", $domain, $cookie_domain, $path ) );
-	}
+	/**
+	 * Filter the number of path segments to consider when searching for a site.
+	 *
+	 * @since 3.9.0
+	 *
+	 * @param int|null $segments The number of path segments to consider. WordPress by default looks at
+	 *                           one path segment following the network path. The function default of
+	 *                           null only makes sense when you know the requested path should match a site.
+	 * @param string   $domain   The requested domain.
+	 * @param string   $path     The requested path, in full.
+	 */
+	$segments = apply_filters( 'site_by_path_segments_count', $segments, $domain, $path );
 
-	if ( $current_site ) {
-		$path = $current_site->path;
-		$current_site->cookie_domain = $cookie_domain;
-		return $current_site;
-	}
-
-	if ( is_subdomain_install() ) {
-		$sitedomain = substr( $domain, 1 + strpos( $domain, '.' ) );
-		$current_site = $wpdb->get_row( $wpdb->prepare("SELECT * FROM $wpdb->site WHERE domain = %s AND path = %s", $sitedomain, $path) );
-		if ( $current_site ) {
-			$current_site->cookie_domain = $current_site->domain;
-			return $current_site;
-		}
-
-		$current_site = $wpdb->get_row( $wpdb->prepare("SELECT * FROM $wpdb->site WHERE domain = %s AND path='/'", $sitedomain) );
+	if ( null !== $segments && count( $path_segments ) > $segments ) {
+		$path_segments = array_slice( $path_segments, 0, $segments );
 	}
 
-	if ( $current_site || defined( 'WP_INSTALLING' ) ) {
-		$path = '/';
-		return $current_site;
+	$paths = array();
+
+	while ( count( $path_segments ) ) {
+		$paths[] = '/' . implode( '/', $path_segments ) . '/';
+		array_pop( $path_segments );
 	}
 
-	// Still no dice.
-	wp_load_translations_early();
+	$paths[] = '/';
 
-	if ( 1 == count( $sites ) )
-		wp_die( sprintf( __( 'That site does not exist. Please try <a href="%s">%s</a>.' ), 'http://' . $sites[0]->domain . $sites[0]->path ) );
-	else
-		wp_die( __( 'No site defined on this host. If you are the owner of this site, please check <a href="http://codex.wordpress.org/Debugging_a_WordPress_Network">Debugging a WordPress Network</a> for help.' ) );
+	/**
+	 * Determine a site by its domain and path.
+	 *
+	 * This allows one to short-circuit the default logic, perhaps by
+	 * replacing it with a routine that is more optimal for your setup.
+	 *
+	 * Return null to avoid the short-circuit. Return false if no site
+	 * can be found at the requested domain and path. Otherwise, return
+	 * a site object.
+	 *
+	 * @since 3.9.0
+	 *
+	 * @param null|bool|object $site     Site value to return by path.
+	 * @param string           $domain   The requested domain.
+	 * @param string           $path     The requested path, in full.
+	 * @param int|null         $segments The suggested number of paths to consult.
+	 *                                   Default null, meaning the entire path was to be consulted.
+	 * @param array            $paths    The paths to search for, based on $path and $segments.
+	 */
+	$pre = apply_filters( 'pre_get_site_by_path', null, $domain, $path, $segments, $paths );
+	if ( null !== $pre ) {
+		return $pre;
+	}
+
+	/*
+	 * @todo
+	 * get_blog_details(), caching, etc. Consider alternative optimization routes,
+	 * perhaps as an opt-in for plugins, rather than using the pre_* filter.
+	 * For example: The segments filter can expand or ignore paths.
+	 * If persistent caching is enabled, we could query the DB for a path <> '/'
+	 * then cache whether we can just always ignore paths.
+	 */
+
+	// Either www or non-www is supported, not both. If a www domain is requested,
+	// query for both to provide the proper redirect.
+	$domains = array( $domain );
+	if ( 'www.' === substr( $domain, 0, 4 ) ) {
+		$domains[] = substr( $domain, 4 );
+		$search_domains = "'" . implode( "', '", $wpdb->_escape( $domains ) ) . "'";
+	}
+
+	if ( count( $paths ) > 1 ) {
+		$search_paths = "'" . implode( "', '", $wpdb->_escape( $paths ) ) . "'";
+	}
+
+	if ( count( $domains ) > 1 && count( $paths ) > 1 ) {
+		$site = $wpdb->get_row( "SELECT * FROM $wpdb->blogs WHERE domain IN ($search_domains) AND path IN ($search_paths) ORDER BY CHAR_LENGTH(domain) DESC, CHAR_LENGTH(path) DESC LIMIT 1" );
+	} elseif ( count( $domains ) > 1 ) {
+		$sql = $wpdb->prepare( "SELECT * FROM $wpdb->blogs WHERE path = %s", $paths[0] );
+		$sql .= " AND domain IN ($search_domains) ORDER BY CHAR_LENGTH(domain) DESC LIMIT 1";
+		$site = $wpdb->get_row( $sql );
+	} elseif ( count( $paths ) > 1 ) {
+		$sql = $wpdb->prepare( "SELECT * FROM $wpdb->blogs WHERE domain = %s", $domains[0] );
+		$sql .= " AND path IN ($search_paths) ORDER BY CHAR_LENGTH(path) DESC LIMIT 1";
+		$site = $wpdb->get_row( $sql );
+	} else {
+		$site = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $wpdb->blogs WHERE domain = %s AND path = %s", $domains[0], $paths[0] ) );
+	}
+
+	if ( $site ) {
+		// @todo get_blog_details()
+		return $site;
+	}
+
+	return false;
 }
 
 /**
@@ -234,24 +267,48 @@ function wpmu_current_site() {
  *
  * @access private
  * @since 3.0.0
+ * @since 4.4.0 The `$domain` and `$path` parameters were added.
+ *
+ * @global wpdb $wpdb WordPress database abstraction object.
+ *
+ * @param string $domain The requested domain for the error to reference.
+ * @param string $path   The requested path for the error to reference.
  */
-function ms_not_installed() {
-	global $wpdb, $domain, $path;
+function ms_not_installed( $domain, $path ) {
+	global $wpdb;
+
+	if ( ! is_admin() ) {
+		dead_db();
+	}
 
 	wp_load_translations_early();
 
 	$title = __( 'Error establishing a database connection' );
+
 	$msg  = '<h1>' . $title . '</h1>';
-	if ( ! is_admin() )
-		die( $msg );
 	$msg .= '<p>' . __( 'If your site does not display, please contact the owner of this network.' ) . '';
 	$msg .= ' ' . __( 'If you are the owner of this network please check that MySQL is running properly and all tables are error free.' ) . '</p>';
-	if ( ! $wpdb->get_var( "SHOW TABLES LIKE '$wpdb->site'" ) )
-		$msg .= '<p>' . sprintf( __( '<strong>Database tables are missing.</strong> This means that MySQL is not running, WordPress was not installed properly, or someone deleted <code>%s</code>. You really should look at your database now.' ), $wpdb->site ) . '</p>';
-	else
-		$msg .= '<p>' . sprintf( __( '<strong>Could not find site <code>%1$s</code>.</strong> Searched for table <code>%2$s</code> in database <code>%3$s</code>. Is that right?' ), rtrim( $domain . $path, '/' ), $wpdb->blogs, DB_NAME ) . '</p>';
+	$query = $wpdb->prepare( "SHOW TABLES LIKE %s", $wpdb->esc_like( $wpdb->site ) );
+	if ( ! $wpdb->get_var( $query ) ) {
+		$msg .= '<p>' . sprintf(
+			/* translators: %s: table name */
+			__( '<strong>Database tables are missing.</strong> This means that MySQL is not running, WordPress was not installed properly, or someone deleted %s. You really should look at your database now.' ),
+			'<code>' . $wpdb->site . '</code>'
+		) . '</p>';
+	} else {
+		$msg .= '<p>' . sprintf(
+			/* translators: 1: site url, 2: table name, 3: database name */
+			__( '<strong>Could not find site %1$s.</strong> Searched for table %2$s in database %3$s. Is that right?' ),
+			'<code>' . rtrim( $domain . $path, '/' ) . '</code>',
+			'<code>' . $wpdb->blogs . '</code>',
+			'<code>' . DB_NAME . '</code>'
+		) . '</p>';
+	}
 	$msg .= '<p><strong>' . __( 'What do I do now?' ) . '</strong> ';
-	$msg .= __( 'Read the <a target="_blank" href="http://codex.wordpress.org/Debugging_a_WordPress_Network">bug report</a> page. Some of the guidelines there may help you figure out what went wrong.' );
+	/* translators: %s: Codex URL */
+	$msg .= sprintf( __( 'Read the <a href="%s" target="_blank">bug report</a> page. Some of the guidelines there may help you figure out what went wrong.' ),
+		__( 'https://codex.wordpress.org/Debugging_a_WordPress_Network' )
+	);
 	$msg .= ' ' . __( 'If you&#8217;re still stuck with this message, then check that your database contains the following tables:' ) . '</p><ul>';
 	foreach ( $wpdb->tables('global') as $t => $table ) {
 		if ( 'sitecategories' == $t )
@@ -260,5 +317,43 @@ function ms_not_installed() {
 	}
 	$msg .= '</ul>';
 
-	wp_die( $msg, $title );
+	wp_die( $msg, $title, array( 'response' => 500 ) );
+}
+
+/**
+ * This deprecated function formerly set the site_name property of the $current_site object.
+ *
+ * This function simply returns the object, as before.
+ * The bootstrap takes care of setting site_name.
+ *
+ * @access private
+ * @since 3.0.0
+ * @deprecated 3.9.0 Use get_current_site() instead.
+ *
+ * @param object $current_site
+ * @return object
+ */
+function get_current_site_name( $current_site ) {
+	_deprecated_function( __FUNCTION__, '3.9', 'get_current_site()' );
+	return $current_site;
+}
+
+/**
+ * This deprecated function managed much of the site and network loading in multisite.
+ *
+ * The current bootstrap code is now responsible for parsing the site and network load as
+ * well as setting the global $current_site object.
+ *
+ * @access private
+ * @since 3.0.0
+ * @deprecated 3.9.0
+ *
+ * @global object $current_site
+ *
+ * @return object
+ */
+function wpmu_current_site() {
+	global $current_site;
+	_deprecated_function( __FUNCTION__, '3.9' );
+	return $current_site;
 }

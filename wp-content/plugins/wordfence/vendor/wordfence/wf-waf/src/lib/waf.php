@@ -421,8 +421,8 @@ auEa+7b+FGTKs7dUo2BNGR7OVifK4GZ8w/ajS0TelhrSRi3BBQCGXLzUO/UURUAh
 			if (!is_writable($this->getCompiledRulesFile())) {
 				throw new wfWAFBuildRulesException('Rules file not writable.');
 			}
-
-			file_put_contents($this->getCompiledRulesFile(), sprintf(<<<PHP
+			
+			wfWAFStorageFile::atomicFilePutContents($this->getCompiledRulesFile(), sprintf(<<<PHP
 <?php
 if (!defined('WFWAF_VERSION')) {
 	exit('Access denied');
@@ -433,9 +433,9 @@ if (!defined('WFWAF_VERSION')) {
 
 %s?>
 PHP
-				, $this->buildRuleSet($rules)), LOCK_EX);
+				, $this->buildRuleSet($rules)), 'rules');
 			if (!empty($ruleString) && !WFWAF_DEBUG) {
-				file_put_contents($this->getStorageEngine()->getRulesDSLCacheFile(), $ruleString, LOCK_EX);
+				wfWAFStorageFile::atomicFilePutContents($this->getStorageEngine()->getRulesDSLCacheFile(), $ruleString, 'rules');
 			}
 
 			if ($updateLastUpdatedTimestamp) {

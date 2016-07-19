@@ -3,6 +3,29 @@ $sigUpdateTime = wfConfig::get('signatureUpdateTime');
 ?>
 <div class="wordfenceModeElem" id="wordfenceMode_scan"></div>
 <div class="wrap wordfence">
+
+	<?php
+	$nonce = filter_input(INPUT_GET, 'nonce', FILTER_SANITIZE_STRING);
+	if (!empty($promptForCredentials) && !empty($wpFilesystemActionCallback) && is_callable($wpFilesystemActionCallback)):
+		if (wp_verify_nonce($nonce, 'wp-ajax')) {
+			$relaxedOwnership = true;
+			$homePath = get_home_path();
+
+			if (!wordfence::requestFilesystemCredentials($filesystemCredentialsAdminURL, $homePath, $relaxedOwnership, true)) {
+				echo '</div>';
+				return;
+			}
+
+			call_user_func_array($wpFilesystemActionCallback,
+				!empty($wpFilesystemActionCallbackArgs) && is_array($wpFilesystemActionCallbackArgs) ? $wpFilesystemActionCallbackArgs : array());
+		} else {
+			printf("Security token has expired. Click <a href='%s'>here</a> to return to the scan page.", esc_url(network_admin_url('admin.php?page=Wordfence')));
+		}
+
+		?>
+
+	<?php else: ?>
+
 	<?php require('menuHeader.php'); ?>
 	<?php $pageTitle = "Wordfence Scan"; $helpLink="http://docs.wordfence.com/en/Wordfence_scanning"; $helpLabel="Learn more about scanning"; include('pageTitle.php'); ?>
 	<div class="wordfenceWrap">
@@ -171,6 +194,8 @@ $sigUpdateTime = wfConfig::get('signatureUpdateTime');
 			</div>
 		</div>
 	</div>
+	<?php endif ?>
+
 </div>
 <script type="text/x-jquery-template" id="issueTmpl_configReadable">
 <div>
@@ -911,6 +936,40 @@ $sigUpdateTime = wfConfig::get('signatureUpdateTime');
 	</div>
 </div>
 </div>
+</script>
+<script type="text/x-jquery-template" id="issueTmpl_checkGSB">
+	<div>
+		<div class="wfIssue">
+			<h2>${shortMsg}</h2>
+			<p>
+			<table border="0" class="wfIssue" cellspacing="0" cellpadding="0">
+				{{if ((typeof data.badURL !== 'undefined') && data.badURL)}}
+				<tr><th>Bad URL:</th><td><strong class="wfWarn">${data.badURL}</strong></td></tr>
+				{{/if}}
+				<tr><th>Issue first detected:</th><td>${timeAgo} ago.</td></tr>
+				<tr><th>Severity:</th><td>{{if severity == '1'}}Critical{{else}}Warning{{/if}}</td></tr>
+				<tr><th>Status</th><td>
+						{{if status == 'new' }}New{{/if}}
+						{{if status == 'ignoreC' }}This issue will be ignored until it changes.{{/if}}
+						{{if status == 'ignoreP' }}This issue is permanently ignored.{{/if}}
+					</td></tr>
+			</table>
+			</p>
+			<p>
+				{{html longMsg}}
+			</p>
+			<div class="wfIssueOptions">
+				{{if status == 'new'}}
+				<strong>Resolve:</strong>
+				<a href="#" onclick="WFAD.updateIssueStatus('${id}', 'delete'); return false;">I have fixed this issue</a>
+				<a href="#" onclick="WFAD.updateIssueStatus('${id}', 'ignoreP'); return false;">Ignore this problem</a>
+				{{/if}}
+				{{if status == 'ignoreP' || status == 'ignoreC'}}
+				<a href="#" onclick="WFAD.updateIssueStatus('${id}', 'delete'); return false;">Stop ignoring this issue</a>
+				{{/if}}
+			</div>
+		</div>
+	</div>
 </script>
 
 <script type="text/x-jquery-template" id="issueTmpl_spamvertizeCheck">

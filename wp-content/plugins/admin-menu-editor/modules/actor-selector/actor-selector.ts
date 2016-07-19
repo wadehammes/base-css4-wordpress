@@ -165,16 +165,8 @@ class AmeActorSelector {
 
 		var visibleActors = this.getVisibleActors();
 		for (let i = 0; i < visibleActors.length; i++) {
-			const actor = visibleActors[i];
-
-			let name = actor.displayName;
-			if (actor instanceof AmeUser) {
-				if (actor.userLogin === this.currentUserLogin) {
-					name = 'Current user (' + actor.userLogin + ')';
-				} else {
-					name = actor.displayName + ' (' + actor.userLogin + ')';
-				}
-			}
+			const actor = visibleActors[i],
+				name = this.getNiceName(actor);
 
 			actorSelector.append(
 				$('<li></li>').append(
@@ -256,5 +248,21 @@ class AmeActorSelector {
 				'visible_users' : jQuery.toJSON(this.visibleUsers)
 			}
 		);
+	}
+
+	getCurrentUserActor(): AmeUser {
+		return this.actorManager.getUser(this.currentUserLogin);
+	}
+
+	getNiceName(actor: AmeBaseActor): string {
+		let name = actor.displayName;
+		if (actor instanceof AmeUser) {
+			if (actor.userLogin === this.currentUserLogin) {
+				name = 'Current user (' + actor.userLogin + ')';
+			} else {
+				name = actor.displayName + ' (' + actor.userLogin + ')';
+			}
+		}
+		return name;
 	}
 }

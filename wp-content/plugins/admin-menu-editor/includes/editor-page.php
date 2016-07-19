@@ -54,12 +54,8 @@ if ( !apply_filters('admin_menu_editor_is_pro', false) ){
 }
 
 ?>
-<div class="<?php echo esc_attr(implode(' ', $wrap_classes)); ?>">
-	<?php echo '<', WPMenuEditor::$admin_heading_tag, ' id="ws_ame_editor_heading">'; ?>
-		<?php echo apply_filters('admin_menu_editor-self_page_title', 'Menu Editor'); ?>
-	<?php echo '</', WPMenuEditor::$admin_heading_tag, '>'; ?>
 
-	<?php do_action('admin_menu_editor-display_tabs'); ?>
+<?php do_action('admin_menu_editor-display_header'); ?>
 
 <?php
 if ( !empty($_GET['message']) ){
@@ -313,7 +309,7 @@ function ame_output_sort_buttons($icons) {
 
 </div> <!-- / .ws_menu_editor -->
 
-</div> <!-- / .wrap -->
+<?php do_action('admin_menu_editor-display_footer'); ?>
 
 
 

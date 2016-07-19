@@ -1,9 +1,6 @@
 <?php
 $w = new wfConfig();
 ?>
-<script type="text/javascript">
-	var WFSLevels = <?php echo json_encode(wfConfig::$securityLevels); ?>;
-</script>
 <div class="wordfenceModeElem" id="wordfenceMode_options"></div>
 <div class="wrap">
 	<?php require( 'menuHeader.php' ); ?>
@@ -197,30 +194,6 @@ $w = new wfConfig();
 			</tr>
 			<tr>
 				<th colspan="2">&nbsp;</th>
-			</tr>
-			<tr>
-				<th>Security Level:<a href="http://docs.wordfence.com/en/Wordfence_options#Security_Level"
-				                      target="_blank" class="wfhelp"></a></th>
-				<td>
-					<select id="securityLevel" name="securityLevel" onchange="WFAD.changeSecurityLevel(); return true;">
-						<option value="0"<?php $w->sel( 'securityLevel', '0' ); ?>>Level 0: Disable all Wordfence
-							security measures
-						</option>
-						<option value="1"<?php $w->sel( 'securityLevel', '1' ); ?>>Level 1: Light protection. Just the
-							basics
-						</option>
-						<option value="2"<?php $w->sel( 'securityLevel', '2' ); ?>>Level 2: Medium protection. Suitable
-							for most sites
-						</option>
-						<option value="3"<?php $w->sel( 'securityLevel', '3' ); ?>>Level 3: High security. Use this when
-							an attack is imminent
-						</option>
-						<option value="4"<?php $w->sel( 'securityLevel', '4' ); ?>>Level 4: Lockdown. Protect the site
-							against an attack in progress at the cost of inconveniencing some users
-						</option>
-						<option value="CUSTOM"<?php $w->sel( 'securityLevel', 'CUSTOM' ); ?>>Custom settings</option>
-					</select>
-				</td>
 			</tr>
 			<tr>
 				<th>How does Wordfence get IPs:<a
@@ -836,7 +809,7 @@ $w = new wfConfig();
 					           name="loginSec_blockAdminReg" <?php $w->cb( 'loginSec_blockAdminReg' ); ?> /></td>
 				</tr>
 				<tr>
-					<th>Prevent discovery of usernames through '/?author=N' scans<a
+					<th>Prevent discovery of usernames through '/?author=N' scans and the oEmbed API<a
 							href="http://docs.wordfence.com/en/Wordfence_options#Prevent_discovery_of_usernames_through_.27.3F.2Fauthor.3DN.27_scans"
 							target="_blank" class="wfhelp"></a></th>
 					<td><input type="checkbox" id="loginSec_disableAuthorScan" class="wfConfigElem"

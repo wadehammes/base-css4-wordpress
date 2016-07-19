@@ -27,42 +27,75 @@
 <?php } ?>
 
 	<div class="wordfenceWrap" style="margin: 20px 20px 20px 30px;">
-		<p style="width: 500px;">
-		</p>
-		<p>
-			<table border="0">
+		<h2>Enable Cellphone Sign-in</h2>
+		<p><em>Our Cellphone Sign-in uses a technique called "Two Factor Authentication" which is used by banks, government agencies and military world-wide as one of the most secure forms of remote system authentication. We recommend you enable Cellphone Sign-in for all Administrator level accounts.</em></p>
+		<table class="wfConfigForm">
 			<tr><td>Enter a username to enable Cellphone Sign-in:</td><td><input type="text" id="wfUsername" value="" size="20" /></td></tr>
-			<tr><td>Enter a phone number where the code will be sent:</td><td><input type="text" id="wfPhone" value="" size="20" />Format: +1-123-555-5034</td></tr>
-			<tr><td colspan="2"><input type="button" value="Enable Cellphone Sign-in" onclick="WFAD.addTwoFactor(jQuery('#wfUsername').val(), jQuery('#wfPhone').val());" /></td></tr>
-			</table>
-		</p>
+			<tr><td>Enter a phone number where the code will be sent:</td><td><input type="text" id="wfPhone" value="" size="20" /> Format: +1-123-555-5034</td></tr>
+			<tr><td colspan="2"><input type="button" class="button button-primary" value="Enable Cellphone Sign-in" onclick="WFAD.addTwoFactor(jQuery('#wfUsername').val(), jQuery('#wfPhone').val());" /></td></tr>
+		</table>
 		<div style="height: 20px;">
 			<div id="wfTwoFacMsg" style="color: #F00;">
 			&nbsp;
 			</div>
 		</div>
+		
+		<h2>Cellphone Sign-in Users</h2>
 		<div id="wfTwoFacUsers">
 
 		</div>
+		
+		<br>
+		
+		<h2>Security Options</h2>
+		<table class="wfConfigForm">
+			<tr>
+				<td><input type="checkbox" id="loginSec_requireAdminTwoFactor" name="loginSec_requireAdminTwoFactor"<?php echo wfConfig::get('loginSec_requireAdminTwoFactor') ? ' checked' : ''; ?>></td>
+				<th>Require Cellphone Sign-in for all Administrators<a href="<?php echo $helpLink; ?>" target="_blank" class="wfhelp"></a><br>
+					<em>This setting requires at least one administrator to have Cellphone Sign-in enabled. On multisite, this option applies only to super admins.</em></th>
+			</tr>
+		</table>
+		
+		<script type="text/javascript">
+			jQuery('#loginSec_requireAdminTwoFactor').on('click', function() {
+				WFAD.updateConfig('loginSec_requireAdminTwoFactor', jQuery('#loginSec_requireAdminTwoFactor').is(':checked') ? 1 : 0, function() {});
+			})
+		</script>
 	</div>
 </div>
 
 <script type="text/x-jquery-template" id="wfTwoFacUserTmpl">
-<div>
-	<table border="0"><tr>
-		<td style="width: 100px;">${username}</td>
-		<td style="width: 150px;">${phone}</td>
-		<td>
-			{{if status == 'activated'}}
-				<span style="color: #0A0;">Cellphone Sign-in Enabled</span>
-			{{else}}
-				Enter activation code:<input type="text" id="wfActivate" size="4" /><input type="button" value="Activate" onclick="WFAD.twoFacActivate('${userID}', jQuery('#wfActivate').val());" />
-			{{/if}}
-		</td>
-		<td>&nbsp;&nbsp;&nbsp;<a href="#" onclick="WFAD.delTwoFac('${userID}'); return false;">[Delete]</a></td>
-	</tr>
+	<table class="wf-table">
+		<thead>
+			<tr>
+				<th style="width: 80px;"></th>
+				<th style="width: 100px;">User</th>
+				<th style="width: 150px;">Phone Number</th>
+				<th>Status</th>
+			</tr>
+		</thead>
+		<tbody>
+		{{each(idx, user) users}}
+			<tr id="twoFactorUser-${user.userID}">
+				<td style="white-space: nowrap; text-align: center;"><a href="#" class="button" onclick="WFAD.delTwoFac('${user.userID}'); return false;">Delete</a></td>
+				<td style="white-space: nowrap;">${user.username}</td>
+				<td style="white-space: nowrap;">${user.phone}</td>
+				<td style="white-space: nowrap;"> 
+					{{if user.status == 'activated'}}
+						<span style="color: #0A0;">Cellphone Sign-in Enabled</span>
+					{{else}}
+						Enter activation code: <input type="text" id="wfActivate-${user.userID}" size="6" /><input type="button" value="Activate" onclick="WFAD.twoFacActivate('${user.userID}', jQuery('#wfActivate-${user.userID}').val());" />
+					{{/if}}
+				</td>
+			</tr>
+		{{/each}}
+		{{if (users.length == 0)}}
+		<tr id="twoFactorUser-none">
+			<td colspan="4">No users currently have cellphone sign-in enabled.</td>
+		</tr>
+		{{/if}}
+		</tbody>
 	</table>
-</div>
 </script>
 <script type="text/x-jquery-template" id="wfWelcomeTwoFactor">
 <div>

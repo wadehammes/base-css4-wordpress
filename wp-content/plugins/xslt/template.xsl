@@ -66,7 +66,7 @@ function pop(url){
 		</xsl:for-each>
 	</div>
 	<div id="footer">
-		 <p>Powered by <a href="http://wordpress.org" rel="nofollow">WordPress</a> and <a href="https://wordpress.org/plugins/xslt/" rel="nofollow">Better RSS Feeds</a></p>
+		 <p>Powered by <a href="https://wordpress.org/">WordPress</a> and <a href="https://wordpress.org/plugins/xslt/">Better RSS Feeds</a>.</p>
 	</div>
 </body>
 </xsl:element>

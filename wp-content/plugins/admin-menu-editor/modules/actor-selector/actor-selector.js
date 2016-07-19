@@ -119,16 +119,7 @@ var AmeActorSelector = (function () {
         actorSelector.append('<li><a href="#" class="current ws_actor_option ws_no_actor" data-text="All">All</a></li>');
         var visibleActors = this.getVisibleActors();
         for (var i = 0; i < visibleActors.length; i++) {
-            var actor = visibleActors[i];
-            var name_1 = actor.displayName;
-            if (actor instanceof AmeUser) {
-                if (actor.userLogin === this.currentUserLogin) {
-                    name_1 = 'Current user (' + actor.userLogin + ')';
-                }
-                else {
-                    name_1 = actor.displayName + ' (' + actor.userLogin + ')';
-                }
-            }
+            var actor = visibleActors[i], name_1 = this.getNiceName(actor);
             actorSelector.append($('<li></li>').append($('<a></a>')
                 .attr('href', '#' + actor.id)
                 .attr('data-text', name_1)
@@ -189,6 +180,21 @@ var AmeActorSelector = (function () {
             '_ajax_nonce': this.ajaxParams.ajaxUpdateNonce,
             'visible_users': jQuery.toJSON(this.visibleUsers)
         });
+    };
+    AmeActorSelector.prototype.getCurrentUserActor = function () {
+        return this.actorManager.getUser(this.currentUserLogin);
+    };
+    AmeActorSelector.prototype.getNiceName = function (actor) {
+        var name = actor.displayName;
+        if (actor instanceof AmeUser) {
+            if (actor.userLogin === this.currentUserLogin) {
+                name = 'Current user (' + actor.userLogin + ')';
+            }
+            else {
+                name = actor.displayName + ' (' + actor.userLogin + ')';
+            }
+        }
+        return name;
     };
     AmeActorSelector._ = wsAmeLodash;
     return AmeActorSelector;

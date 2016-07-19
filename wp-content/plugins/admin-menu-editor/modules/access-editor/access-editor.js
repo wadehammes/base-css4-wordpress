@@ -1,4 +1,4 @@
-/* globals AmeCapabilityManager, jQuery */
+/* globals AmeCapabilityManager, jQuery, AmeActors */
 
 window.AmeItemAccessEditor = (function ($) {
 	'use strict';
@@ -16,7 +16,7 @@ window.AmeItemAccessEditor = (function ($) {
 	var _,
 		api,
 		isProVersion = false,
-		actors,
+		actorSelector,
 		postTypes,
 		taxonomies,
 
@@ -79,7 +79,9 @@ window.AmeItemAccessEditor = (function ($) {
 				return $(this).data('actor') === selectedActor;
 			}).addClass('ws_cpt_selected_role');
 
-			$editor.find('.ws_aed_selected_actor_name').text(actors[selectedActor]);
+			$editor.find('.ws_aed_selected_actor_name').text(
+				actorSelector.getNiceName(AmeActors.getActor(selectedActor))
+			);
 		}
 
 		if (hasExtendedPermissions) {
@@ -323,6 +325,7 @@ window.AmeItemAccessEditor = (function ($) {
 		/**
 		 * @param {AmeEditorApi} config.api
 		 * @param {Object}   config.actors
+		 * @param {AmeActorSelector}   config.actorSelector
 		 * @param {Object}   config.postTypes
 		 * @param {Object}   config.taxonomies
 		 * @param {lodash}   config.lodash
@@ -334,7 +337,7 @@ window.AmeItemAccessEditor = (function ($) {
 		setup: function(config) {
 			_ = config.lodash;
 			api = config.api;
-			actors = config.actors; //Note: This can change on the fly if the user changes visible users.
+			actorSelector = config.actorSelector;
 
 			postTypes = config.postTypes;
 			taxonomies = config.taxonomies;
@@ -377,26 +380,25 @@ window.AmeItemAccessEditor = (function ($) {
 
 			//Generate the actor list.
 			var table = $editor.find('.ws_role_table_body tbody').empty(),
-				alternate = '';
-			for(var actor in actors) {
-				if (!actors.hasOwnProperty(actor)) {
-					continue;
-				}
+				alternate = '',
+				visibleActors = actorSelector.getVisibleActors();
+			for(var index = 0; index < visibleActors.length; index++) {
+				var actor = visibleActors[index];
 
-				var checkboxId = 'allow_' + actor.replace(/[^a-zA-Z0-9_]/g, '_');
+				var checkboxId = 'allow_' + actor.id.replace(/[^a-zA-Z0-9_]/g, '_');
 				var checkbox = $('<input type="checkbox">').addClass('ws_role_access').attr('id', checkboxId);
 
-				var actorHasAccess = api.actorCanAccessMenu(menuItem, actor);
+				var actorHasAccess = api.actorCanAccessMenu(menuItem, actor.id);
 				checkbox.prop('checked', actorHasAccess);
 
 				alternate = (alternate === '') ? 'alternate' : '';
 
 				var cell = '<td>';
-				var row = $('<tr>').data('actor', actor).attr('class', alternate).append(
+				var row = $('<tr>').data('actor', actor.id).attr('class', alternate).append(
 					$(cell).addClass('ws_column_access').append(checkbox),
 					$(cell).addClass('ws_column_role post-title').append(
 						$('<label>').attr('for', checkboxId).append(
-							$('<span>').text(actors[actor])
+							$('<span>').text(actorSelector.getNiceName(actor))
 						)
 					),
 					$(cell).addClass('ws_column_selected_role_tip').append(
@@ -467,7 +469,7 @@ window.AmeItemAccessEditor = (function ($) {
 
 			if (hasExtendedPermissions) {
 				//Select either the currently selected actor, or just the first one.
-				setSelectedActor(state.selectedActor || _.keys(actors)[0] || null);
+				setSelectedActor(state.selectedActor || (visibleActors[0].id) || null);
 
 				//The permission table must be at least as tall as the actor list or the selected row won't look right.
 				var roleTable = $editor.find('.ws_role_table_body'),

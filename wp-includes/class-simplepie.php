@@ -1,5 +1,5 @@
 <?php
-if ( ! class_exists( 'SimplePie' ) ) :
+if ( ! class_exists( 'SimplePie', false ) ) :
 
 // Load classes we will need.
 require ABSPATH . WPINC . '/SimplePie/Misc.php';
@@ -26,7 +26,7 @@ function wp_simplepie_autoload( $class ) {
 		return;
 
 	$file = ABSPATH . WPINC . '/' . str_replace( '_', '/', $class ) . '.php';
-	include $file;
+	include( $file );
 }
 
 if ( function_exists( 'spl_autoload_register' ) ) {
@@ -1612,7 +1612,7 @@ class SimplePie
 	}
 
 	/**
-	 * Get the error message for the occured error
+	 * Get the error message for the occurred error.
 	 *
 	 * @return string|array Error message, or array of messages for multifeeds
 	 */

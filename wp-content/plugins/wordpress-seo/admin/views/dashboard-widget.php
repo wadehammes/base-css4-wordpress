@@ -39,13 +39,13 @@
 </table>
 <?php if ( ! empty( $onpage ) && WPSEO_Utils::grant_access() ) : ?>
 <div class="onpage">
-	<h4 class="hide-if-no-js"><?php
+	<h3 class="hide-if-no-js"><?php
 		printf(
 			/* translators: 1: expands to OnPage.org */
 			__( 'Indexability check by %1$s', 'wordpress-seo' ),
 			'OnPage.org'
 		);
-	?></h4>
+	?></h3>
 
 	<div>
 		<?php
@@ -63,7 +63,7 @@
 				printf(
 					/* translators: 1: opens a link to a related knowledge base article. 2: closes the link */
 					__( '%1$sYour homepage cannot be indexed by search engines%2$s. This is very bad for SEO and should be fixed.', 'wordpress-seo' ),
-					'<a href="http://yoa.st/onpageindexerror" target="_blank">',
+					'<a href="https://yoa.st/onpageindexerror" target="_blank">',
 					'</a>'
 				);
 				break;
@@ -72,7 +72,7 @@
 				printf(
 					/* translators: 1: opens a link to a related knowledge base article. 2: closes the link */
 					__( 'Yoast SEO has %1$snot been able to fetch your site’s indexability status%2$s from OnPage.org', 'wordpress-seo' ),
-					'<a href="http://yoa.st/onpagerequestfailed" target="_blank">',
+					'<a href="https://yoa.st/onpagerequestfailed" target="_blank">',
 					'</a>'
 				);
 				break;
@@ -81,7 +81,7 @@
 				printf(
 					/* translators: 1: opens a link to a related knowledge base article. 2: closes the link */
 					__( 'Yoast SEO has %1$snot fetched your site’s indexability status%2$s yet from OnPage.org', 'wordpress-seo' ),
-					'<a href="http://yoa.st/onpagerequestfailed" target="_blank">',
+					'<a href="https://yoa.st/onpagerequestfailed" target="_blank">',
 					'</a>'
 				);
 				break;

@@ -588,8 +588,13 @@ SQL
 		add_action('init', 'wordfence::initAction');
 		add_action('template_redirect', 'wordfence::templateRedir', 1001);
 		add_action('shutdown', 'wordfence::shutdownAction');
-		add_action('wp_enqueue_scripts', 'wordfence::enqueueAJAXWatcher');
-		add_action('admin_enqueue_scripts', 'wordfence::enqueueAJAXWatcher');
+		
+		if (!wfConfig::get('ajaxWatcherDisabled_front')) {
+			add_action('wp_enqueue_scripts', 'wordfence::enqueueAJAXWatcher');
+		}
+		if (!wfConfig::get('ajaxWatcherDisabled_admin')) {
+			add_action('admin_enqueue_scripts', 'wordfence::enqueueAJAXWatcher');
+		}
 
 		if(version_compare(PHP_VERSION, '5.4.0') >= 0){
 			add_action('wp_authenticate','wordfence::authActionNew', 1, 2);
@@ -636,6 +641,10 @@ SQL
 		add_filter('get_the_generator_comment', 'wordfence::genFilter', 99, 2);
 		add_filter('get_the_generator_export', 'wordfence::genFilter', 99, 2);
 		add_filter('registration_errors', 'wordfence::registrationFilter', 99, 3);
+		
+		if (wfConfig::get('loginSec_disableAuthorScan')) {
+			add_filter('oembed_response_data', 'wordfence::oembedAuthorFilter', 99, 4);
+		}
 
 		// Change GoDaddy's limit login mu-plugin since it can interfere with the two factor auth message.
 		if (self::hasGDLimitLoginsMUPlugin()) {
@@ -715,10 +724,16 @@ SQL
 		return $URL;
 	}
 	public static function enqueueAJAXWatcher() {
-		if (wfUtils::isAdmin()) {
-			wp_enqueue_style('wordfence-colorbox-style', wfUtils::getBaseURL() . 'css/colorbox.css', '', WORDFENCE_VERSION);
-			wp_enqueue_script('jquery.wfcolorbox', wfUtils::getBaseURL() . 'js/jquery.colorbox-min.js', array('jquery'), WORDFENCE_VERSION);
-			wp_enqueue_script('wordfenceAJAXjs', wfUtils::getBaseURL() . 'js/admin.ajaxWatcher.js', array('jquery'), WORDFENCE_VERSION);
+		try {
+			$waf = wfWAF::getInstance();
+			$config = $waf->getStorageEngine();
+			$wafStatus = (!WFWAF_ENABLED ? 'disabled' : $config->getConfig('wafStatus'));
+			if (wfUtils::isAdmin() && $wafStatus != 'disabled') {
+				wp_enqueue_style('wordfenceAJAXcss', wfUtils::getBaseURL() . 'css/wordfenceBox.css', '', WORDFENCE_VERSION);
+				wp_enqueue_script('wordfenceAJAXjs', wfUtils::getBaseURL() . 'js/admin.ajaxWatcher.js', array('jquery'), WORDFENCE_VERSION);
+			}
+		} catch (wfWAFStorageFileException $e) {
+			error_log($e->getMessage());
 		}
 	}
 	public static function ajax_testAjax_callback(){
@@ -1157,6 +1172,11 @@ SQL
 		}
 		return $errors;
 	}
+	public static function oembedAuthorFilter($data, $post, $width, $height) {
+		unset($data['author_name']);
+		unset($data['author_url']);
+		return $data;
+	}
 	public static function authenticateFilter($authUser, $username, $passwd){
 		wfConfig::inc('totalLoginHits'); //The total hits to wp-login.php including logins, logouts and just hits.
 		$IP = wfUtils::getIP();
@@ -1203,7 +1223,19 @@ SQL
 							} //No user matches and has TF activated so let user sign in.
 						}
 					} else { //valid login with no code entered
-						foreach($twoFactorUsers as &$t){
+						//Verify at least one administrator has 2FA enabled
+						$requireAdminTwoFactor = false;
+						foreach($twoFactorUsers as &$t) {
+							$userID = $t[0];
+							$testUser = get_user_by('ID', $userID);
+							if (is_object($testUser) && wfUtils::isAdmin($testUser) && $t[3] == 'activated') {
+								$requireAdminTwoFactor = true;
+								break;
+							}
+						}
+						$requireAdminTwoFactor = $requireAdminTwoFactor && wfConfig::get('loginSec_requireAdminTwoFactor');
+						
+						foreach($twoFactorUsers as &$t) {
 							if($t[0] == $userDat->ID && $t[3] == 'activated'){ //Yup, enabled, so lets send the code
 								$api = new wfAPI(wfConfig::get('apiKey'), wfUtils::getWPVersion());
 								try {
@@ -1240,8 +1272,18 @@ SQL
 								} else { //oops, our API returned an error.
 									break; //Let them sign in without two factor because the API is broken and we don't want to lock users out of their own systems.
 								}
-							} //User is not present in two factor list or is not activated. Sign in without twofactor.
-						} //Two facto users is empty. Sign in without two factor.
+							}
+						}
+						
+						if ($requireAdminTwoFactor && wfUtils::isAdmin($authUser)) {
+							$username = $authUser->user_login;
+							self::getLog()->logLogin('loginFailValidUsername', 1, $username);
+							wordfence::alert("Admin Login Blocked", "A user with username \"$username\" who has administrator access tried to sign in to your WordPress site. Access was denied because all administrator accounts are required to have Cellphone Sign-in enabled but this account does not.", wfUtils::getIP());
+							self::$authError = new WP_Error( 'twofactor_disabled_required', __( '<strong>Cellphone Sign-in Required</strong>: Cellphone Sign-in is required for all administrator accounts. Please contact the site administrator to enable it for your account.' ) );
+							return self::$authError;
+						}
+						
+						//User is not configured for two factor. Sign in without two factor.
 					}
 				}
 			}
@@ -2644,8 +2686,10 @@ SQL
 			return array('errorMsg' => "Invalid bulk operation selected");
 		}
 	}
-	public static function ajax_deleteFile_callback(){
-		$issueID = intval($_POST['issueID']);
+	public static function ajax_deleteFile_callback($issueID = null){
+		if ($issueID === null) {
+			$issueID = intval($_POST['issueID']);
+		}
 		$wfIssues = new wfIssues();
 		$issue = $wfIssues->getIssueByID($issueID);
 		if(! $issue){
@@ -2671,7 +2715,27 @@ SQL
 				</p>",
 			);
 		}
-		if(@unlink($localFile)){
+
+		/** @var WP_Filesystem_Base $wp_filesystem */
+		global $wp_filesystem;
+
+		$adminURL = network_admin_url('admin.php?' . http_build_query(array(
+				'page'               => 'Wordfence',
+				'wfScanAction'       => 'promptForCredentials',
+				'wfFilesystemAction' => 'deleteFile',
+				'issueID'            => $issueID,
+				'nonce'              => wp_create_nonce('wp-ajax'),
+			)));
+
+		if (!self::requestFilesystemCredentials($adminURL, null, true, false)) {
+			return array(
+				'ok'               => 1,
+				'needsCredentials' => true,
+				'redirect'         => $adminURL,
+			);
+		}
+
+		if($wp_filesystem->delete($localFile)){
 			$wfIssues->updateIssue($issueID, 'delete');
 			return array(
 				'ok' => 1,
@@ -2736,13 +2800,35 @@ SQL
 		$issues->updateIssue($_POST['issueID'], 'delete');
 		return array('ok' => 1);
 	}
-	public static function ajax_restoreFile_callback(){
-		$issueID = intval($_POST['issueID']);
+	public static function ajax_restoreFile_callback($issueID = null){
+		if ($issueID === null) {
+			$issueID = intval($_POST['issueID']);
+		}
 		$wfIssues = new wfIssues();
 		$issue = $wfIssues->getIssueByID($issueID);
 		if(! $issue){
 			return array('cerrorMsg' => "We could not find that issue in our database.");
 		}
+
+		/** @var WP_Filesystem_Base $wp_filesystem */
+		global $wp_filesystem;
+
+		$adminURL = network_admin_url('admin.php?' . http_build_query(array(
+				'page'               => 'Wordfence',
+				'wfScanAction'       => 'promptForCredentials',
+				'wfFilesystemAction' => 'restoreFile',
+				'issueID'            => $issueID,
+				'nonce'              => wp_create_nonce('wp-ajax'),
+			)));
+
+		if (!self::requestFilesystemCredentials($adminURL, null, true, false)) {
+			return array(
+				'ok'               => 1,
+				'needsCredentials' => true,
+				'redirect'         => $adminURL,
+			);
+		}
+
 		$dat = $issue['data'];
 		$result = self::getWPFileContent($dat['file'], $dat['cType'], (isset($dat['cName']) ? $dat['cName'] : ''), (isset($dat['cVersion']) ? $dat['cVersion'] : ''));
 		$file = $dat['file'];
@@ -2756,28 +2842,16 @@ SQL
 			return array('cerrorMsg' => "An invalid file was specified for repair.");
 		}
 		$localFile = ABSPATH . '/' . preg_replace('/^[\.\/]+/', '', $file);
-		$fh = fopen($localFile, 'w');
-		if(! $fh){
-			$err = error_get_last();
-			if(preg_match('/Permission denied/i', $err['message'])){
-				$errMsg = "You don't have permission to repair that file. You need to either fix the file manually using FTP or change the file permissions and ownership so that your web server has write access to repair the file.";
-			} else {
-				$errMsg = "We could not write to that file. The error was: " . $err['message'];
-			}
-			return array('cerrorMsg' => $errMsg);
-		}
-		flock($fh, LOCK_EX);
-		$bytes = fwrite($fh, $result['fileContent']);
-		flock($fh, LOCK_UN);
-		fclose($fh);
-		if($bytes < 1){
-			return array('cerrorMsg' => "We could not write to that file. ($bytes bytes written) You may not have permission to modify files on your WordPress server.");
-		}
-		$wfIssues->updateIssue($issueID, 'delete');
-		return array(
-			'ok' => 1,
-			'file' => $localFile
+		if ($wp_filesystem->put_contents($localFile, $result['fileContent'])) {
+			$wfIssues->updateIssue($issueID, 'delete');
+			return array(
+				'ok'   => 1,
+				'file' => $localFile,
 			);
+		}
+		return array(
+			'cerrorMsg' => "We could not write to that file. You may not have permission to modify files on your WordPress server.",
+		);
 	}
 	public static function ajax_scan_callback(){
 		self::status(4, 'info', "Ajax request received to start scan.");
@@ -3563,12 +3637,35 @@ HTML;
 				}
 			}
 		}
+		else {
+			if (!empty($_GET['wafAction'])) {
+				switch ($_GET['wafAction']) {
+					case 'removeAutoPrepend':
+						if (isset($_REQUEST['serverConfiguration'])) {
+							check_admin_referer('wfWAFRemoveAutoPrepend', 'wfnonce');
+							$helper = new wfWAFAutoPrependHelper($_REQUEST['serverConfiguration']);
+							if (!empty($_REQUEST['downloadBackup'])) {
+								$helper->downloadBackups(!empty($_REQUEST['backupIndex']) ? absint($_REQUEST['backupIndex']) : 0);
+							}
+						}
+						break;
+				}
+			}
+		}
 
 		if (!empty($_REQUEST['wafVerify']) && wp_verify_nonce($_REQUEST['wafVerify'], 'wfWAFAutoPrepend')) {
 			if (is_multisite()) {
 				add_action('network_admin_notices', 'wordfence::wafAutoPrependVerify');
 			} else {
 				add_action('admin_notices', 'wordfence::wafAutoPrependVerify');
+			}
+		}
+		
+		if (!empty($_REQUEST['wafRemoved']) && wp_verify_nonce($_REQUEST['wafRemoved'], 'wfWAFRemoveAutoPrepend')) {
+			if (is_multisite()) {
+				add_action('network_admin_notices', 'wordfence::wafAutoPrependRemoved');
+			} else {
+				add_action('admin_notices', 'wordfence::wafAutoPrependRemoved');
 			}
 		}
 	}
@@ -3985,6 +4082,243 @@ $nginxIniWarning
 
 					$wafActionContent = sprintf('<div style="margin: 20px 0;">%s</div>', $wafActionContent);
 					break;
+				
+				case 'removeAutoPrepend':
+					$installedHere = !(!WFWAF_AUTO_PREPEND && !WFWAF_SUBDIRECTORY_INSTALL);
+					$wfnonce = wp_create_nonce('wfWAFRemoveAutoPrepend');
+					
+					$currentAutoPrependFile = ini_get('auto_prepend_file');
+					$adminURL = network_admin_url('admin.php?page=WordfenceWAF&wafAction=removeAutoPrepend');
+					if (!$currentAutoPrependFile && $installedHere) {
+						//This should never happen but covering the possibility anyway
+						$wafActionContent = "<p>Extended Protection Mode of the Wordfence Web Application Firewall uses the PHP ini setting called <code>auto_prepend_file</code> in order to ensure it runs before any potentially
+vulnerable code runs. This PHP setting is not currently configured.</p>";
+						break;
+					}
+					else if ($currentAutoPrependFile &&
+						is_file($currentAutoPrependFile) &&
+						!isset($_REQUEST['serverConfiguration']) &&
+						!isset($_REQUEST['iniModified']) &&
+						$installedHere &&
+						!WFWAF_SUBDIRECTORY_INSTALL
+					) {
+						$contents = file_get_contents($currentAutoPrependFile);
+						$refersToWAF = preg_match('/define\s*\(\s*(["\'])WFWAF_LOG_PATH\1\s*,\s*(["\']).+?\2\s*\)\s*/', $contents);
+						
+						if ($refersToWAF) {
+							$wafActionContent = sprintf("<p>Extended Protection Mode of the Wordfence Web Application Firewall uses the PHP ini setting called <code>auto_prepend_file</code> in order to ensure it runs before any potentially
+vulnerable code runs. This PHP setting currently refers to the Wordfence file at:</p>
+
+<pre class='wf-pre'>%s</pre>
+
+<p>Before this file can be deleted, the configuration for the <code>auto_prepend_file</code> setting needs to be removed.</p>
+",
+								esc_html($currentAutoPrependFile)
+							);
+							
+							// Auto populate drop down with server configuration
+							// If no preconfiguration routine exists, output instructions for manual configuration
+							$serverInfo = wfWebServerInfo::createFromEnvironment();
+							
+							$dropdown = array(
+								array("apache-mod_php", 'Apache + mod_php', $serverInfo->isApacheModPHP()),
+								array("apache-suphp", 'Apache + suPHP', $serverInfo->isApacheSuPHP()),
+								array("cgi", 'Apache + CGI/FastCGI', $serverInfo->isApache() &&
+									!$serverInfo->isApacheSuPHP() &&
+									($serverInfo->isCGI() || $serverInfo->isFastCGI())),
+								array("litespeed", 'LiteSpeed', $serverInfo->isLiteSpeed()),
+								array("nginx", 'NGINX', $serverInfo->isNGINX()),
+								array("iis", 'Windows (IIS)', $serverInfo->isIIS()),
+							);
+							
+							$hasRecommendedOption = false;
+							$wafPrependOptions = '';
+							foreach ($dropdown as $option) {
+								list($optionValue, $optionText, $selected) = $option;
+								$wafPrependOptions .= "<option value=\"$optionValue\"" . ($selected ? ' selected' : '')
+									. ">$optionText" . ($selected ? ' (recommended based on our tests)' : '') . "</option>\n";
+								if ($selected) {
+									$hasRecommendedOption = true;
+								}
+							}
+							
+							if (!$hasRecommendedOption) {
+								$wafActionContent .= "<p>If you know your web server's configuration, please select it from the
+list below:</p>";
+							}
+							else {
+								$wafActionContent .= "<p>We've preselected your server configuration based on our tests, but if
+you know your web server's configuration, please select it now.</p>";
+							}
+							
+							$adminURL = esc_url($adminURL);
+							$wafActionContent .= "
+<form action='$adminURL' method='post'>
+<input type='hidden' name='wfnonce' value='$wfnonce'>
+<select name='serverConfiguration' id='wf-waf-server-config'>
+$wafPrependOptions
+</select>
+<button class='button button-primary' type='submit'>Continue</button>
+</form>
+</div>
+";
+						}
+						else {
+							//This point should only be reached if the wordfence-waf.php file format changes enough for the detection to fail and this isn't updated to match
+							$wafActionContent = sprintf("<p>Extended Protection Mode of the Wordfence Web Application Firewall uses the PHP ini setting called <code>auto_prepend_file</code> in order to ensure it runs before any potentially
+vulnerable code runs. This PHP setting currently refers to an unknown file at:</p>
+
+<pre class='wf-pre'>%s</pre>
+
+<p>Automatic uninstallation cannot be completed, but you may still be able to <a href='%s' target='_blank'>manually uninstall extended protection</a>.</p>
+",
+								esc_html($currentAutoPrependFile),
+								esc_url('https://docs.wordfence.com/en/Web_Application_Firewall_FAQ#How_can_I_remove_the_firewall_setup_manually.3F')
+							);
+							break;
+						}
+					}
+					else if (isset($_REQUEST['serverConfiguration'])) {
+						check_admin_referer('wfWAFRemoveAutoPrepend', 'wfnonce');
+						$allow_relaxed_file_ownership = true;
+						$helper = new wfWAFAutoPrependHelper($_REQUEST['serverConfiguration'], null);
+						$serverConfig = esc_attr($helper->getServerConfig());
+						if ($installedHere && empty($_REQUEST['iniModified']) && ($backups = $helper->getFilesNeededForBackup()) && empty($_REQUEST['confirmedBackup'])) {
+							$wafActionContent = '<p>Please download a backup copy of the following files before we make the necessary changes:</p>';
+							$wafActionContent .= '<ul>';
+							foreach ($backups as $index => $backup) {
+								$wafActionContent .= '<li><a class="button" onclick="wfWAFConfirmBackup(' . $index . ');" href="' .
+									esc_url(add_query_arg(array(
+										'downloadBackup'      => 1,
+										'backupIndex'         => $index,
+										'serverConfiguration' => $helper->getServerConfig(),
+										'wfnonce'             => $wfnonce,
+									), $adminURL)) . '">Download ' . esc_html(basename($backup)) . '</a></li>';
+							}
+							$jsonBackups = json_encode(array_map('basename', $backups));
+							$adminURL = esc_url($adminURL);
+							$wafActionContent .= "</ul>
+<form action='$adminURL' method='post'>
+<input type='hidden' name='wfnonce' value='$wfnonce'>
+<input type='hidden' value='$serverConfig' name='serverConfiguration'>
+<input type='hidden' value='1' name='confirmedBackup'>
+<button id='confirmed-backups' disabled class='button button-primary' type='submit'>Continue</button>
+</form>
+<script>
+var wfWAFBackups = $jsonBackups;
+var wfWAFConfirmedBackups = [];
+function wfWAFConfirmBackup(index) {
+	wfWAFBackups[index] = false;
+	var confirmed = true;
+	for (var i = 0; i < wfWAFBackups.length; i++) {
+		if (wfWAFBackups[i] !== false) {
+			confirmed = false;
+		}
+	}
+	if (confirmed) {
+		document.getElementById('confirmed-backups').disabled = false;
+	}
+}
+</script>";
+							break;
+						}
+						
+						ob_start();
+						if (false === ($credentials = request_filesystem_credentials($adminURL, '', false, ABSPATH,
+								array('version', 'locale'), $allow_relaxed_file_ownership))
+						) {
+							$wafActionContent = ob_get_clean();
+							break;
+						}
+						
+						if (!WP_Filesystem($credentials, ABSPATH, $allow_relaxed_file_ownership)) {
+							// Failed to connect, Error and request again
+							request_filesystem_credentials($adminURL, '', true, ABSPATH, array('version', 'locale'),
+								$allow_relaxed_file_ownership);
+							$wafActionContent = ob_get_clean();
+							break;
+						}
+						
+						if ($wp_filesystem->errors->get_error_code()) {
+							foreach ($wp_filesystem->errors->get_error_messages() as $message)
+								show_message($message);
+							$wafActionContent = ob_get_clean();
+							break;
+						}
+						ob_end_clean();
+						
+						try {
+							if (isset($_REQUEST['iniModified'])) {
+								$usesUserIni = $helper->usesUserIni();
+								if ((!WFWAF_AUTO_PREPEND || WFWAF_SUBDIRECTORY_INSTALL) && (!$usesUserIni || ($usesUserIni && isset($_REQUEST['iniTTLWaited'])))) { //WFWAF_AUTO_PREPEND can be false for a brief time when using .user.ini, so make sure we've waited the TTL before removing the wordfence-waf.php file
+									$helper->performAutoPrependFileRemoval($wp_filesystem);
+									
+									$adminURL = json_encode(esc_url_raw(network_admin_url('admin.php?page=WordfenceWAF&wafRemoved=' . $wfnonce)));
+									$wafActionContent = "<p>Removing firewall files...</p><script>
+document.location.href=$adminURL;
+</script>";
+								}
+								else { //Using a .user.ini where there's a delay before taking effect
+									$iniTTL = intval(ini_get('user_ini.cache_ttl'));
+									if ($iniTTL == 0) {
+										$iniTTL = 300; //The PHP default
+									}
+									$timeout = max(30000, ($iniTTL + 1) * 1000);
+									
+									if ($timeout < 60000) { $timeoutString = floor($timeout / 1000) . ' second' . ($timeout == 1000 ? '' : 's'); }
+									else { $timeoutString = floor($timeout / 60000) . ' minute' . (floor($timeout / 60000) == 1 ? '' : 's'); }
+									
+									$wafActionContent = "<h3>Finishing Removal</h3>";
+									
+									if (isset($_REQUEST['iniTTLWaited'])) {
+										$wafActionContent .= "<p class='wf-error'>Extended Protection Mode has not been disabled. This may be because <code>auto_prepend_file</code> is configured somewhere else or the value is still cached by PHP.</p>";
+									}
+									else {
+										$wafActionContent .= "<p>The <code>auto_prepend_file</code> setting has been successfully removed from <code>.htaccess</code> and <code>.user.ini</code>. Once this change takes effect, Extended Protection Mode will be disabled.</p>\n";
+										if ($_REQUEST['manualAutoPrependReenable']) {
+											$wafActionContent .= "<p>Any previous value for <code>auto_prepend_file</code> will need to be re-enabled manually if needed.</p>";
+										}
+										$wafActionContent .= "<p class='wordfence-waiting'><img src='" . wfUtils::getBaseURL() . "images/loading_large.gif' alt='Loading indicator'>&nbsp;&nbsp;<span>Waiting for it to take effect. This may take up to {$timeoutString}.</span></p>";
+									}
+									
+									$adminURL = json_encode(esc_url_raw(network_admin_url('admin.php?page=WordfenceWAF&wafAction=removeAutoPrepend&wfnonce='
+										. $wfnonce . '&serverConfiguration=' . $serverConfig . '&iniModified=1&iniTTLWaited=1')));
+									$wafActionContent .= "<script>
+setTimeout(function() { document.location.href={$adminURL}; }, {$timeout});
+</script>"; 
+								}
+							}
+							else if ($installedHere) {
+								$hasCommentedAutoPrepend = $helper->performIniRemoval($wp_filesystem);
+								
+								$adminURL = json_encode(esc_url_raw(network_admin_url('admin.php?page=WordfenceWAF&wafAction=removeAutoPrepend&wfnonce='
+									. $wfnonce . '&serverConfiguration=' . $serverConfig . '&iniModified=1&manualAutoPrependReenable=' . ($hasCommentedAutoPrepend ? 1 : 0))));
+								$wafActionContent = "<script>
+document.location.href={$adminURL};
+</script>";
+							}
+							break;
+						}
+						catch (wfWAFAutoPrependHelperException $e) {
+							$wafActionContent = "<p>" . $e->getMessage() . "</p>";
+							break;
+						}
+					}
+					
+					$bootstrap = self::getWAFBootstrapPath();
+					
+					$wafActionContent .= "<br>
+<h3>Alternate method:</h3>
+<p>We've also included instructions to manually perform the change if you are using a web server other than what is listed in the drop-down, or if file permissions prevent this change.</p>";
+					
+					
+					$wafActionContent .= "<p>You will need to remove the following code from your <code>php.ini</code>, <code>.user.ini</code>, or <code>.htaccess</code> file:</p>
+<pre class='wf-pre'>auto_prepend_file = '" . esc_textarea($currentAutoPrependFile) . "'</pre>
+<p>Once the change takes effect, you will need remove the following file in your WordPress root:</p>
+<pre class='wf-pre'>" . esc_html(self::getWAFBootstrapPath()) . "</pre>";
+					
+					$wafActionContent = sprintf('<div style="margin: 20px 0;">%s</div>', $wafActionContent);
+					break;
 
 				case '':
 					break;
@@ -4019,8 +4353,75 @@ $nginxIniWarning
 		require 'menu_activity.php';
 	}
 	public static function menu_scan(){
+		$scanAction = filter_input(INPUT_GET, 'wfScanAction', FILTER_SANITIZE_STRING);
+		if ($scanAction == 'promptForCredentials') {
+			$fsAction = filter_input(INPUT_GET, 'wfFilesystemAction', FILTER_SANITIZE_STRING);
+			$promptForCredentials = true;
+			$filesystemCredentialsAdminURL = network_admin_url('admin.php?' . http_build_query(array(
+					'page'               => 'Wordfence',
+					'wfScanAction'       => 'promptForCredentials',
+					'wfFilesystemAction' => $fsAction,
+					'issueID'            => filter_input(INPUT_GET, 'issueID', FILTER_SANITIZE_NUMBER_INT),
+					'nonce'              => wp_create_nonce('wp-ajax'),
+				)));
+
+			switch ($fsAction) {
+				case 'restoreFile':
+					$wpFilesystemActionCallback = array('wordfence', 'fsActionRestoreFileCallback');
+					break;
+				case 'deleteFile':
+					$wpFilesystemActionCallback = array('wordfence', 'fsActionDeleteFileCallback');
+					break;
+			}
+		}
+
 		require 'menu_scan.php';
 	}
+
+	public static function fsActionRestoreFileCallback() {
+		$issueID = filter_input(INPUT_GET, 'issueID', FILTER_SANITIZE_NUMBER_INT);
+		$response = self::ajax_restoreFile_callback($issueID);
+		if (!empty($response['ok'])) {
+			$result = sprintf('<p>The file <code>%s</code> was restored successfully.</p>',
+				esc_html(strpos($response['file'], ABSPATH) === 0 ? substr($response['file'], strlen(ABSPATH) + 1) : $response['file']));
+		} else if (!empty($response['cerrorMessage'])) {
+			$result = sprintf('<div class="wfSummaryErr">%s</div>', esc_html($response['cerrorMessage']));
+		} else {
+			$result = '<div class="wfSummaryErr">There was an error restoring the file.</div>';
+		}
+		printf(<<<HTML
+<br>
+%s
+<p><a href="%s">Return to scan results</a></p>
+HTML
+			,
+			$result,
+			esc_url(network_admin_url('admin.php?page=Wordfence'))
+		);
+
+	}
+
+	public static function fsActionDeleteFileCallback() {
+		$issueID = filter_input(INPUT_GET, 'issueID', FILTER_SANITIZE_NUMBER_INT);
+		$response = self::ajax_deleteFile_callback($issueID);
+		if (!empty($response['ok'])) {
+			$result = sprintf('<p>The file <code>%s</code> was deleted successfully.</p>', esc_html($response['file']));
+		} else if (!empty($response['errorMessage'])) {
+			$result = sprintf('<div class="wfSummaryErr">%s</div>', esc_html($response['errorMessage']));
+		} else {
+			$result = '<div class="wfSummaryErr">There was an error deleting the file.</div>';
+		}
+		printf(<<<HTML
+<br>
+%s
+<p><a href="%s">Return to scan results</a></p>
+HTML
+			,
+			$result,
+			esc_url(network_admin_url('admin.php?page=Wordfence'))
+		);
+	}
+
 	public static function status($level /* 1 has highest visibility */, $type /* info|error */, $msg){
 		if($level > 3 && $level < 10 && (! self::isDebugOn())){ //level 10 and higher is for summary messages
 			return false;
@@ -5155,6 +5556,21 @@ configuration files are sometimes cached. You also may need to select a differen
 complete this step, but wait for a few minutes before trying. You can try refreshing this page. </p></div>';
 		}
 	}
+	
+	public static function wafAutoPrependRemoved() {
+		if (!WFWAF_AUTO_PREPEND) {
+			echo '<div class="updated is-dismissible"><p>Uninstallation was successful!</p></div>';
+		}
+		else if (WFWAF_SUBDIRECTORY_INSTALL) {
+			echo '<div class="notice notice-warning"><p>Uninstallation from this site was successful! The Wordfence Firewall is still active because it is installed in another WordPress installation.</p></div>';
+		}
+		else {
+			echo '<div class="notice notice-error"><p>The changes have not yet taken effect. If you are using LiteSpeed or IIS
+as your web server or CGI/FastCGI interface, you may need to wait a few minutes for the changes to take effect since the
+configuration files are sometimes cached. You also may need to select a different server configuration in order to
+complete this step, but wait for a few minutes before trying. You can try refreshing this page. </p></div>';
+		}
+	}
 
 	public static function getWAFBootstrapPath() {
 		return ABSPATH . 'wordfence-waf.php';
@@ -5225,6 +5641,44 @@ if (file_exists(%1$s)) {
 			}
 		}
 		wfWAF::getInstance()->getStorageEngine()->setConfig('cron', $cron);
+	}
+
+	/**
+	 * @param string $adminURL
+	 * @param string $homePath
+	 * @param bool $relaxedFileOwnership
+	 * @param bool $output
+	 * @return bool
+	 */
+	public static function requestFilesystemCredentials($adminURL, $homePath = null, $relaxedFileOwnership = true, $output = true) {
+		if ($homePath === null) {
+			$homePath = get_home_path();
+		}
+
+		global $wp_filesystem;
+
+		!$output && ob_start();
+		if (false === ($credentials = request_filesystem_credentials($adminURL, '', false, $homePath,
+				array('version', 'locale'), $relaxedFileOwnership))
+		) {
+			!$output && ob_end_clean();
+			return false;
+		}
+
+		if (!WP_Filesystem($credentials, $homePath, $relaxedFileOwnership)) {
+			// Failed to connect, Error and request again
+			request_filesystem_credentials($adminURL, '', true, ABSPATH, array('version', 'locale'),
+				$relaxedFileOwnership);
+			!$output && ob_end_clean();
+			return false;
+		}
+
+		if ($wp_filesystem->errors->get_error_code()) {
+			!$output && ob_end_clean();
+			return false;
+		}
+		!$output && ob_end_clean();
+		return true;
 	}
 }
 
@@ -5364,9 +5818,6 @@ $userIniHtaccessDirectives
 
 			case 'apache-suphp':
 				$autoPrependDirective = sprintf("# Wordfence WAF
-<IfModule mod_suphp.c>
-	suPHP_ConfigPath '%s'
-</IfModule>
 $userIniHtaccessDirectives
 # END Wordfence WAF
 ", addcslashes($homePath, "'"));
@@ -5450,6 +5901,75 @@ auto_prepend_file = '%s'
 			}
 		}
 	}
+	
+	/**
+	 * @param WP_Filesystem_Base $wp_filesystem
+	 * @throws wfWAFAutoPrependHelperException
+	 * 
+	 * @return bool Whether or not the .user.ini still has a commented-out auto_prepend_file setting
+	 */
+	public function performIniRemoval($wp_filesystem) {
+		$serverConfig = $this->getServerConfig();
+		
+		$htaccessPath = $this->getHtaccessPath();
+		
+		$userIniPath = $this->getUserIniPath();
+		$userIni = ini_get('user_ini.filename');
+		
+		// Modify .htaccess
+		$htaccessContent = $wp_filesystem->get_contents($htaccessPath);
+		
+		if (is_string($htaccessContent)) {
+			$htaccessContent = preg_replace('/# Wordfence WAF.*?# END Wordfence WAF/is', '', $htaccessContent);
+		} else {
+			$htaccessContent = '';
+		}
+		
+		if (!$wp_filesystem->put_contents($htaccessPath, $htaccessContent)) {
+			throw new wfWAFAutoPrependHelperException('We were unable to make changes to the .htaccess file. It\'s
+			possible WordPress cannot write to the .htaccess file because of file permissions, which may have been
+			set by another security plugin, or you may have set them manually. Please verify the permissions allow
+			the web server to write to the file, and retry the installation.');
+		}
+		if ($serverConfig == 'litespeed') {
+			// sleep(2);
+			$wp_filesystem->touch($htaccessPath);
+		}
+	
+		if ($userIni) {
+			// Modify .user.ini
+			$userIniContent = $wp_filesystem->get_contents($userIniPath);
+			if (is_string($userIniContent)) {
+				$userIniContent = preg_replace('/; Wordfence WAF.*?; END Wordfence WAF/is', '', $userIniContent);
+				$userIniContent = str_replace('auto_prepend_file', ';auto_prepend_file', $userIniContent);
+			} else {
+				$userIniContent = '';
+			}
+			
+			if (!$wp_filesystem->put_contents($userIniPath, $userIniContent)) {
+				throw new wfWAFAutoPrependHelperException(sprintf('We were unable to make changes to the %1$s file.
+				It\'s possible WordPress cannot write to the %1$s file because of file permissions.
+				Please verify the permissions are correct and retry the installation.', basename($userIniPath)));
+			}
+			
+			return strpos($userIniContent, 'auto_prepend_file') !== false;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * @param WP_Filesystem_Base $wp_filesystem
+	 * @throws wfWAFAutoPrependHelperException
+	 */
+	public function performAutoPrependFileRemoval($wp_filesystem) {
+		$bootstrapPath = wordfence::getWAFBootstrapPath();
+		if (!$wp_filesystem->delete($bootstrapPath)) {
+			throw new wfWAFAutoPrependHelperException('We were unable to remove the <code>wordfence-waf.php</code> file
+in the root of the WordPress installation. It\'s possible WordPress cannot remove the <code>wordfence-waf.php</code>
+file because of file permissions. Please verify the permissions are correct and retry the removal.');
+		}
+	}
 
 	public function getHtaccessPath() {
 		return get_home_path() . '.htaccess';
@@ -5459,6 +5979,22 @@ auto_prepend_file = '%s'
 		$userIni = ini_get('user_ini.filename');
 		if ($userIni) {
 			return get_home_path() . $userIni;
+		}
+		return false;
+	}
+	
+	public function usesUserIni() {
+		$userIni = ini_get('user_ini.filename');
+		if (!$userIni) {
+			return false;
+		}
+		switch ($this->getServerConfig()) {
+			case 'cgi':
+			case 'apache-suphp':
+			case 'nginx':
+			case 'litespeed':
+			case 'iis':
+				return true;
 		}
 		return false;
 	}

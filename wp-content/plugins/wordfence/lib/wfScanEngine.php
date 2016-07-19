@@ -86,6 +86,7 @@ class wfScanEngine {
 		$this->jobList[] = 'publicSite';
 		$this->jobList[] = 'checkSpamvertized';
 		$this->jobList[] = 'checkSpamIP';
+		$this->jobList[] = 'checkGSB';
 		$this->jobList[] = 'heartbleed';
 		$this->jobList[] = 'knownFiles_init';
 		$this->jobList[] = 'knownFiles_main';
@@ -238,6 +239,48 @@ class wfScanEngine {
 
 		} else {
 			wordfence::statusPaidOnly("Checking if your IP is generating spam is for paid members only");
+			sleep(2);
+		}
+	}
+	
+	private function scan_checkGSB(){
+		if(wfConfig::get('isPaid')){
+			$this->statusIDX['checkGSB'] = wordfence::statusStart("Checking if your site is on the Google Safe Browsing list");
+			
+			$urlsToCheck = array(array(get_site_url()));
+			$haveIssues = false;
+			$badURLs = $this->api->call('check_bad_urls', array(), array( 'toCheck' => json_encode($urlsToCheck)) );
+			if (is_array($badURLs) && sizeof($badURLs) > 0) {
+				foreach ($badURLs as $id => $badSiteList) {
+					foreach ($badSiteList as $badSite) {
+						$url = $badSite[0];
+						$badList = $badSite[1];
+						
+						if ($badList == 'goog-malware-shavar') {
+							$shortMsg = 'Your site is listed on Google\'s Safe Browsing malware list.';
+							$longMsg = "The URL " . esc_html($url) . " is on the malware list. More info available at <a href=\"http://safebrowsing.clients.google.com/safebrowsing/diagnostic?site=" . urlencode($url) . "&client=googlechrome&hl=en-US\" target=\"_blank\">Google Safe Browsing diagnostic page</a>.";
+							$gsb = $badList;
+						}
+						else if ($badList == 'googpub-phish-shavar') {
+							$shortMsg = 'Your site is listed on Google\'s Safe Browsing phishing list.';
+							$longMsg = "The URL " . esc_html($url) . " is on the phishing list. More info available at <a href=\"http://safebrowsing.clients.google.com/safebrowsing/diagnostic?site=" . urlencode($url) . "&client=googlechrome&hl=en-US\" target=\"_blank\">Google Safe Browsing diagnostic page</a>.";
+							$gsb = $badList;
+						}
+						else {
+							$shortMsg = 'Your site is listed on Google\'s Safe Browsing list.';
+							$longMsg = "The URL is: " . esc_html($url) . ". More info available at <a href=\"http://safebrowsing.clients.google.com/safebrowsing/diagnostic?site=" . urlencode($url) . "&client=googlechrome&hl=en-US\" target=\"_blank\">Google Safe Browsing diagnostic page</a>.";
+							$gsb = 'unknown';
+						}
+						
+						$this->addIssue('checkGSB', 1, 'checkGSB', 'checkGSB' . $url, $shortMsg, $longMsg, array('badURL' => $url, 'gsb' => $gsb));
+						$haveIssues = true;
+					}
+				}
+			}
+			
+			wordfence::statusEnd($this->statusIDX['checkGSB'], $haveIssues);
+		} else {
+			wordfence::statusPaidOnly("Checking if your site is on the Google Safe Browsing list is for paid members only");
 			sleep(2);
 		}
 	}
@@ -466,7 +509,7 @@ class wfScanEngine {
 
 
 	private function scan_posts_init(){
-		$this->statusIDX['posts'] = wordfence::statusStart('Scanning posts for URL\'s in Google\'s Safe Browsing List');
+		$this->statusIDX['posts'] = wordfence::statusStart('Scanning posts for URLs in Google\'s Safe Browsing List');
 		$blogsToScan = self::getBlogsToScan('posts');
 		$wfdb = new wfDB();
 		$this->hoover = new wordfenceURLHoover($this->apiKey, $this->wp_version);
@@ -573,7 +616,7 @@ class wfScanEngine {
 		wordfence::statusEnd($this->statusIDX['posts'], $haveIssues);
 	}
 	private function scan_comments_init(){
-		$this->statusIDX['comments'] = wordfence::statusStart('Scanning comments for URL\'s in Google\'s Safe Browsing List');
+		$this->statusIDX['comments'] = wordfence::statusStart('Scanning comments for URLs in Google\'s Safe Browsing List');
 		$this->scanData = array();
 		$this->scanQueue = array();
 		$this->hoover = new wordfenceURLHoover($this->apiKey, $this->wp_version);
@@ -767,7 +810,7 @@ class wfScanEngine {
 			$this->userPasswdQueue = substr($this->userPasswdQueue, 4);
 			$userLogin = $wfdb->querySingle("select user_login from $wpdb->users where ID=%s", $userID);
 			if(! $userLogin){
-				wordfence::status(2, 'error', "Could not get username for user with ID $userID when checking password strenght.");
+				wordfence::status(2, 'error', "Could not get username for user with ID $userID when checking password strength.");
 				continue;
 			}
 			wordfence::status(4, 'info', "Checking password strength for user $userLogin with ID $userID");

@@ -952,44 +952,34 @@ class wfLog {
 				$skipCountryBlocking = true;
 			}
 
-			if((! $skipCountryBlocking) && $blockedCountries && (! self::isCBLBypassCookieSet()) ){
-				if(is_user_logged_in() && (! wfConfig::get('cbl_loggedInBlocked', false)) ){ //User is logged in and we're allowing logins
-					//Do nothing
-				} else if(strpos($_SERVER['REQUEST_URI'], '/wp-login.php') !== false && (! wfConfig::get('cbl_loginFormBlocked', false))  ){ //It's the login form and we're allowing that
-					//Do nothing
-				} else if(strpos($_SERVER['REQUEST_URI'], '/wp-login.php') === false && (! wfConfig::get('cbl_restOfSiteBlocked', false))  ){ //It's the rest of the site and we're allowing that
-					//Do nothing
-				} else {
-					if($country = wfUtils::IP2Country($IP) ){
-						foreach(explode(',', $blockedCountries) as $blocked){
-							if(strtoupper($blocked) == strtoupper($country)){ //At this point we know the user has been blocked
-								if(wfConfig::get('cbl_action') == 'redir'){
-									$redirURL = wfConfig::get('cbl_redirURL');
-									$eRedirHost = wfUtils::extractHostname($redirURL);
-									$isExternalRedir = false;
-									if($eRedirHost && $eRedirHost != wfUtils::extractHostname(home_url())){ //It's an external redirect...
-										$isExternalRedir = true;
-									}
-									if( (! $isExternalRedir) && wfUtils::extractBareURI($redirURL) == $bareRequestURI){ //Is this the URI we want to redirect to, then don't block it
-										//Do nothing
-										/* Uncomment the following if page components aren't loading for the page we redirect to.
-										   Uncommenting is not recommended because it means that anyone from a blocked country
-										   can crawl your site by sending the page blocked users are redirected to as the referer for every request.
-										   But it's your call.
-										} else if(wfUtils::extractBareURI($_SERVER['HTTP_REFERER']) == $redirURL){ //If the referer the page we want to redirect to? Then this might be loading as a component so don't block.
-											//Do nothing
-										*/
-									} else {
-										$this->redirect(wfConfig::get('cbl_redirURL'));
-									}
-								} else {
-									$this->currentRequest->actionDescription = 'blocked access via country blocking';
-									$this->do503(3600, "Access from your area has been temporarily limited for security reasons");
-									wfConfig::inc('totalCountryBlocked');
-								}
-							}
-						}
+			if (!$skipCountryBlocking && $blockedCountries && !self::isCBLBypassCookieSet()) {
+				// If everything is checked, make sure this always runs.
+				if (wfConfig::get('cbl_loggedInBlocked', false) &&
+					wfConfig::get('cbl_loginFormBlocked', false) &&
+					wfConfig::get('cbl_restOfSiteBlocked', false)) {
+					$this->checkForBlockedCountry();
+				}
+				// Block logged in users.
+				if (wfConfig::get('cbl_loggedInBlocked', false) && is_user_logged_in()) {
+					$this->checkForBlockedCountry();
+				}
+				// Block the login form itself and any attempt to authenticate.
+				if (wfConfig::get('cbl_loginFormBlocked', false)) {
+					if (self::isAuthRequest()) {
+						$this->checkForBlockedCountry();
 					}
+					add_filter('authenticate', array($this, 'checkForBlockedCountry'), 1, 0);
+				}
+				// Block requests that aren't to the login page, xmlrpc.php, or a user already logged in.
+				if (wfConfig::get('cbl_restOfSiteBlocked', false) &&
+					!self::isAuthRequest() && !defined('XMLRPC_REQUEST') && !is_user_logged_in()) {
+					$this->checkForBlockedCountry();
+				}
+				// XMLRPC is inaccesible when public portion of the site and auth is disabled.
+				if (wfConfig::get('cbl_loginFormBlocked', false) &&
+					wfConfig::get('cbl_restOfSiteBlocked', false) &&
+					defined('XMLRPC_REQUEST')) {
+					$this->checkForBlockedCountry();
 				}
 			}
 		}
@@ -998,7 +988,7 @@ class wfLog {
 			$this->getDB()->queryWrite("update " . $this->blocksTable . " set lastAttempt=unix_timestamp(), blockedHits = blockedHits + 1 where IP=%s", $IPnum);
 			$now = $this->getDB()->querySingle("select unix_timestamp()");
 			$secsToGo = ($rec['blockedTime'] + wfConfig::get('blockedTime')) - $now;
-			if(wfConfig::get('other_WFNet') && strpos($_SERVER['REQUEST_URI'], '/wp-login.php') !== false){ //We're on the login page and this IP has been blocked
+			if(wfConfig::get('other_WFNet') && self::isAuthRequest()){ //It's an auth request and this IP has been blocked
 				wordfence::wfsnReportBlockedAttempt($IP, 'login');
 			}
 			$this->do503($secsToGo, $rec['reason']); 
@@ -1021,6 +1011,49 @@ class wfLog {
 		}
 		return false;
 	}
+
+	public function checkForBlockedCountry() {
+		static $hasRun;
+		if (isset($hasRun)) {
+			return;
+		}
+		$hasRun = true;
+
+		$blockedCountries = wfConfig::get('cbl_countries', false);
+		$bareRequestURI = wfUtils::extractBareURI($_SERVER['REQUEST_URI']);
+		$IP = wfUtils::getIP();
+		if($country = wfUtils::IP2Country($IP) ){
+			foreach(explode(',', $blockedCountries) as $blocked){
+				if(strtoupper($blocked) == strtoupper($country)){ //At this point we know the user has been blocked
+					if(wfConfig::get('cbl_action') == 'redir'){
+						$redirURL = wfConfig::get('cbl_redirURL');
+						$eRedirHost = wfUtils::extractHostname($redirURL);
+						$isExternalRedir = false;
+						if($eRedirHost && $eRedirHost != wfUtils::extractHostname(home_url())){ //It's an external redirect...
+							$isExternalRedir = true;
+						}
+						if( (! $isExternalRedir) && wfUtils::extractBareURI($redirURL) == $bareRequestURI){ //Is this the URI we want to redirect to, then don't block it
+							//Do nothing
+							/* Uncomment the following if page components aren't loading for the page we redirect to.
+							   Uncommenting is not recommended because it means that anyone from a blocked country
+							   can crawl your site by sending the page blocked users are redirected to as the referer for every request.
+							   But it's your call.
+							} else if(wfUtils::extractBareURI($_SERVER['HTTP_REFERER']) == $redirURL){ //If the referer the page we want to redirect to? Then this might be loading as a component so don't block.
+								//Do nothing
+							*/
+						} else {
+							$this->redirect(wfConfig::get('cbl_redirURL'));
+						}
+					} else {
+						$this->currentRequest->actionDescription = 'blocked access via country blocking';
+						wfConfig::inc('totalCountryBlocked');
+						$this->do503(3600, "Access from your area has been temporarily limited for security reasons");
+					}
+				}
+			}
+		}
+	}
+
 	private function takeBlockingAction($configVar, $reason){
 		if($this->googleSafetyCheckOK()){
 			$action = wfConfig::get($configVar . '_action');
@@ -1050,6 +1083,19 @@ class wfLog {
 			return;
 		}
 	}
+	
+	/**
+	 * Test if the current request is for wp-login.php or xmlrpc.php
+	 *
+	 * @return boolean
+	 */
+	private static function isAuthRequest() {
+		if ((strpos($_SERVER['REQUEST_URI'], '/wp-login.php') !== false)) {
+			return true;
+		}
+		return false;
+	}
+	
 	public function do503($secsToGo, $reason){
 		$this->initLogRequest();
 		$this->currentRequest->statusCode = 403;

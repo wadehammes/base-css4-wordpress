@@ -25,16 +25,9 @@
 
 		<?php endwhile; ?>
 
-		    <?php if (function_exists('joints_page_navi')) { ?>
-		        <?php joints_page_navi(); ?>
-		    <?php } else { ?>
-		        <nav class="wp-prev-next">
-		            <ul class="clearfix">
-		    	        <li class="prev-link"><?php next_posts_link(__('&laquo; Older Entries', "jointstheme")) ?></li>
-		    	        <li class="next-link"><?php previous_posts_link(__('Newer Entries &raquo;', "jointstheme")) ?></li>
-		            </ul>
-		        </nav>
-		    <?php } ?>
+			<nav class="wp-prev-next">
+					<?php if ( function_exists( 'wp_pagenavi' ) ) wp_pagenavi(array('query' => $query_post)); ?>
+			</nav>
 
 	    <?php else : ?>
 

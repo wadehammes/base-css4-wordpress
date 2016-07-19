@@ -153,6 +153,7 @@ class wfIssues {
 			'new' => array(),
 			'ignored' => array()
 			);
+		$userIni = ini_get('user_ini.filename');
 		$q1 = $this->getDB()->querySelect("select * from " . $this->issuesTable . " order by time desc");
 		foreach($q1 as $i){
 			$i['data'] = unserialize($i['data']);
@@ -170,7 +171,14 @@ class wfIssues {
 		foreach($ret as $status => &$issueList){
 			for($i = 0; $i < sizeof($issueList); $i++){
 				if($issueList[$i]['type'] == 'file'){
-					$localFile = ABSPATH . '/' . preg_replace('/^[\.\/]+/', '', $issueList[$i]['data']['file']);
+					$localFile = $issueList[$i]['data']['file'];
+					if ($localFile != '.htaccess' && $localFile != $userIni) {
+						$localFile = ABSPATH . '/' . preg_replace('/^[\.\/]+/', '', $localFile);
+					}
+					else {
+						$localFile = ABSPATH . '/' . $localFile;
+					}
+					
 					if(file_exists($localFile)){
 						$issueList[$i]['data']['fileExists'] = true;
 					} else {

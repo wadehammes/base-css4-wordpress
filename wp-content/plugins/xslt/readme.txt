@@ -2,12 +2,12 @@
 Contributors: Waterloo Plugins
 Tags: rss, feed, atom, rdf, xml, xsl, xslt, subscription, reader, social, share, sharing, button, facebook, twitter, google plus, google+
 Requires at least: 3.3
-Tested up to: 4.4
-Stable tag: 1.0.8
+Tested up to: 4.5.3
+Stable tag: 1.0.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Make Your RSS Feeds Look Pretty and Get More Subscribers. Check Out the Before and After Screenshots »
+Make your RSS feeds look better and get more RSS subscribers. Before and after screenshots »
 
 == Description ==
 
@@ -105,3 +105,7 @@ Yes. I also plan on letting you choose which buttons to show.
 
 = 1.0.8 =
 * Added content type header to work on some incorrectly configured servers
+
+= 1.0.9 =
+* Fixed to work in 4.5.3
+* Override default content type header

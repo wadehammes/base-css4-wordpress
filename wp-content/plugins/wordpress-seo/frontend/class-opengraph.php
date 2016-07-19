@@ -233,7 +233,7 @@ class WPSEO_OpenGraph {
 		elseif ( is_category() || is_tax() || is_tag() ) {
 			$title = WPSEO_Taxonomy_Meta::get_meta_without_term( 'opengraph-title' );
 			if ( $title === '' ) {
-				$title = $frontend->get_taxonomy_title( '' );
+				$title = $frontend->title( '' );
 			}
 			else {
 				// Replace Yoast SEO Variables.
@@ -758,7 +758,10 @@ class WPSEO_OpenGraph_Image {
 	 */
 	private $images = array();
 
-	/** @var array $dimensions Holds image dimensions, if determined. */
+	/**
+	 * @TODO This needs to be refactored since we only hold one set of dimensions for multiple images. R.
+	 * @var array $dimensions Holds image dimensions, if determined.
+	 */
 	protected $dimensions = array();
 
 	/**
@@ -769,10 +772,12 @@ class WPSEO_OpenGraph_Image {
 	 */
 	public function __construct( $options, $image = false ) {
 		$this->options = $options;
-		$this->set_images();
 
-		if ( ! empty( $image ) ) {
-			$this->add_image( $image );
+		if ( ! empty( $image ) && $this->add_image( $image ) ) {
+			// Safely assume an image was added so we don't need to automatically determine it anymore.
+		}
+		else {
+			$this->set_images();
 		}
 	}
 
@@ -847,7 +852,7 @@ class WPSEO_OpenGraph_Image {
 	 * Get default image and call add_image
 	 */
 	private function get_default_image() {
-		if ( count( $this->images ) == 0 && isset( $this->options['og_default_image'] ) && $this->options['og_default_image'] !== '' ) {
+		if ( count( $this->images ) === 0 && isset( $this->options['og_default_image'] ) && $this->options['og_default_image'] !== '' ) {
 			$this->add_image( $this->options['og_default_image'] );
 		}
 	}
@@ -975,8 +980,15 @@ class WPSEO_OpenGraph_Image {
 	 * @return bool
 	 */
 	private function add_image( $img ) {
+
+		$original = trim( $img );
+
 		// Filter: 'wpseo_opengraph_image' - Allow changing the OpenGraph image.
 		$img = trim( apply_filters( 'wpseo_opengraph_image', $img ) );
+
+		if ( $original !== $img ) {
+			$this->dimensions = array();
+		}
 
 		if ( empty( $img ) ) {
 			return false;

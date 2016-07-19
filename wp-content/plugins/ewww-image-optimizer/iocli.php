@@ -1,4 +1,7 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 /**
  * implements wp-cli extension for bulk optimizing
  */
@@ -68,7 +71,7 @@ class EWWWIO_CLI extends WP_CLI_Command {
 				WP_CLI::line( __( 'Scanning, this could take a while', EWWW_IMAGE_OPTIMIZER_DOMAIN ) );
 				list( $fullsize_count, $unoptimized_count, $resize_count, $unoptimized_resize_count ) = ewww_image_optimizer_count_optimized ('media');
 				WP_CLI::line( sprintf( __( '%1$d images in the Media Library have been selected (%2$d unoptimized), with %3$d resizes (%4$d unoptimized).', EWWW_IMAGE_OPTIMIZER_DOMAIN ), $fullsize_count, $unoptimized_count, $resize_count, $unoptimized_resize_count ) );
-				if ( class_exists( 'ewwwngg' ) ) {
+				if ( class_exists( 'EwwwNgg' ) ) {
 					global $ngg;
 					if ( preg_match( '/^2/', $ngg->version ) ) {
 						list( $fullsize_count, $unoptimized_count, $resize_count, $unoptimized_resize_count ) = ewww_image_optimizer_count_optimized ('ngg');
@@ -87,7 +90,7 @@ class EWWWIO_CLI extends WP_CLI_Command {
 					WP_CLI::confirm( sprintf( __( '%1$d images in other folders need optimizing.', EWWW_IMAGE_OPTIMIZER_DOMAIN ), count($other_attachments) ) );
 				}
 				ewww_image_optimizer_bulk_media( $delay );
-				if ( class_exists( 'ewwwngg' ) ) {
+				if ( class_exists( 'Ewwwngg' ) ) {
 					global $ngg;
 					if ( preg_match( '/^2/', $ngg->version ) ) {
 						ewww_image_optimizer_bulk_ngg( $delay );
@@ -117,7 +120,7 @@ class EWWWIO_CLI extends WP_CLI_Command {
 					update_option('ewww_image_optimizer_bulk_ngg_resume', '');
 					WP_CLI::line( __('Bulk status has been reset, starting from the beginning.', EWWW_IMAGE_OPTIMIZER_DOMAIN ) );
 				}
-				if ( class_exists( 'ewwwngg' ) ) {
+				if ( class_exists( 'EwwwNgg' ) ) {
 					global $ngg;
 					if ( preg_match( '/^2/', $ngg->version ) ) {
 						list( $fullsize_count, $unoptimized_count, $resize_count, $unoptimized_resize_count ) = ewww_image_optimizer_count_optimized ('ngg');

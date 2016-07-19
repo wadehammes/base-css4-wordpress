@@ -110,7 +110,15 @@ class Yoast_Form {
 			</form>';
 		}
 
+		/**
+		 * Apply general admin_footer hooks
+		 */
 		do_action( 'wpseo_admin_footer' );
+
+		/**
+		 * Run possibly set actions to add for example an i18n box
+		 */
+		do_action( 'wpseo_admin_promo_footer' );
 
 		echo '
 			</div><!-- end of div wpseo_content_top -->';
@@ -128,9 +136,9 @@ class Yoast_Form {
 			<div id="poststuff">
 			<div id="wpseo-debug-info" class="postbox">
 
-				<h3 class="hndle"><span>' . __( 'Debug Information', 'wordpress-seo' ) . '</span></h3>
+				<h2 class="hndle"><span>' . __( 'Debug Information', 'wordpress-seo' ) . '</span></h2>
 				<div class="inside">
-					<h4>' . esc_html( __( 'Current option:', 'wordpress-seo' ) ) . ' <span class="wpseo-debug">' . esc_html( $this->option_name ) . '</span></h4>
+					<h3 class="wpseo-debug-heading">' . esc_html( __( 'Current option:', 'wordpress-seo' ) ) . ' <span class="wpseo-debug">' . esc_html( $this->option_name ) . '</span></h3>
 					' . ( ( $xdebug ) ? '' : '<pre>' );
 			var_dump( $this->get_option() );
 			echo '
@@ -161,17 +169,27 @@ class Yoast_Form {
 			array(
 				'url' => 'https://yoast.com/hire-us/website-review/#utm_source=wordpress-seo-config&utm_medium=banner&utm_campaign=website-review-banner',
 				'img' => 'banner-website-review.png',
-				'alt' => 'Website Review banner',
+				'alt' => __( 'Order a Website Review and we will tell you what to improve to attract more visitors!', 'wordpress-seo' ),
+			),
+			array(
+				'url' => 'https://yoast.com/hire-us/yoast-seo-configuration/#utm_source=wordpress-seo-config&utm_medium=banner&utm_campaign=configuration-service-banner',
+				'img' => 'banner-configuration-service.png',
+				'alt' => __( 'Let our experts set up your Yoast SEO Premium plugin!', 'wordpress-seo' ),
+			),
+			array(
+				'url' => 'https://yoast.com/academy/course/seo-copywriting-training/#utm_source=wordpress-seo-config&utm_medium=banner&utm_campaign=seo-copywriting-training-banner',
+				'img' => 'banner-seo-copywriting-training.png',
+				'alt' => __( 'Take the online SEO Copywriting Training course and learn how to write awesome copy that ranks!', 'wordpress-seo' ),
 			),
 			array(
 				'url' => 'https://yoast.com/academy/course/basic-seo-training/#utm_source=wordpress-seo-config&utm_medium=banner&utm_campaign=basic-seo-training-banner',
 				'img' => 'banner-basic-seo-training.png',
-				'alt' => 'Basic SEO Training banner',
+				'alt' => __( 'Take the online Basic SEO Training course and learn the fundamentals of SEO!', 'wordpress-seo' ),
 			),
 			array(
 				'url' => 'https://yoast.com/academy/course/yoast-seo-wordpress-training/#utm_source=wordpress-seo-config&utm_medium=banner&utm_campaign=yoast-seo-plugin-training-banner',
 				'img' => 'banner-yoast-seo-for-wordpress-training.png',
-				'alt' => 'Yoast SEO for WordPress Training banner',
+				'alt' => __( 'Take the Yoast SEO for WordPress Training course and become a certified Yoast SEO for WordPress expert!', 'wordpress-seo' ),
 			),
 		);
 
@@ -179,7 +197,7 @@ class Yoast_Form {
 			array(
 				'url' => 'https://yoast.com/wordpress/plugins/seo-premium/#utm_source=wordpress-seo-config&utm_medium=banner&utm_campaign=premium-seo-banner',
 				'img' => 'banner-premium-seo.png',
-				'alt' => 'Banner Yoast SEO Premium',
+				'alt' => __( 'Buy the Yoast SEO Premium plugin now and get access to extra features and 24/7 support!', 'wordpress-seo' ),
 			),
 		);
 
@@ -187,7 +205,7 @@ class Yoast_Form {
 			$plugin_banners[] = array(
 				'url' => 'https://yoast.com/wordpress/plugins/video-seo/#utm_source=wordpress-seo-config&utm_medium=banner&utm_campaign=video-seo-banner',
 				'img' => 'banner-video-seo.png',
-				'alt' => 'Banner Yoast Video SEO plugin',
+				'alt' => __( 'Buy the Yoast Video SEO plugin now and optimize your videos for video search results and social media!', 'wordpress-seo' ),
 			);
 		}
 
@@ -195,7 +213,7 @@ class Yoast_Form {
 			$plugin_banners[] = array(
 				'url' => 'https://yoast.com/wordpress/plugins/yoast-woocommerce-seo/#utm_source=wordpress-seo-config&utm_medium=banner&utm_campaign=woocommerce-seo-banner',
 				'img' => 'banner-woocommerce-seo.png',
-				'alt' => 'Banner Yoast WooCommerce SEO plugin',
+				'alt' => __( 'Buy the Yoast WooCommerce SEO plugin now and optimize your shop today to improve your product promotion!', 'wordpress-seo' ),
 			);
 		}
 
@@ -203,7 +221,7 @@ class Yoast_Form {
 			$plugin_banners[] = array(
 				'url' => 'https://yoast.com/wordpress/plugins/local-seo/#utm_source=wordpress-seo-config&utm_medium=banner&utm_campaign=local-seo-banner',
 				'img' => 'banner-local-seo.png',
-				'alt' => 'Banner Yoast Local SEO plugin',
+				'alt' => __( 'Buy the Yoast Local SEO plugin now to improve your site&#8217;s Local SEO and ranking in Google Maps!', 'wordpress-seo' ),
 			);
 		}
 
@@ -211,7 +229,7 @@ class Yoast_Form {
 			$plugin_banners[] = array(
 				'url' => 'https://yoast.com/wordpress/plugins/news-seo/#utm_source=wordpress-seo-config&utm_medium=banner&utm_campaign=news-seo-banner',
 				'img' => 'banner-news-seo.png',
-				'alt' => 'Banner Yoast News SEO plugin',
+				'alt' => __( 'Buy the Yoast News SEO plugin now and start optimizing to get your site featured in Google News!', 'wordpress-seo' ),
 			);
 		}
 
@@ -222,9 +240,14 @@ class Yoast_Form {
 			<div id="sidebar">
 		<?php
 
-		$service_banner = $service_banners[0];
-
-		echo '<a target="_blank" href="' . esc_url( $service_banner['url'] ) . '"><img width="261" height="190" src="' . plugins_url( 'images/' . $service_banner['img'], WPSEO_FILE ) . '" alt="' . esc_attr( $service_banner['alt'] ) . '"/></a><br/><br/>';
+		$i = 0;
+		foreach ( $service_banners as $service_banner ) {
+			if ( $i == 2 ) {
+				break;
+			}
+			echo '<a target="_blank" href="' . esc_url( $service_banner['url'] ) . '"><img width="261" height="190" src="' . plugins_url( 'images/' . $service_banner['img'], WPSEO_FILE ) . '" alt="' . esc_attr( $service_banner['alt'] ) . '"/></a><br/><br/>';
+			$i ++;
+		}
 
 		$i = 0;
 		foreach ( $plugin_banners as $banner ) {
@@ -235,10 +258,12 @@ class Yoast_Form {
 			$i ++;
 		}
 		?>
+				<p class="wpseo-remove-ads">
 				<strong><?php _e( 'Remove these ads?', 'wordpress-seo' ); ?></strong><br/>
 				<a target="_blank" href="https://yoast.com/wordpress/plugins/seo-premium/#utm_source=wordpress-seo-config&amp;utm_medium=textlink&amp;utm_campaign=remove-ads-link"><?php
 				 /* translators: %1$s expands to Yoast SEO Premium */
-				printf( __( 'Upgrade to %1$s &raquo;', 'wordpress-seo' ), 'Yoast SEO Premium' ); ?></a><br/><br/>
+				printf( __( 'Upgrade to %1$s &raquo;', 'wordpress-seo' ), 'Yoast SEO Premium' ); ?></a>
+			</p>
 			</div>
 		</div>
 	<?php
@@ -261,6 +286,22 @@ class Yoast_Form {
 		if ( $attr['close'] ) {
 			echo '</label>';
 		}
+	}
+
+	/**
+	 * Output a legend element.
+	 *
+	 * @param string $text Legend text string.
+	 * @param array  $attr HTML attributes set.
+	 */
+	public function legend( $text, $attr ) {
+		$attr = wp_parse_args( $attr, array(
+				'id' => '',
+				'class' => '',
+			)
+		);
+		$id = ( '' === $attr['id'] ) ? '' : ' id="' . esc_attr( $attr['id'] ) . '"';
+		echo '<legend class="yoast-form-legend ' . $attr['class'] . '"' . $id . '>' . $text . '</legend>';
 	}
 
 	/**
@@ -318,6 +359,7 @@ class Yoast_Form {
 		}
 
 		$class = 'switch-light switch-candy switch-yoast-seo';
+		$aria_labelledby = esc_attr( $var ) . '-label';
 
 		if ( $reverse ) {
 			$class .= ' switch-yoast-seo-reverse';
@@ -330,9 +372,9 @@ class Yoast_Form {
 		list( $off_button, $on_button ) = $buttons;
 
 		echo '<div class="switch-container">',
-		'<label class="', esc_attr( $class ), '" onclick="">',
-		'<input type="checkbox" id="', esc_attr( $var ), '" name="', esc_attr( $this->option_name ), '[', esc_attr( $var ), ']" value="on"', checked( $this->options[ $var ], 'on', false ), '/>',
-		"<h4>{$label}</h4>",
+		'<label class="', esc_attr( $class ), '"><b class="switch-yoast-seo-jaws-a11y">&nbsp;</b>',
+		'<input type="checkbox" aria-labelledby="', $aria_labelledby, '" id="', esc_attr( $var ), '" name="', esc_attr( $this->option_name ), '[', esc_attr( $var ), ']" value="on"', checked( $this->options[ $var ], 'on', false ), '/>',
+		"<b class='label-text' id='{$aria_labelledby}'>{$label}</b>",
 		'<span aria-hidden="true">
 			<span>', esc_html( $off_button ) ,'</span>
 			<span>', esc_html( $on_button ) ,'</span>
@@ -480,11 +522,12 @@ class Yoast_Form {
 	/**
 	 * Create a Radio input field.
 	 *
-	 * @param string $var    The variable within the option to create the file upload field for.
-	 * @param array  $values The radio options to choose from.
-	 * @param string $label  The label to show for the variable.
+	 * @param string $var         The variable within the option to create the radio button for.
+	 * @param array  $values      The radio options to choose from.
+	 * @param string $legend      Optional. The legend to show for the field set, if any.
+	 * @param array  $legend_attr Optional. The attributes for the legend, if any.
 	 */
-	public function radio( $var, $values, $label ) {
+	public function radio( $var, $values, $legend = '', $legend_attr = array() ) {
 		if ( ! is_array( $values ) || $values === array() ) {
 			return;
 		}
@@ -494,9 +537,16 @@ class Yoast_Form {
 
 		$var_esc = esc_attr( $var );
 
-		echo '<br/><div class="wpseo_radio_block" id="' . $var_esc . '">';
-		if ( is_string( $label ) && $label !== '' ) {
-			$this->label( $label . ':', array( 'class' => 'select' ) );
+		echo '<fieldset class="yoast-form-fieldset wpseo_radio_block" id="' . $var_esc . '">';
+
+		if ( is_string( $legend ) && '' !== $legend ) {
+
+			$legend_attr = wp_parse_args( $legend_attr, array(
+				'id'    => '',
+				'class' => 'radiogroup',
+			) );
+
+			$this->legend( $legend, $legend_attr );
 		}
 
 		foreach ( $values as $key => $value ) {
@@ -504,8 +554,7 @@ class Yoast_Form {
 			echo '<input type="radio" class="radio" id="' . $var_esc . '-' . $key_esc . '" name="' . esc_attr( $this->option_name ) . '[' . $var_esc . ']" value="' . $key_esc . '" ' . checked( $this->options[ $var ], $key_esc, false ) . ' />';
 			$this->label( $value, array( 'for' => $var_esc . '-' . $key_esc, 'class' => 'radio' ) );
 		}
-		echo '<div class="clear"></div>';
-		echo '</div><br/>';
+		echo '</fieldset>';
 	}
 
 
@@ -533,14 +582,14 @@ class Yoast_Form {
 		$var_esc = esc_attr( $var );
 
 		echo '<div class="switch-container">';
-		echo '<fieldset id="', $var_esc, '" class="fieldset-switch-toggle" ><legend>', $label, '</legend>
-	<div class="switch-toggle switch-candy switch-yoast-seo">';
+		echo '<fieldset id="', $var_esc, '" class="fieldset-switch-toggle"><legend>', $label, '</legend>
+		<div class="switch-toggle switch-candy switch-yoast-seo">';
 
 		foreach ( $values as $key => $value ) {
 			$key_esc = esc_attr( $key );
 			$for     = $var_esc . '-' . $key_esc;
 			echo '<input type="radio" id="' . $for . '" name="' . esc_attr( $this->option_name ) . '[' . $var_esc . ']" value="' . $key_esc . '" ' . checked( $this->options[ $var ], $key_esc, false ) . ' />',
-			'<label for="', $for, '" onclick="">', $value, '</label>';
+			'<label for="', $for, '">', $value, '</label>';
 		}
 
 		echo '<a></a></div></fieldset><div class="clear"></div></div>' . "\n\n";
