@@ -10,7 +10,7 @@ h6 a {
   color: var(--black);
 
   &:hover {
-    color: var(--mantis);
+    color: color(var(--black) shade(20%));
   }
 }
 

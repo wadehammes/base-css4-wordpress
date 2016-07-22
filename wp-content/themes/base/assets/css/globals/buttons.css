@@ -25,11 +25,3 @@ button:before,
 .button:before {
   display: none;
 }
-
-.button-green {
-  background: var(--mantis) !important;
-}
-
-.button-green:hover {
-  background: color(var(--mantis) shade(10%)) !important;
-}

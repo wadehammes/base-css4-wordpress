@@ -134,18 +134,12 @@
   --button-padding-y: .5rem;
   --button-padding-x: 1rem;
 
-  --container-width: 100%;
-
-  --body-black: #1f1f1f;
+  --container-width: 70em;
 
   --black:  #111;
   --gray:   #aaa;
   --silver: #ddd;
   --white:  #fff;
-
-  --dark-gray: #212121;
-
-  --mantis: #7BBE67;
 
   --darken-1: rgba(0,0,0,.0625);
   --darken-2: rgba(0,0,0,.125);
@@ -158,8 +152,8 @@
   --default-border: var(--border-width) solid var(--gray);
   --hover-background-color: var(--darken-1);
 
-  --link-color: var(--mantis);
-  --button-background-color: var(--mantis);
+  --link-color: var(--black);
+  --button-background-color: var(--black);
   --pre-background-color: var(--gray);
 
   /* Custom Variables Overrides */

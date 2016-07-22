@@ -9,8 +9,6 @@
 =========================================*/
 .bg-white { background-color: var(--white); }
 .bg-black { background-color: var(--black); }
-.bg-dark-gray { background-color: var(--dark-gray); }
-.bg-body-black { background-color: var(--body-black); }
 
 /*=============================================>>>>>
 = Opaque Backgrounds =
