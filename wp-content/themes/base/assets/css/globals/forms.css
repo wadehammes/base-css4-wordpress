@@ -35,33 +35,6 @@ label {
   }
 }
 
-.wpcf7-form fieldset.half {
-  width: 48%;
-  margin-right: 4%;
-  float: left;
-  margin-bottom: 1em;
-
-  &:nth-of-type(2n) {
-    margin-right: 0;
-  }
-}
-
-.wpcf7-form textarea {
-  margin-bottom: 1em;
-}
-
-.wpcf7-form  input[type="submit"] {
-  border: 0 !important;
-  background-color: var(--mantis) !important;
-  font-family: var(--header-font-family);
-  font-size: var(--text-xx-small);
-  text-transform: uppercase;
-  padding: 10px 10px 8px 10px;
-  display: inline-block !important;
-  width: auto !important;
-  float: right;
-}
-
 /* Custom Variables */
 :root {
   --input-color: color(var(--black) tint(20%));

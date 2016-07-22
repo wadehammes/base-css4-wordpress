@@ -79,9 +79,3 @@
 .ml4 { margin-left: 3em; }
 .mx4 { margin-left: 3em; margin-right: 3em; }
 .my4 { margin-top: 3em; margin-bottom: 3em; }
-
-@media (--phone) {
-  .p4 {
-    padding: 1.5em;
-  }
-}

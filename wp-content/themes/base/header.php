@@ -70,4 +70,4 @@
   <body <?php body_class(); ?>>
 
     <!-- Begin Site Container -->
-    <div class="site-container site-slide relative p4 z4">
+    <div class="site-container relative p4 z4">
