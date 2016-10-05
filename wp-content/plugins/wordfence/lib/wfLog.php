@@ -203,7 +203,7 @@ class wfLog {
 			if ($type == '404') {
 				$allowed404s = wfConfig::get('allowed404s');
 				if (is_string($allowed404s)) {
-					$allowed404s = array_filter(explode("\n", $allowed404s));
+					$allowed404s = array_filter(preg_split("/[\r\n]+/", $allowed404s));
 					$allowed404sPattern = '';
 					foreach ($allowed404s as $allowed404) {
 						$allowed404sPattern .= preg_replace('/\\\\\*/', '.*?', preg_quote($allowed404, '/')) . '|';
@@ -989,6 +989,7 @@ class wfLog {
 			$now = $this->getDB()->querySingle("select unix_timestamp()");
 			$secsToGo = ($rec['blockedTime'] + wfConfig::get('blockedTime')) - $now;
 			if(wfConfig::get('other_WFNet') && self::isAuthRequest()){ //It's an auth request and this IP has been blocked
+				$this->getCurrentRequest()->action = 'blocked:wfsnrepeat';
 				wordfence::wfsnReportBlockedAttempt($IP, 'login');
 			}
 			$this->do503($secsToGo, $rec['reason']); 
@@ -1098,7 +1099,7 @@ class wfLog {
 	
 	public function do503($secsToGo, $reason){
 		$this->initLogRequest();
-		$this->currentRequest->statusCode = 403;
+		$this->currentRequest->statusCode = 503;
 		if (!$this->currentRequest->action) {
 			$this->currentRequest->action = 'blocked:wordfence';
 		}
@@ -1508,9 +1509,16 @@ class wfAdminUserMonitor {
 	public function getCurrentAdmins() {
 		require_once ABSPATH . WPINC . '/user.php';
 		if (is_multisite()) {
-			$sites = wp_get_sites(array(
-				'network_id' => null,
-			));
+			if (function_exists("get_sites")) {
+				$sites = get_sites(array(
+					'network_id' => null,
+				));
+			}
+			else {
+				$sites = wp_get_sites(array(
+					'network_id' => null,
+				));
+			}
 		} else {
 			$sites = array(array(
 				'blog_id' => get_current_blog_id(),
@@ -1520,8 +1528,9 @@ class wfAdminUserMonitor {
 		// not very efficient, but the WordPress API doesn't provide a good way to do this.
 		$admins = array();
 		foreach ($sites as $siteRow) {
+			$siteRowArray = (array) $siteRow;
 			$user_query = new WP_User_Query(array(
-				'blog_id' => $siteRow['blog_id'],
+				'blog_id' => $siteRowArray['blog_id'],
 				'role'    => 'administrator',
 			));
 			$users = $user_query->get_results();
@@ -1770,7 +1779,7 @@ class wfLiveTrafficQuery {
 		$limit = absint($this->getLimit());
 		$offset = absint($this->getOffset());
 
-		$wheres = array();
+		$wheres = array("h.action != 'logged:waf'");
 		if ($startDate) {
 			$wheres[] = $wpdb->prepare('h.ctime > %f', $startDate);
 		}

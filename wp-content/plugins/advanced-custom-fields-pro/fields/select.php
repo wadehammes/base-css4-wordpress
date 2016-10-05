@@ -33,7 +33,7 @@ class acf_field_select extends acf_field {
 		
 		// vars
 		$this->name = 'select';
-		$this->label = __("Select",'acf');
+		$this->label = _x('Select', 'noun', 'acf');
 		$this->category = 'choice';
 		$this->defaults = array(
 			'multiple' 		=> 0,
@@ -43,8 +43,21 @@ class acf_field_select extends acf_field {
 			'ui'			=> 0,
 			'ajax'			=> 0,
 			'placeholder'	=> '',
-			'disabled'		=> 0,
-			'readonly'		=> 0,
+			'return_format'	=> 'value'
+		);
+		$this->l10n = array(
+			'matches_1'				=> _x('One result is available, press enter to select it.',	'Select2 JS matches_1',	'acf'),
+			'matches_n'				=> _x('%d results are available, use up and down arrow keys to navigate.',	'Select2 JS matches_n',	'acf'),
+			'matches_0'				=> _x('No matches found',	'Select2 JS matches_0',	'acf'),
+			'input_too_short_1'		=> _x('Please enter 1 or more characters', 'Select2 JS input_too_short_1', 'acf' ),
+			'input_too_short_n'		=> _x('Please enter %d or more characters', 'Select2 JS input_too_short_n', 'acf' ),
+			'input_too_long_1'		=> _x('Please delete 1 character', 'Select2 JS input_too_long_1', 'acf' ),
+			'input_too_long_n'		=> _x('Please delete %d characters', 'Select2 JS input_too_long_n', 'acf' ),
+			'selection_too_long_1'	=> _x('You can only select 1 item', 'Select2 JS selection_too_long_1', 'acf' ),
+			'selection_too_long_n'	=> _x('You can only select %d items', 'Select2 JS selection_too_long_n', 'acf' ),
+			'load_more'				=> _x('Loading more results&hellip;', 'Select2 JS load_more', 'acf' ),
+			'searching'				=> _x('Searching&hellip;', 'Select2 JS searching', 'acf' ),
+			'load_fail'           	=> _x('Loading failed', 'Select2 JS load_fail', 'acf' ),
 		);
 		
 		
@@ -57,10 +70,49 @@ class acf_field_select extends acf_field {
     	parent::__construct();
     	
 	}
-
+	
 	
 	/*
-	*  query_posts
+	*  input_admin_enqueue_scripts
+	*
+	*  description
+	*
+	*  @type	function
+	*  @date	16/12/2015
+	*  @since	5.3.2
+	*
+	*  @param	$post_id (int)
+	*  @return	$post_id (int)
+	*/
+	
+	function input_admin_enqueue_scripts() {
+		
+		// globals
+		global $wp_scripts, $wp_styles;
+		
+		
+		// vars
+		$version = '3.5.2';
+		$min = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG ? '' : '.min';
+		
+		
+		// script
+		wp_enqueue_script('select2', acf_get_dir("assets/inc/select2/select2{$min}.js"), array('jquery'), $version );
+		
+		
+		// style
+		wp_enqueue_style('select2', acf_get_dir('assets/inc/select2/select2.css'), '', $version );
+
+
+		// v4
+		//wp_enqueue_script('select2', acf_get_dir("assets/inc/select2/dist/js/select2.full.js"), array('jquery'), '4.0', true );
+		//wp_enqueue_style('select2', acf_get_dir("assets/inc/select2/dist/css/select2{$min}.css"), '', '4.0' );
+				
+	}
+	
+	
+	/*
+	*  ajax_query
 	*
 	*  description
 	*
@@ -68,76 +120,106 @@ class acf_field_select extends acf_field {
 	*  @date	24/10/13
 	*  @since	5.0.0
 	*
-	*  @param	n/a
-	*  @return	n/a
+	*  @param	$post_id (int)
+	*  @return	$post_id (int)
 	*/
 	
 	function ajax_query() {
 		
-   		// options
-   		$options = acf_parse_args( $_POST, array(
-			'post_id'					=>	0,
-			's'							=>	'',
-			'field_key'					=>	'',
-			'nonce'						=>	'',
+		// validate
+		if( !acf_verify_ajax() ) die();
+		
+		
+		// get choices
+		$response = $this->get_ajax_query( $_POST );
+		
+		
+		// return
+		acf_send_ajax_results($response);
+			
+	}
+	
+	
+	/*
+	*  get_ajax_query
+	*
+	*  This function will return an array of data formatted for use in a select2 AJAX response
+	*
+	*  @type	function
+	*  @date	15/10/2014
+	*  @since	5.0.9
+	*
+	*  @param	$options (array)
+	*  @return	(array)
+	*/
+	
+	function get_ajax_query( $options = array() ) {
+		
+   		// defaults
+   		$options = acf_parse_args($options, array(
+			'post_id'		=> 0,
+			's'				=> '',
+			'field_key'		=> '',
+			'paged'			=> 1
 		));
 		
 		
 		// load field
 		$field = acf_get_field( $options['field_key'] );
+		if( !$field ) return false;
 		
-		if( !$field ) {
 		
-			die();
+		// vars
+   		$results = array();
+   		$s = false;
+   		$is_search = false;
+   		
+   		
+   		// search
+		if( $options['s'] !== '' ) {
+			
+			// strip slashes (search may be integer)
+			$s = wp_unslash( strval($options['s']) );
+			
+			
+			// update vars
+			$is_search = true;
+			
+		}
+		
+		
+		// bail ealry if no choices
+		if( empty($field['choices']) ) return false;
+		
+		
+		// loop 
+		foreach( $field['choices'] as $k => $v ) {
+			
+			// ensure $v is a string
+			$v = strval( $v );
+			
+			
+			// if searching, but doesn't exist
+			if( $is_search && stripos($v, $s) === false ) continue;
+			
+			
+			// append
+			$results[] = array(
+				'id'	=> $k,
+				'text'	=> $v
+			);
 			
 		}
 		
 		
 		// vars
-		$r = array();
-		$s = false;
+		$response = array(
+			'results'	=> $results
+		);
 		
 		
-		// search
-		if( $options['s'] !== '' ) {
-			
-			// search may be integer
-			$s = strval($options['s']);
-			
-			
-			// strip slashes
-			$s = wp_unslash($s);
-			
-		}		
-		
-		
-		// loop through choices
-		if( !empty($field['choices']) ) {
-		
-			foreach( $field['choices'] as $k => $v ) {
-				
-				// if searching, but doesn't exist
-				if( $s !== false && stripos($v, $s) === false ) {
-				
-					continue;
-					
-				}
-				
-				
-				// append
-				$r[] = array(
-					'id'	=> $k,
-					'text'	=> strval( $v )
-				);
-				
-			}
-			
-		}
-		
-		
-		// return JSON
-		echo json_encode( $r );
-		die();
+		// return
+		return $response;
 			
 	}
 	
@@ -164,7 +246,7 @@ class acf_field_select extends acf_field {
 		// placeholder
 		if( empty($field['placeholder']) ) {
 		
-			$field['placeholder'] = __("Select",'acf');
+			$field['placeholder'] = _x('Select', 'verb', 'acf');
 			
 		}
 		
@@ -178,12 +260,14 @@ class acf_field_select extends acf_field {
 		
 		
 		// null
+		// - have tried array_merge but this causes keys to re-index if is numeric (post ID's)
 		if( $field['allow_null'] && !$field['multiple'] ) {
 			
 			$prepend = array(''	=> '- ' . $field['placeholder'] . ' -');
 			$field['choices'] = $prepend + $field['choices'];
 			
 		}
+		
 		
 		
 		// vars
@@ -213,6 +297,14 @@ class acf_field_select extends acf_field {
 		foreach( array( 'readonly', 'disabled' ) as $k ) {
 		
 			if( !empty($field[ $k ]) ) $atts[ $k ] = $k;
+			
+		}
+		
+		
+		// custom  ajax action
+		if( !empty($field['ajax_action']) ) {
+			
+			$atts['data-ajax_action'] = $field['ajax_action'];
 			
 		}
 		
@@ -421,6 +513,21 @@ class acf_field_select extends acf_field {
 			),
 			'layout'	=>	'horizontal',
 		));
+		
+		
+		// return_format
+		acf_render_field_setting( $field, array(
+			'label'			=> __('Return Format','acf'),
+			'instructions'	=> __('Specify the value returned','acf'),
+			'type'			=> 'radio',
+			'name'			=> 'return_format',
+			'layout'		=> 'horizontal',
+			'choices'		=> array(
+				'value'			=> __('Value','acf'),
+				'label'			=> __('Label','acf'),
+				'array'			=> __('Both (Array)','acf')
+			)
+		));
 			
 	}
 	
@@ -544,114 +651,87 @@ class acf_field_select extends acf_field {
 	
 	
 	/*
-	*  enqueue_assets
+	*  format_value()
 	*
-	*  This function will enqueue the Select2 JS library
-	*  moved to the footer in an attempt to allow 3rd party to register Select2 paths
+	*  This filter is appied to the $value after it is loaded from the db and before it is returned to the template
 	*
-	*  @type	function
-	*  @date	16/12/2015
-	*  @since	5.3.3
+	*  @type	filter
+	*  @since	3.6
+	*  @date	23/01/13
 	*
-	*  @param	n/a
-	*  @return	n/a
+	*  @param	$value (mixed) the value which was loaded from the database
+	*  @param	$post_id (mixed) the $post_id from which the value was loaded
+	*  @param	$field (array) the field array holding all the field options
+	*
+	*  @return	$value (mixed) the modified value
 	*/
 	
-	function input_admin_enqueue_scripts() {
+	function format_value( $value, $post_id, $field ) {
 		
-		$this->enqueue_assets();
+		// array
+		if( acf_is_array($value) ) {
+			
+			foreach( $value as $i => $v ) {
+				
+				$value[ $i ] = $this->format_value_single( $v, $post_id, $field );
+				
+			}
+			
+		} else {
+			
+			$value = $this->format_value_single( $value, $post_id, $field );
+			
+		}
+		
+		
+		// return
+		return $value;
 		
 	}
 	
 	
-	function field_group_admin_enqueue_scripts() {
+	function format_value_single( $value, $post_id, $field ) {
 		
-		$this->enqueue_assets();
-		
-	}
-	
-	function enqueue_assets() {
-		
-		// globals
-		global $wp_scripts, $wp_styles;
+		// bail ealry if is empty
+		if( acf_is_empty($value) ) return $value;
 		
 		
 		// vars
-		$version = '3.5.2';
-		$lang = get_locale();
-		$min = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG ? '' : '.min';
-		//$lang = 'fr';
+		$label = acf_maybe_get($field['choices'], $value, $value);
 		
 		
-		// v4
-/*
-		wp_enqueue_script('select2', acf_get_dir("assets/inc/select2/dist/js/select2.full.js"), array('jquery'), '4.0', true );
-		wp_enqueue_style('select2', acf_get_dir("assets/inc/select2/dist/css/select2{$min}.css"), '', '4.0' );
-		return;
-*/
-		
-
-		// register script
-		if( !isset($wp_scripts->registered['select2']) ) {
+		// value
+		if( $field['return_format'] == 'value' ) {
 			
-			// scripts
-			wp_register_script('select2', acf_get_dir("assets/inc/select2/select2{$min}.js"), array('jquery'), $version );
+			// do nothing
 		
+		// label	
+		} elseif( $field['return_format'] == 'label' ) {
 			
-			// translation
-			if( $lang ) {
-				
-				// vars
-				$lang = str_replace('_', '-', $lang);
-				$lang_code = substr($lang, 0, 2);
-				$lang_src = '';
-				
-				
-				// attempt 1
-				if( file_exists(acf_get_path("assets/inc/select2/select2_locale_{$lang_code}.js")) ) {
-					
-					$lang_src = acf_get_dir("assets/inc/select2/select2_locale_{$lang_code}.js");
-				
-				// attempt 2
-				} elseif( file_exists(acf_get_path("assets/inc/select2/select2_locale_{$lang}.js")) ) {
-					
-					$lang_src = acf_get_dir("assets/inc/select2/select2_locale_{$lang}.js");
-					
-				}
-				
-				
-				// enqueue
-				if( $lang_src ) {
-					
-					wp_enqueue_script('select2-l10n', $lang_src, array('select2'), $version );
-					
-				}
-				
-			}
-			// end translation
+			$value = $label;
+		
+		// array	
+		} elseif( $field['return_format'] == 'array' ) {
+			
+			$value = array(
+				'value'	=> $value,
+				'label'	=> $label
+			);
 			
 		}
 		
 		
-		// register style
-		if( !isset($wp_styles->registered['select2']) ) {
-			
-			wp_register_style('select2', acf_get_dir('assets/inc/select2/select2.css'), '', $version );
-			
-		}
+		// return
+		return $value;
 		
-		
-		// enqueue
-		wp_enqueue_script('select2');
-		wp_enqueue_style('select2');
-	   
-	    
 	}
 	
 }
 
-new acf_field_select();
 
-endif;
+// initialize
+acf_register_field_type( new acf_field_select() );
+
+endif; // class_exists check
 
 ?>

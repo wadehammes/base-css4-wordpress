@@ -1,7 +1,6 @@
 <?php
 
 interface wfWAFStorageInterface {
-
 	public function hasPreviousAttackData($olderThan);
 
 	public function hasNewerAttackData($newerThan);

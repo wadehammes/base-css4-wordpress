@@ -29,6 +29,21 @@ $sigUpdateTime = wfConfig::get('signatureUpdateTime');
 	<?php require('menuHeader.php'); ?>
 	<?php $pageTitle = "Wordfence Scan"; $helpLink="http://docs.wordfence.com/en/Wordfence_scanning"; $helpLabel="Learn more about scanning"; include('pageTitle.php'); ?>
 	<div class="wordfenceWrap">
+		<?php
+		$rightRail = new wfView('marketing/rightrail');
+		echo $rightRail;
+		?>
+		<?php if (!wfConfig::get('isPaid')) { ?>
+		<div class="wordfenceRightRail">
+			<ul>
+				<li><a href="https://www.wordfence.com/gnl1rightRailGetPremium/wordfence-signup/" target="_blank"><img src="<?php echo wfUtils::getBaseURL() . 'images/rr_premium.png'; ?>" alt="Upgrade your protection - Get Wordfence Premium"></a></li>
+				<li><a href="https://www.wordfence.com/gnl1rightRailSiteCleaning/wordfence-site-cleanings/" target="_blank"><img src="<?php echo wfUtils::getBaseURL() . 'images/rr_sitecleaning.jpg'; ?>" alt="Have you been hacked? Get help from Wordfence"></a></li> 
+				<li>
+					<p class="center"><strong>Would you like to remove these ads?</strong><br><a href="https://www.wordfence.com/gnl1rightRailBottomUpgrade/wordfence-signup/" target="_blank">Get Premium</a></p>
+				</li>
+			</ul>
+		</div>
+		<?php } ?>
 		<div class="wordfenceScanButton">
 			<table border="0" cellpadding="0" cellspacing="0" style="width: 800px;">
 			<tr>
@@ -63,7 +78,7 @@ $sigUpdateTime = wfConfig::get('signatureUpdateTime');
 				<?php if (wfConfig::get('scansEnabled_fileContents')): ?>
 				<div style="width: 800px; ">
 					<p class="wf-success">You are running the Premium version of the Threat Defense Feed which is
-						updated in real-time as new threats emerge.</p>
+						updated in real-time as new threats emerge. <a href="https://www.wordfence.com/zz13/sign-in/" target="_blank">Protect additional sites.</a></p>
 				</div>
 			<?php else: ?>
 				<div class="wfSecure">Premium scanning enabled</div>
@@ -80,10 +95,9 @@ $sigUpdateTime = wfConfig::get('signatureUpdateTime');
 
 					<p>As new threats emerge, the Threat Defense Feed is updated to detect these new hacks. The Premium
 						version of the Threat Defense Feed is updated in real-time protecting you immediately. As a free
-						user <strong>you are receiving the community version</strong> of the feed which is updated 30 days later. Upgrade
-						now for less than $5 a month!</p>
+						user <strong>you are receiving the community version</strong> of the feed which is updated 30 days later.</p>
 					<p class="center"><a class="button button-primary"
-					                     href="https://www.wordfence.com/gnl1scanUpgrade/wordfence-signup/">
+					                     href="https://www.wordfence.com/gnl1scanUpgrade/wordfence-signup/" target="_blank">
 							Get Premium</a></p>
 				</div>
 
@@ -137,14 +151,10 @@ $sigUpdateTime = wfConfig::get('signatureUpdateTime');
 			</div>
 
 			<div class="wf-premium-callout" style="margin: 20px 0 20px 2px;width: 765px;">
-				<h3>Have you been hacked?</h3>
-				<p>If your site has been compromised by attackers it is vitally important to restore it to working
-					order as quickly as possible. But cleaning up a hacked website can be difficult if you've never
-					done it before, sometimes it takes professional intervention. Let our team of seasoned Security
-					Analysts resolve it for you quickly and professionally.</p>
-				<p class="center"><a class="button button-primary"
-				                     href="https://www.wordfence.com/gnl1scanGetHelp/wordfence-site-cleanings/">
-						Get Help</a></p>
+				<h3>Need help with a hacked website?</h3>
+				<p>Our team of security experts will clean the infection and remove malicious content. Once your site is restored we will provide a detailed report of our findings. All for an affordable rate.</p>
+				<?php if (!wfConfig::get('isPaid')) { ?><p><strong>Includes a 1 year Wordfence Premium license.</strong></p><?php } ?>
+				<p class="center"><a class="button button-primary" href="https://www.wordfence.com/gnl1scanGetHelp/wordfence-site-cleanings/" target="_blank">Get Help</a></p>
 			</div>
 
 
@@ -154,7 +164,7 @@ $sigUpdateTime = wfConfig::get('signatureUpdateTime');
 				<a href="#" id="wfNewIssuesTab" class="wfTab2 wfTabSwitch selected" onclick="wordfenceAdmin.switchIssuesTab(this, 'new'); return false;">New Issues</a>
 				<a href="#" class="wfTab2 wfTabSwitch"          onclick="wordfenceAdmin.switchIssuesTab(this, 'ignored'); return false;">Ignored Issues</a>
 			</div>
-			<div class="wfTabsContainer">
+			<div class="wfTabsContainer wfScanIssuesTabs">
 				<div id="wfIssues_new" class="wfIssuesContainer">
 					<h2>New Issues</h2>
 					<?php if (wfConfig::get('scansEnabled_highSense')): ?>
@@ -374,6 +384,7 @@ $sigUpdateTime = wfConfig::get('signatureUpdateTime');
 		<table border="0" class="wfIssue" cellspacing="0" cellpadding="0">
 		<tr><th>Plugin Name:</th><td>${data.Name}</td></tr>
 		{{if data.PluginURI}}<tr><th>Plugin Website:</th><td><a href="${data.PluginURI}" target="_blank">${data.PluginURI}</a></td></tr>{{/if}}
+		<tr><th>Changelog:</th><td><a href="${data.wpURL}/changelog" target="_blank">${data.wpURL}/changelog</a></td></tr>
 		<tr><th>Current Plugin Version:</th><td>${data.Version}</td></tr>
 		<tr><th>New Plugin Version:</th><td>${data.newVersion}</td></tr>
 		<tr><th>Severity:</th><td>{{if severity == '1'}}Critical{{else}}Warning{{/if}}</td></tr>
@@ -383,6 +394,7 @@ $sigUpdateTime = wfConfig::get('signatureUpdateTime');
 		</td></tr>
 		</table>
 	</p>
+	{{if data.vulnerabilityPatched}}<p><strong>Update includes security-related fixes.</strong></p>{{/if}}
 	<p>
 		{{html longMsg}}
 		<a href="<?php echo get_admin_url() . 'update-core.php'; ?>">Click here to update now</a>.
@@ -761,6 +773,39 @@ $sigUpdateTime = wfConfig::get('signatureUpdateTime');
 </div>
 </div>
 </script>
+
+<script type="text/x-jquery-template" id="issueTmpl_coreUnknown">
+	<div>
+		<div class="wfIssue">
+			<h2>${shortMsg}</h2>
+			<p>
+			<table border="0" class="wfIssue" cellspacing="0" cellpadding="0">
+				<tr><th>Issue first detected:</th><td>${timeAgo} ago.</td></tr>
+				<tr><th>Severity:</th><td>{{if severity == '1'}}Critical{{else}}Warning{{/if}}</td></tr>
+				<tr><th>Status</th><td>
+						{{if status == 'new' }}New{{/if}}
+						{{if status == 'ignoreP' }}Permanently ignoring this version{{/if}}
+						{{if status == 'ignoreC' }}Ignoring this version until it changes{{/if}}
+					</td></tr>
+			</table>
+			</p>
+			<p>
+				{{html longMsg}}
+			</p>
+			<div class="wfIssueOptions">
+				{{if status == 'new'}}
+				<strong>Resolve:</strong>
+				<a href="#" onclick="WFAD.updateIssueStatus('${id}', 'ignoreC'); return false;">Ignore until the version changes.</a>
+				<a href="#" onclick="WFAD.updateIssueStatus('${id}', 'ignoreP'); return false;">Always ignore this version.</a>
+				{{/if}}
+				{{if status == 'ignoreC' || status == 'ignoreP'}}
+				<a href="#" onclick="WFAD.updateIssueStatus('${id}', 'delete'); return false;">Stop ignoring this issue.</a>
+				{{/if}}
+			</div>
+		</div>
+	</div>
+</script>
+
 <script type="text/x-jquery-template" id="issueTmpl_database">
 <div>
 <div class="wfIssue">

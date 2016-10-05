@@ -14,7 +14,7 @@ function joints_scripts_and_styles() {
     wp_deregister_script( 'wp-embed' );
 
     // Loads jQuery from CDNJS
-    wp_enqueue_script( 'jquery', 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js', array(), '3.1.0', true );
+    wp_enqueue_script( 'jquery', 'https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js', array(), '2.2.4', true );
 
     // Adding scripts file in the footer
     wp_enqueue_script( 'site-js', get_template_directory_uri() . '/library/js/app.js', array(), '', true );
@@ -23,7 +23,7 @@ function joints_scripts_and_styles() {
     wp_enqueue_style( 'site-css', get_template_directory_uri() . '/library/css/base.css', array(), '', 'all' );
 
     // Add FontAwesome
-    wp_enqueue_style( 'fontAwesome', 'https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css', array(), '4.6.3', 'all' );
+    // wp_enqueue_style( 'fontAwesome', 'https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css', array(), '4.6.3', 'all' );
   }
 }
 add_action('wp_enqueue_scripts', 'joints_scripts_and_styles', 999);

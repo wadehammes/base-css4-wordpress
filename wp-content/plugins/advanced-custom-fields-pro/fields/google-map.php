@@ -81,7 +81,7 @@ class acf_field_google_map extends acf_field {
 		
 		
 		// value
-		$field['value'] = acf_parse_args($field['value'], array(
+		$field['value'] = wp_parse_args($field['value'], array(
 			'address'	=> '',
 			'lat'		=> '',
 			'lng'		=> ''
@@ -275,10 +275,54 @@ class acf_field_google_map extends acf_field {
 		// return
 		return $value;
 	}
+	
+	
+	/*
+   	*  input_admin_footer
+   	*
+   	*  description
+   	*
+   	*  @type	function
+   	*  @date	6/03/2014
+   	*  @since	5.0.0
+   	*
+   	*  @param	$post_id (int)
+   	*  @return	$post_id (int)
+   	*/
+   	
+   	function input_admin_footer() {
+	   	
+	   	// vars
+	   	$api = array(
+			'libraries'		=> 'places',
+			'key'			=> acf_get_setting('google_api_key'),
+			'client'		=> acf_get_setting('google_api_client')
+	   	);
+	   	
+	   	
+	   	// filter
+	   	$api = apply_filters('acf/fields/google_map/api', $api);
+	   	
+	   	
+	   	// remove empty
+	   	if( empty($api['key']) ) unset($api['key']);
+	   	if( empty($api['client']) ) unset($api['client']);
+	   	
+	   	
+?>
+<script type="text/javascript">
+acf.fields.google_map.api = <?php echo json_encode($api); ?>;
+</script>
+<?php
+	
+   	}
+   	
 }
 
-new acf_field_google_map();
 
-endif;
+// initialize
+acf_register_field_type( new acf_field_google_map() );
+
+endif; // class_exists check
 
 ?>

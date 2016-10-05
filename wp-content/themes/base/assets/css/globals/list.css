@@ -19,10 +19,10 @@ li.divider {
   list-style: none;
   margin: 0;
   padding: 0;
-}
 
-.ul-none li {
-  display: inline-block;
+  & > li {
+    display: inline-block;
+  }
 }
 
 .ul-pretty,
@@ -40,26 +40,26 @@ li.divider {
   padding-left: 2em;
   font-weight: var(--font-weight-regular);
   color: var(--black);
-}
 
-.ul-pretty li::before {
-  content: "•";
-  color: var(--black);
-  font-size: var(--text-large);
-  line-height: var(--line-height-normal);
-  margin-right: 10px;
-  position: absolute;
-  top: 2px;
-  left: 0;
+  &:before {
+    content: "•";
+    color: var(--black);
+    font-size: var(--text-large);
+    line-height: var(--line-height-normal);
+    margin-right: 10px;
+    position: absolute;
+    top: 2px;
+    left: 0;
+  }
 }
 
 .ol-pretty {
   list-style: decimal !important;
-}
 
-.ol-pretty li {
-  display: block;
-  font-weight: var(--font-weight-regular);
+  & > li {
+    display: block;
+    font-weight: var(--font-weight-regular);
+  }
 }
 
 /* Bullets */

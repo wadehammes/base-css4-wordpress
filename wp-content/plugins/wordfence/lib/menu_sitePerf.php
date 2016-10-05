@@ -5,7 +5,11 @@ $w = new wfConfig();
 <div class="wrap">
 	<?php require('menuHeader.php'); ?>
 	<?php $pageTitle = "Your Site Performance"; $helpLink="http://docs.wordfence.com/en/Falcon_Cache"; $helpLabel="Learn more about Wordfence Caching"; include('pageTitle.php'); ?>
-	<div class="wordfenceWrap" style="margin: 20px 20px 20px 30px;">
+	<?php
+	$rightRail = new wfView('marketing/rightrail');
+	echo $rightRail;
+	?>
+	<div class="wordfenceWrap" style="margin: 20px 20px 20px 30px; max-width: 800px;">
 		<h2>Caching</h2>
 		<table border="0">
 		<tr><td>Disable all performance enhancements:</td><td><input type="radio" name="cacheType" id="cacheType_disable" value="disable" <?php if(! wfConfig::get('cacheType')){ echo 'checked="checked"'; } ?> /></td><td>No performance improvement</td></tr>
@@ -45,7 +49,7 @@ $w = new wfConfig();
 				<option value="uaeq">User-Agent Exactly Matches</option>
 				<option value="cc">Cookie Name Contains</option>
 			</select>
-			this value then don't cache it:
+			this value<br>then don't cache it:
 			<input type="text" id="wfPattern" value="" size="20" maxlength="1000" />e.g. /my/dynamic/page/
 			<input type="button" class="button-primary" value="Add exclusion" onclick="WFAD.addCacheExclusion(jQuery('#wfPatternType').val(), jQuery('#wfPattern').val()); return false;" />
 		</p>

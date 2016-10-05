@@ -65,9 +65,18 @@ gulp.task('stylesheets', function () {
   var processors = [
     require("postcss-import")(),
     require("postcss-url")(),
+    require('postcss-utilities')(),
+    require("precss")(),
     require("postcss-cssnext")(),
-    require("cssnano")(),
-    require("postcss-browser-reporter")(),
+    require("css-mqpacker")(),
+    require("cssnano")({
+      discardComments: {
+        removeAll: true
+      },
+      filterPlugins: false,
+      discardEmpty: false,
+      autoprefixer: false
+    }),
     require("postcss-reporter")()
   ];
   return gulp.src(stylePathSrc)

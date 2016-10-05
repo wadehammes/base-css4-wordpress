@@ -167,6 +167,16 @@ class wfSchema {
 	unixday int UNSIGNED NOT NULL,
 	PRIMARY KEY(IP, unixday)
 ) default charset=utf8",
+'wfSNIPCache' => "(
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `IP` varchar(45) NOT NULL DEFAULT '',
+  `expiration` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `body` varchar(255) NOT NULL DEFAULT '',
+  `count` int(10) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `expiration` (`expiration`),
+  KEY `IP` (`IP`)
+) DEFAULT CHARSET=utf8;",
 /*
 'wfPerfLog' => "(
 	id int UNSIGNED NOT NULL auto_increment PRIMARY KEY,

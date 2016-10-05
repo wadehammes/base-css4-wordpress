@@ -14,6 +14,11 @@ $wafRemoveURL = network_admin_url('admin.php?page=WordfenceWAF&wafAction=removeA
 	include('pageTitle.php');
 	?>
 	<div class="wordfenceModeElem" id="wordfenceMode_waf"></div>
+	
+	<?php
+	$rightRail = new wfView('marketing/rightrail', array('additionalClasses' => 'wordfenceRightRailWAF'));
+	echo $rightRail;
+	?>
 
 	<?php
 	if (defined('WFWAF_ENABLED') && !WFWAF_ENABLED) :
@@ -48,15 +53,19 @@ $wafRemoveURL = network_admin_url('admin.php?page=WordfenceWAF&wafAction=removeA
 	<?php elseif (!empty($wafActionContent)): ?>
 		<?php echo $wafActionContent ?>
 
-		<?php if (!empty($_REQUEST['wafAction']) && $_REQUEST['wafAction'] == 'removeAutoPrepend'): ?>
+		<?php if (!empty($_REQUEST['wafAction']) && $_REQUEST['wafAction'] == 'removeAutoPrepend') { ?>
 			<p class="wf-notice"><em>If you cannot complete the uninstallation process,
 					<a target="_blank" href="https://docs.wordfence.com/en/Web_Application_Firewall_FAQ#How_can_I_remove_the_firewall_setup_manually.3F">click here for
 						help</a>.</em></p>
-		<?php else: ?>
+		<?php }
+		else if (!empty($_REQUEST['wafAction']) && $_REQUEST['wafAction'] == 'updateSuPHPConfig') {
+			//Do nothing
+		}
+		else { ?>
 			<p class="wf-notice"><em>If you cannot complete the setup process,
 				<a target="_blank" href="https://docs.wordfence.com/en/Web_Application_Firewall_Setup">click here for
 					help</a>.</em></p>
-		<?php endif ?>
+		<?php } ?>
 
 	<?php else: ?>
 
@@ -73,20 +82,13 @@ $wafRemoveURL = network_admin_url('admin.php?page=WordfenceWAF&wafAction=removeA
 				<p>As new threats emerge, the Threat Defense Feed is updated to protect you from new attacks. The
 					Premium version of the Threat Defense Feed is updated in real-time protecting you immediately. As a
 					free user <strong>you are receiving the community version</strong> of the feed which is updated 30
-					days later.
-					Upgrade now for less than $5 a month!</p>
+					days later.</p>
 
 				<p class="center"><a class="button button-primary"
 				                     href="https://www.wordfence.com/wafOptions1/wordfence-signup/">
 						Get Premium</a></p>
 			</div>
-		<?php } else { ?>
-			<div class="wf-success">
-				You are running the Premium version of the Threat Defense Feed which is updated in real-time as new
-				threats emerge.
-			</div>
 		<?php } ?>
-
 
 		<?php if (WFWAF_SUBDIRECTORY_INSTALL): ?>
 			<div class="wf-notice">
@@ -97,6 +99,12 @@ $wafRemoveURL = network_admin_url('admin.php?page=WordfenceWAF&wafAction=removeA
 			</div>
 		<?php else: ?>
 			<div class="wordfenceWrap" style="margin: 20px 20px 20px 30px;">
+				<?php if (wfConfig::get('isPaid')) { ?>
+					<div class="wf-success" style="max-width: 881px;"> 
+						You are running the Premium version of the Threat Defense Feed which is updated in real-time as new
+						threats emerge. <a href="https://www.wordfence.com/zz14/sign-in/" target="_blank">Protect additional sites.</a>
+					</div>
+				<?php } ?>
 				<form action="javascript:void(0)" id="waf-config-form">
 
 					<table class="wfConfigForm">

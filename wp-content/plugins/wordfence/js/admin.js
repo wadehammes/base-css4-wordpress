@@ -944,8 +944,11 @@
 					}
 				});
 			},
-			colorbox: function(width, heading, body) {
-				this.colorboxQueue.push([width, heading, body]);
+			colorbox: function(width, heading, body, settings) {
+				if (typeof settings === 'undefined') {
+					settings = {};
+				}
+				this.colorboxQueue.push([width, heading, body, settings]);
 				this.colorboxServiceQueue();
 			},
 			colorboxServiceQueue: function() {
@@ -956,18 +959,19 @@
 					return;
 				}
 				var elem = this.colorboxQueue.shift();
-				this.colorboxOpen(elem[0], elem[1], elem[2]);
+				this.colorboxOpen(elem[0], elem[1], elem[2], elem[3]);
 			},
-			colorboxOpen: function(width, heading, body) {
+			colorboxOpen: function(width, heading, body, settings) {
 				var self = this;
 				this.colorboxIsOpen = true;
-				jQuery.colorbox({
+				jQuery.extend(settings, {
 					width: width,
 					html: "<h3>" + heading + "</h3><p>" + body + "</p>",
 					onClosed: function() {
 						self.colorboxClose();
 					}
 				});
+				jQuery.colorbox(settings);
 			},
 			colorboxClose: function() {
 				this.colorboxIsOpen = false;
@@ -2099,14 +2103,77 @@
 					}, 2000);
 				});
 			},
-			addTwoFactor: function(username, phone) {
+			addTwoFactor: function(username, phone, mode) {
 				var self = this;
 				this.ajax('wordfence_addTwoFactor', {
 					username: username,
-					phone: phone
+					phone: phone,
+					mode: mode
 				}, function(res) {
 					if (res.ok) {
-						self.twoFacStatus('User added! Check the user\'s phone to get the activation code.');
+						if (mode == 'authenticator') {
+							var totpURL = "otpauth://totp/" + encodeURI(res.homeurl) + encodeURI(" (" + res.username + ")") + "?" + res.uriQueryString + "&issuer=Wordfence"; 
+							self.twoFacStatus('User added! Scan the QR code with your authenticator app to add it.');
+							
+							var message = "Scan the code below with your authenticator app to add this account. Some authenticator apps also allow you to type in the text version instead.<br><div id=\"wfTwoFactorQRCodeTable\"></div><br><strong>Key:</strong> <input type=\"text\" size=\"45\" value=\"" + res.base32Secret + "\" onclick=\"this.select();\" readonly>";
+							if (res.recoveryCodes.length > 0) {
+								message = message + "<br><br><strong>Recovery Codes</strong><br><p>Use these codes to log in if you lose access to your authenticator device. Each one may be used only once.</p><ul id=\"wfTwoFactorRecoveryCodes\">";
+
+								var recoveryCodeFileContents = "Cellphone Sign-In Recovery Codes - " + res.homeurl + " (" + res.username + ")\r\n";
+								var splitter = /.{4}/g;
+								for (var i = 0; i < res.recoveryCodes.length; i++) { 
+									var code = res.recoveryCodes[i];
+									var chunks = code.match(splitter);
+									message = message + "<li>" + chunks[0] + " " + chunks[1] + " " + chunks[2] + " " + chunks[3] + "</li>";
+									recoveryCodeFileContents = recoveryCodeFileContents + chunks[0] + " " + chunks[1] + " " + chunks[2] + " " + chunks[3] + "\r\n"; 
+								}
+								
+								message = message + "</ul>";
+								
+								message = message + "<p class=\"wf-center\"><a href=\"#\" class=\"button\" id=\"wfTwoFactorDownload\" target=\"_blank\"><i class=\"dashicons dashicons-download\"></i> Download</a></p>";
+							}
+
+							message = message + "<p><em>This will be shown only once. Keep these codes somewhere safe.</em></p>";
+							
+							self.colorbox('440px', "Authentication Code", message, {onComplete: function() { 
+								jQuery('#wfTwoFactorQRCodeTable').qrcode({text: totpURL});
+								jQuery('#wfTwoFactorDownload').on('click', function(e) {
+									e.preventDefault();
+									e.stopPropagation();
+									saveAs(new Blob([recoveryCodeFileContents], {type: "text/plain;charset=" + document.characterSet}), self.htmlEscape(res.homeurl) + "_" + self.htmlEscape(res.username) + "_recoverycodes.txt");
+								});
+							}});
+						}
+						else {
+							self.twoFacStatus('User added! Check the user\'s phone to get the activation code.');
+
+							if (res.recoveryCodes.length > 0) {
+								var message = "<p>Use these codes to log in if you are unable to access your phone. Each one may be used only once.</p><ul id=\"wfTwoFactorRecoveryCodes\">";
+
+								var recoveryCodeFileContents = "Cellphone Sign-In Recovery Codes - " + res.homeurl + " (" + res.username + ")\r\n";
+								var splitter = /.{4}/g;
+								for (var i = 0; i < res.recoveryCodes.length; i++) {
+									var code = res.recoveryCodes[i];
+									var chunks = code.match(splitter);
+									message = message + "<li>" + chunks[0] + " " + chunks[1] + " " + chunks[2] + " " + chunks[3] + "</li>";
+									recoveryCodeFileContents = recoveryCodeFileContents + chunks[0] + " " + chunks[1] + " " + chunks[2] + " " + chunks[3] + "\r\n";
+								}
+
+								message = message + "<p class=\"wf-center\"><a href=\"#\" class=\"button\" id=\"wfTwoFactorDownload\" target=\"_blank\"><i class=\"dashicons dashicons-download\"></i> Download</a></p>";
+
+								message = message + "</ul><p><em>This will be shown only once. Keep these codes somewhere safe.</em></p>";
+
+								self.colorbox('400px', "Recovery Codes", message, {onComplete: function() {
+									jQuery('#wfTwoFactorQRCodeTable').qrcode({text: totpURL});
+									jQuery('#wfTwoFactorDownload').on('click', function(e) {
+										e.preventDefault();
+										e.stopPropagation();
+										saveAs(new Blob([recoveryCodeFileContents], {type: "text/plain;charset=" + document.characterSet}), self.htmlEscape(res.homeurl) + "_" + self.htmlEscape(res.username) + "_recoverycodes.txt");
+									});
+								}});
+							}
+						}
+						
 						var updatedTwoFac = jQuery('#wfTwoFacUserTmpl').tmpl({users: [res]});
 						jQuery('#twoFactorUser-none').remove();
 						jQuery('#wfTwoFacUsers > table > tbody:last-child').append(updatedTwoFac.find('tbody > tr'));
@@ -2396,6 +2463,16 @@
 				var self = this;
 				jQuery('.wfTimeAgo-timestamp').each(function(idx, elem) {
 					var el = jQuery(elem);
+					var testEl = el;
+					if (typeof jQuery === "function" && testEl instanceof jQuery) {
+						testEl = testEl[0];
+					}
+
+					var rect = testEl.getBoundingClientRect();
+					if (!(rect.top >= 0 && rect.left >= 0 && rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) && rect.right <= (window.innerWidth || document.documentElement.clientWidth))) {
+						return;
+					}
+					
 					var timestamp = el.data('wfctime');
 					if (!timestamp) {
 						timestamp = el.attr('data-timestamp');
@@ -2593,3 +2670,8 @@
 		wordfenceAdmin.init();
 	});
 })(jQuery);
+
+/*! @source http://purl.eligrey.com/github/FileSaver.js/blob/master/FileSaver.js */
+var saveAs=saveAs||function(e){"use strict";if(typeof e==="undefined"||typeof navigator!=="undefined"&&/MSIE [1-9]\./.test(navigator.userAgent)){return}var t=e.document,n=function(){return e.URL||e.webkitURL||e},r=t.createElementNS("http://www.w3.org/1999/xhtml","a"),o="download"in r,i=function(e){var t=new MouseEvent("click");e.dispatchEvent(t)},a=/constructor/i.test(e.HTMLElement),f=/CriOS\/[\d]+/.test(navigator.userAgent),u=function(t){(e.setImmediate||e.setTimeout)(function(){throw t},0)},d="application/octet-stream",s=1e3*40,c=function(e){var t=function(){if(typeof e==="string"){n().revokeObjectURL(e)}else{e.remove()}};setTimeout(t,s)},l=function(e,t,n){t=[].concat(t);var r=t.length;while(r--){var o=e["on"+t[r]];if(typeof o==="function"){try{o.call(e,n||e)}catch(i){u(i)}}}},p=function(e){if(/^\s*(?:text\/\S*|application\/xml|\S*\/\S*\+xml)\s*;.*charset\s*=\s*utf-8/i.test(e.type)){return new Blob([String.fromCharCode(65279),e],{type:e.type})}return e},v=function(t,u,s){if(!s){t=p(t)}var v=this,w=t.type,m=w===d,y,h=function(){l(v,"writestart progress write writeend".split(" "))},S=function(){if((f||m&&a)&&e.FileReader){var r=new FileReader;r.onloadend=function(){var t=f?r.result:r.result.replace(/^data:[^;]*;/,"data:attachment/file;");var n=e.open(t,"_blank");if(!n)e.location.href=t;t=undefined;v.readyState=v.DONE;h()};r.readAsDataURL(t);v.readyState=v.INIT;return}if(!y){y=n().createObjectURL(t)}if(m){e.location.href=y}else{var o=e.open(y,"_blank");if(!o){e.location.href=y}}v.readyState=v.DONE;h();c(y)};v.readyState=v.INIT;if(o){y=n().createObjectURL(t);setTimeout(function(){r.href=y;r.download=u;i(r);h();c(y);v.readyState=v.DONE});return}S()},w=v.prototype,m=function(e,t,n){return new v(e,t||e.name||"download",n)};if(typeof navigator!=="undefined"&&navigator.msSaveOrOpenBlob){return function(e,t,n){t=t||e.name||"download";if(!n){e=p(e)}return navigator.msSaveOrOpenBlob(e,t)}}w.abort=function(){};w.readyState=w.INIT=0;w.WRITING=1;w.DONE=2;w.error=w.onwritestart=w.onprogress=w.onwrite=w.onabort=w.onerror=w.onwriteend=null;return m}(typeof self!=="undefined"&&self||typeof window!=="undefined"&&window||this.content);if(typeof module!=="undefined"&&module.exports){module.exports.saveAs=saveAs}else if(typeof define!=="undefined"&&define!==null&&define.amd!==null){define([],function(){return saveAs})}
+
+!function(t){"use strict";if(t.URL=t.URL||t.webkitURL,t.Blob&&t.URL)try{return void new Blob}catch(e){}var n=t.BlobBuilder||t.WebKitBlobBuilder||t.MozBlobBuilder||function(t){var e=function(t){return Object.prototype.toString.call(t).match(/^\[object\s(.*)\]$/)[1]},n=function(){this.data=[]},o=function(t,e,n){this.data=t,this.size=t.length,this.type=e,this.encoding=n},i=n.prototype,a=o.prototype,r=t.FileReaderSync,c=function(t){this.code=this[this.name=t]},l="NOT_FOUND_ERR SECURITY_ERR ABORT_ERR NOT_READABLE_ERR ENCODING_ERR NO_MODIFICATION_ALLOWED_ERR INVALID_STATE_ERR SYNTAX_ERR".split(" "),s=l.length,u=t.URL||t.webkitURL||t,d=u.createObjectURL,f=u.revokeObjectURL,R=u,p=t.btoa,h=t.atob,b=t.ArrayBuffer,g=t.Uint8Array,w=/^[\w-]+:\/*\[?[\w\.:-]+\]?(?::[0-9]+)?/;for(o.fake=a.fake=!0;s--;)c.prototype[l[s]]=s+1;return u.createObjectURL||(R=t.URL=function(t){var e,n=document.createElementNS("http://www.w3.org/1999/xhtml","a");return n.href=t,"origin"in n||("data:"===n.protocol.toLowerCase()?n.origin=null:(e=t.match(w),n.origin=e&&e[1])),n}),R.createObjectURL=function(t){var e,n=t.type;return null===n&&(n="application/octet-stream"),t instanceof o?(e="data:"+n,"base64"===t.encoding?e+";base64,"+t.data:"URI"===t.encoding?e+","+decodeURIComponent(t.data):p?e+";base64,"+p(t.data):e+","+encodeURIComponent(t.data)):d?d.call(u,t):void 0},R.revokeObjectURL=function(t){"data:"!==t.substring(0,5)&&f&&f.call(u,t)},i.append=function(t){var n=this.data;if(g&&(t instanceof b||t instanceof g)){for(var i="",a=new g(t),l=0,s=a.length;s>l;l++)i+=String.fromCharCode(a[l]);n.push(i)}else if("Blob"===e(t)||"File"===e(t)){if(!r)throw new c("NOT_READABLE_ERR");var u=new r;n.push(u.readAsBinaryString(t))}else t instanceof o?"base64"===t.encoding&&h?n.push(h(t.data)):"URI"===t.encoding?n.push(decodeURIComponent(t.data)):"raw"===t.encoding&&n.push(t.data):("string"!=typeof t&&(t+=""),n.push(unescape(encodeURIComponent(t))))},i.getBlob=function(t){return arguments.length||(t=null),new o(this.data.join(""),t,"raw")},i.toString=function(){return"[object BlobBuilder]"},a.slice=function(t,e,n){var i=arguments.length;return 3>i&&(n=null),new o(this.data.slice(t,i>1?e:this.data.length),n,this.encoding)},a.toString=function(){return"[object Blob]"},a.close=function(){this.size=0,delete this.data},n}(t);t.Blob=function(t,e){var o=e?e.type||"":"",i=new n;if(t)for(var a=0,r=t.length;r>a;a++)Uint8Array&&t[a]instanceof Uint8Array?i.append(t[a].buffer):i.append(t[a]);var c=i.getBlob(o);return!c.slice&&c.webkitSlice&&(c.slice=c.webkitSlice),c};var o=Object.getPrototypeOf||function(t){return t.__proto__};t.Blob.prototype=o(new t.Blob)}("undefined"!=typeof self&&self||"undefined"!=typeof window&&window||this.content||this);

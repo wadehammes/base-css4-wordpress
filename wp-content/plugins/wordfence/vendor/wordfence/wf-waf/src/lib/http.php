@@ -325,7 +325,9 @@ class wfWAFHTTPTransportCurl extends wfWAFHTTPTransport {
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_TIMEOUT, 5);
 		curl_setopt($ch, CURLOPT_HEADER, 1);
+		curl_setopt($ch, CURLOPT_CAINFO, WFWAF_PATH . 'cacert.pem'); //On some systems curl uses an outdated root certificate chain file
 		$curlResponse = curl_exec($ch);
+		
 		if ($curlResponse !== false) {
 			$headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
 			$header = wfWAFUtils::substr($curlResponse, 0, $headerSize);

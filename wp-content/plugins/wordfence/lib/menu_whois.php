@@ -2,14 +2,18 @@
 <div class="wrap" id="paidWrap">
 	<?php require('menuHeader.php'); ?>
 	<?php $pageTitle = "WHOIS Lookup"; $helpLink="http://docs.wordfence.com/en/Whois_Lookup"; $helpLabel="Learn more about Whois Lookups"; include('pageTitle.php'); ?>
-	<div class="wordfenceWrap" style="margin: 20px 20px 20px 30px;">
+	<?php
+	$rightRail = new wfView('marketing/rightrail');
+	echo $rightRail;
+	?>
+	<div class="wordfenceWrap<?php if (!wfConfig::get('isPaid')) { echo " wordfence-community"; }?>" style="margin: 20px 20px 20px 30px; max-width: 800px;">
 <?php
 if(! function_exists('fsockopen')){
 ?>
 		<p style="color: #F00; width: 600px;">
 			Sorry, but your web hosting provider has disabled the 'fsockopen' function on your WordPress server. That means you can't 
 			use WHOIS. Please log a support call with them asking them to enable this function. Explain that you need it to be able to 
-			perform Whois lookups on IP addresses which will allow you to determine who owns the IP's that are attacking your website.
+			perform Whois lookups on IP addresses which will allow you to determine who owns the IPs that are attacking your website.
 			<br /><br />
 			If you are hosting your own site, edit your php.ini config file and make sure 'fsockopen' does not appear
 			next to disable_functions in php.ini. You may have to restart your web server for the changes to take effect.
@@ -19,7 +23,7 @@ if(! function_exists('fsockopen')){
 ?>
 		</p>
 		<p>
-			<input type="text" name="whois" id="wfwhois" value="" size="40" maxlength="255" onkeydown="if(event.keyCode == 13){ WFAD.whois(jQuery('#wfwhois').val()); }" />&nbsp;<input type="button" name="whoisbutton" id="whoisbutton" class="button-primary" value="Look up IP or Domain" onclick="WFAD.whois(jQuery('#wfwhois').val());" />
+			<input type="text" name="whois" id="wfwhois" value="" size="60" maxlength="255" onkeydown="if(event.keyCode == 13){ WFAD.whois(jQuery('#wfwhois').val()); }" />&nbsp;<input type="button" name="whoisbutton" id="whoisbutton" class="button-primary" value="Look up IP or Domain" onclick="WFAD.whois(jQuery('#wfwhois').val());" />
 
 		</p>
 		<?php if( isset( $_GET['wfnetworkblock'] ) && $_GET['wfnetworkblock']){ ?>

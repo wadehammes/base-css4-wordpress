@@ -343,11 +343,20 @@ html[dir="rtl"] .acf-c0 {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   font-size: 14px;
-  line-height: 15px;
+  line-height: 1.4;
 }
 .acf-field textarea {
   resize: vertical;
-  line-height: 1.4em;
+}
+/* disabled */
+.acf-field input:disabled,
+.acf-field select:disabled,
+.acf-field textarea:disabled {
+  background: #f8f8f8;
+}
+.acf-field input[readonly],
+.acf-field textarea[readonly] {
+  background: #f8f8f8;
 }
 /*---------------------------------------------------------------------------------------------
 *
@@ -459,6 +468,10 @@ html[dir="rtl"] input.acf-is-prepended.acf-is-appended {
 *  Select2 (v3)
 *
 *---------------------------------------------------------------------------------------------*/
+.select2-container.-acf {
+  /* open */
+  /* single open */
+}
 .select2-container.-acf .select2-choices {
   background: #fff;
   border-color: #ddd;
@@ -484,13 +497,6 @@ html[dir="rtl"] input.acf-is-prepended.acf-is-appended {
 .select2-container.-acf .select2-search-choice-close {
   margin-top: -1px;
 }
-/* open */
-.select2-container.-acf.select2-container-active .select2-choices,
-.select2-container.-acf.select2-dropdown-open .select2-choices {
-  border-color: #5B9DD9;
-  border-radius: 3px 3px 0 0;
-}
-/* single */
 .select2-container.-acf .select2-choice {
   border-color: #BBBBBB;
 }
@@ -499,10 +505,30 @@ html[dir="rtl"] input.acf-is-prepended.acf-is-appended {
   border-left-color: #DFDFDF;
   padding-left: 1px;
 }
-/* single open */
+.select2-container.-acf .select2-choice .select2-result-description {
+  display: none;
+}
+.select2-container.-acf.select2-container-active .select2-choices,
+.select2-container.-acf.select2-dropdown-open .select2-choices {
+  border-color: #5B9DD9;
+  border-radius: 3px 3px 0 0;
+}
 .select2-container.-acf.select2-dropdown-open .select2-choice {
   background: #fff;
   border-color: #5B9DD9;
+}
+/* description */
+.select2-drop .select2-result {
+  /* hover*/
+}
+.select2-drop .select2-result .select2-result-description {
+  color: #999;
+  font-size: 12px;
+  margin-left: 5px;
+}
+.select2-drop .select2-result.select2-highlighted .select2-result-description {
+  color: #fff;
+  opacity: 0.75;
 }
 /*---------------------------------------------------------------------------------------------
 *
@@ -1407,6 +1433,31 @@ html[dir="rtl"] .acf-file-uploader .file-info ul {
 .acf-ui-datepicker .ui-datepicker {
   z-index: 999999999 !important;
 }
+.acf-ui-datepicker .ui-datepicker .ui-widget-header a {
+  cursor: pointer;
+  transition: none;
+}
+/* fix highlight state overriding hover / active */
+.acf-ui-datepicker .ui-state-highlight.ui-state-hover {
+  border: 1px solid #98b7e8 !important;
+  background: #98b7e8 !important;
+  font-weight: normal !important;
+  color: #ffffff !important;
+}
+.acf-ui-datepicker .ui-state-highlight.ui-state-active {
+  border: 1px solid #3875d7 !important;
+  background: #3875d7 !important;
+  font-weight: normal !important;
+  color: #ffffff !important;
+}
+/*---------------------------------------------------------------------------------------------
+*
+*	Clone field
+*
+*---------------------------------------------------------------------------------------------*/
+.acf-clone-fields {
+  border: #dfdfdf solid 1px;
+}
 /*---------------------------------------------------------------------------------------------
 *
 *	Taxonomy
@@ -1766,7 +1817,7 @@ html[dir="rtl"] .acf-taxonomy-field[data-type="select"] .acf-icon {
 .acf-media-modal.-edit .media-frame-content {
   top: 56px;
 }
-body.acf-wp-4 .acf-media-modal.-edit .media-frame-content {
+body.major-4 .acf-media-modal.-edit .media-frame-content {
   top: 50px;
 }
 .acf-media-modal.-edit .media-frame-title {

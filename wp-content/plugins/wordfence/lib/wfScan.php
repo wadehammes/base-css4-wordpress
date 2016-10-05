@@ -27,7 +27,6 @@ class wfScan {
 		}
 		self::status(4, 'info', "Fetching stored cronkey for comparison.");
 		$currentCronKey = wfConfig::get('currentCronKey', false);
-		wfConfig::set('currentCronKey', '');
 		if(! $currentCronKey){
 			wordfence::status(4, 'error', "Wordfence could not find a saved cron key to start the scan so assuming it started and exiting.");
 			exit();
@@ -41,6 +40,7 @@ class wfScan {
 		if($savedKey[1] != $_GET['cronKey']){ 
 			self::errorExit("Wordfence could not start a scan because the cron key does not match the saved key. Saved: " . $savedKey[1] . " Sent: " . $_GET['cronKey'] . " Current unexploded: " . $currentCronKey);
 		}
+		wfConfig::set('currentCronKey', '');
 		/* --------- end cronkey check ---------- */
 
 		self::status(4, 'info', "Becoming admin for scan");
@@ -56,6 +56,10 @@ class wfScan {
 			}
 			
 			wfConfig::set('wfPeakMemory', 0);
+			wfConfig::set('lowResourceScanWaitStep', false);
+			if (wfConfig::get('lowResourceScansEnabled')) {
+				self::status(1, 'info', "Using low resource scanning");
+			}
 		}
 		self::status(4, 'info', "Requesting max memory");
 		wfUtils::requestMaxMemory();
@@ -69,13 +73,13 @@ class wfScan {
 		wfUtils::iniSet('display_errors','On');
 		self::status(4, 'info', "Setting up scanRunning and starting scan");
 		if($isFork){
-			$scan = wfConfig::get_ser('wfsd_engine', false);
+			$scan = wfConfig::get_ser('wfsd_engine', false, false);
 			if($scan){
 				self::status(4, 'info', "Got a true deserialized value back from 'wfsd_engine' with type: " . gettype($scan));
-				wfConfig::set('wfsd_engine', '', true);
+				wfConfig::set('wfsd_engine', '', wfConfig::DONT_AUTOLOAD);
 			} else {
 				self::status(2, 'error', "Scan can't continue - stored data not found after a fork. Got type: " . gettype($scan));
-				wfConfig::set('wfsd_engine', '', true);
+				wfConfig::set('wfsd_engine', '', wfConfig::DONT_AUTOLOAD);
 				exit();
 			}
 		} else {

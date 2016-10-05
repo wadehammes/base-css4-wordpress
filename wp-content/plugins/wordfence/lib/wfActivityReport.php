@@ -96,16 +96,16 @@ class wfActivityReport {
 		$end_time = 0;
 
 		switch ($interval) {
+			// Send a report 4pm every day
+			case 'daily':
+				$start_time = gmmktime(16, 0, 0, $month, $day_of_month, $year) + (-$offset * 60 * 60);
+				$end_time = $start_time + 86400;
+				break;
+			
 			// Send a report 4pm every Monday
 			case 'weekly':
 				$start_time = gmmktime(16, 0, 0, $month, $day_of_month - $day + 1, $year) + (-$offset * 60 * 60);
 				$end_time = $start_time + (86400 * 7);
-				break;
-
-			// Send a report 4pm every other Monday
-			case 'biweekly':
-				$start_time = gmmktime(16, 0, 0, $month, $day_of_month - $day + 1, $year) + (-$offset * 60 * 60);
-				$end_time = $start_time + (86400 * 14);
 				break;
 
 			// Send a report at 4pm the first of every month
@@ -139,8 +139,8 @@ class wfActivityReport {
 		// weekly
 		$from = $time - (86400 * 7);
 		switch ($interval) {
-			case 'biweekly':
-				$from = $time - (86400 * 14);
+			case 'daily':
+				$from = $time - 86400;
 				break;
 
 			// Send a report at 4pm the first of every month
@@ -157,13 +157,17 @@ class wfActivityReport {
 	 */
 	public function getFullReport() {
 		$start_time = microtime(true);
+		$remainder = 0;
+		$recent_firewall_activity = $this->getRecentFirewallActivity($this->limit, $remainder);
 		return array(
-			'top_ips_blocked'         => $this->getTopIPsBlocked($this->limit),
-			'top_countries_blocked'   => $this->getTopCountriesBlocked($this->limit),
-			'top_failed_logins'       => $this->getTopFailedLogins($this->limit),
-			'recently_modified_files' => $this->getRecentFilesModified($this->limit),
-			'updates_needed'          => $this->getUpdatesNeeded(),
-			'microseconds'            => microtime(true) - $start_time,
+			'top_ips_blocked'          => $this->getTopIPsBlocked($this->limit),
+			'top_countries_blocked'    => $this->getTopCountriesBlocked($this->limit),
+			'top_failed_logins'        => $this->getTopFailedLogins($this->limit),
+			'recent_firewall_activity' => $recent_firewall_activity,
+			'omitted_firewall_activity'=> $remainder,
+			'recently_modified_files'  => $this->getRecentFilesModified($this->limit),
+			'updates_needed'           => $this->getUpdatesNeeded(),
+			'microseconds'             => microtime(true) - $start_time,
 		);
 	}
 
@@ -243,8 +247,8 @@ SQL
 	public function getTopFailedLogins($limit = 10) {
 		$interval = 'UNIX_TIMESTAMP(DATE_SUB(NOW(), interval 7 day))';
 		switch (wfConfig::get('email_summary_interval', 'weekly')) {
-			case 'biweekly':
-				$interval = 'UNIX_TIMESTAMP(DATE_SUB(NOW(), interval 14 day))';
+			case 'daily':
+				$interval = 'UNIX_TIMESTAMP(DATE_SUB(NOW(), interval 1 day))';
 				break;
 			case 'monthly':
 				$interval = 'UNIX_TIMESTAMP(DATE_SUB(NOW(), interval 1 month))';
@@ -316,6 +320,19 @@ SQL
 		}
 		return false;
 	}
+	
+	/**
+	 * Returns list of firewall activity up to $limit number of entries.
+	 * 
+	 * @param int $limit Max events to return in results
+	 * @return array
+	 */
+	public function getRecentFirewallActivity($limit = 300, &$remainder) {
+		$dateRange = wfActivityReport::getReportDateRange();
+		$recent_firewall_activity = new wfRecentFirewallActivity(null, max(604800, $dateRange[1] - $dateRange[0]));
+		$recent_firewall_activity->run();
+		return $recent_firewall_activity->mostRecentActivity($limit, $remainder);
+	}
 
 	/**
 	 * Returns list of files modified within given timeframe.
@@ -342,8 +359,8 @@ SQL
 		// default to weekly
 		$interval = 'FLOOR(UNIX_TIMESTAMP(DATE_SUB(NOW(), interval 7 day)) / 86400)';
 		switch (wfConfig::get('email_summary_interval', 'weekly')) {
-			case 'biweekly':
-				$interval = 'FLOOR(UNIX_TIMESTAMP(DATE_SUB(NOW(), interval 14 day)) / 86400)';
+			case 'daily':
+				$interval = 'FLOOR(UNIX_TIMESTAMP(DATE_SUB(NOW(), interval 1 day)) / 86400)';
 				break;
 			case 'monthly':
 				$interval = 'FLOOR(UNIX_TIMESTAMP(DATE_SUB(NOW(), interval 1 month)) / 86400)';
@@ -466,6 +483,77 @@ SQL
 	}
 }
 
+class wfRecentFirewallActivity {
+	private $activity = array();
+	
+	private $max_fetch = 2000;
+	private $time_range = 604800;
+	
+	public function __construct($max_fetch = null, $time_range = null) {
+		if ($max_fetch !== null) {
+			$this->max_fetch = $max_fetch;
+		}
+		
+		if ($time_range !== null) {
+			$this->time_range = $time_range;
+		}
+	}
+	
+	public function run() {
+		global $wpdb;
+		
+		$results = $wpdb->get_results($wpdb->prepare(<<<SQL
+SELECT attackLogTime, IP, URL, UA, actionDescription, actionData
+FROM {$wpdb->prefix}wfHits
+WHERE action = 'blocked:waf' AND attackLogTime > (UNIX_TIMESTAMP() - %d)
+ORDER BY attackLogTime DESC
+LIMIT %d
+SQL
+			, $this->time_range, $this->max_fetch));
+		if ($results) {
+			foreach ($results as &$row) {
+				$row->longDescription = "Blocked for " . $row->actionDescription;
+				
+				$actionData = json_decode($row->actionData, true);
+				if (!is_array($actionData) || !isset($actionData['paramKey']) || !isset($actionData['paramValue'])) {
+					continue;
+				}
+				
+				$paramKey = base64_decode($actionData['paramKey']);
+				$paramValue = base64_decode($actionData['paramValue']);
+				if (strlen($paramValue) > 100) {
+					$paramValue = substr($paramValue, 0, 100) . chr(2026);
+				}
+				
+				if (preg_match('/([a-z0-9_]+\.[a-z0-9_]+)(?:\[(.+?)\](.*))?/i', $paramKey, $matches)) {
+					switch ($matches[1]) {
+						case 'request.queryString':
+							$row->longDescription = "Blocked for " . $row->actionDescription . ' in query string: ' . $matches[2] . '=' . $paramValue;
+							break;
+						case 'request.body':
+							$row->longDescription = "Blocked for " . $row->actionDescription . ' in POST body: ' . $matches[2] . '=' . $paramValue;
+							break;
+						case 'request.cookie':
+							$row->longDescription = "Blocked for " . $row->actionDescription . ' in cookie: ' . $matches[2] . '=' . $paramValue;
+							break;
+						case 'request.fileNames':
+							$row->longDescription = "Blocked for a " . $row->actionDescription . ' in file: ' . $matches[2] . '=' . $paramValue;
+							break;
+					}
+				}
+			}
+		}
+		
+		$this->activity = $results;
+	}
+	
+	public function mostRecentActivity($limit, &$remainder = null) {
+		if ($remainder !== null) {
+			$remainder = count($this->activity) - $limit;
+		}
+		return array_slice($this->activity, 0, $limit);
+	}
+}
 
 class wfRecentlyModifiedFiles extends wfDirectoryIterator {
 
@@ -580,5 +668,18 @@ class wfActivityReportView extends wfView {
 			$unix_time = time();
 		}
 		return date_i18n('F j, Y g:ia', $unix_time);
+	}
+	
+	public function attackTime($unix_time = null) {
+		if ($unix_time === null) {
+			$unix_time = time();
+		}
+		return date_i18n('F j, Y', $unix_time) . "<br>" . date_i18n('g:ia', $unix_time);
+	}
+	
+	public function displayIP($binaryIP) {
+		$readableIP = wfUtils::inet_ntop($binaryIP);
+		$country = wfUtils::countryCode2Name(wfUtils::IP2Country($readableIP));
+		return "{$readableIP} (" . ($country ? $country : 'Unknown') . ")"; 
 	}
 }

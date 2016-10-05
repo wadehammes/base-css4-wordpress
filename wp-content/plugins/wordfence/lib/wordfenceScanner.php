@@ -34,7 +34,8 @@ class wordfenceScanner {
 	protected $api = false;
 	protected static $excludePatterns = array();
 	protected static $builtinExclusions = array(
-											array('pattern' => 'wp-includes/version.php', 'include' => self::EXCLUSION_PATTERNS_KNOWN_FILES), //Excluded from the known files scan because non-en_US installations will have extra content that fails the check, still in malware scan
+											array('pattern' => 'wp\-includes\/version\.php', 'include' => self::EXCLUSION_PATTERNS_KNOWN_FILES), //Excluded from the known files scan because non-en_US installations will have extra content that fails the check, still in malware scan
+											array('pattern' => '(?:wp\-includes|wp\-admin)\/(?:[^\/]+\/+)*(?:\.htaccess|\.htpasswd|php_errorlog|error_log|[^\/]+?\.log|\._|\.DS_Store|\.listing|dwsync\.xml)', 'include' => self::EXCLUSION_PATTERNS_KNOWN_FILES),
 											);
 	/** @var wfScanEngine */
 	protected $scanEngine;
@@ -73,14 +74,27 @@ class wordfenceScanner {
 		if(! (is_array($sigData) && isset($sigData['rules'])) ){
 			throw new Exception("Wordfence could not get the attack signature patterns from the scanning server.");
 		}
+		
+		if (wfWAF::getInstance() && method_exists(wfWAF::getInstance(), 'setMalwareSignatures')) {
+			try { wfWAF::getInstance()->setMalwareSignatures(array()); } catch (Exception $e) { /* Ignore */ }
+		}
 
 		if (is_array($sigData['rules'])) {
+			$wafPatterns = array();
 			foreach ($sigData['rules'] as $key => $signatureRow) {
 				list(, , $pattern) = $signatureRow;
+				$logOnly = (isset($signatureRow[5]) && !empty($signatureRow[5])) ? $signatureRow[5] : false;
 				if (@preg_match('/' . $pattern . '/i', null) === false) {
 					wordfence::status(1, 'error', "A regex Wordfence received from it's servers is invalid. The pattern is: " . esc_html($pattern));
 					unset($sigData['rules'][$key]);
 				}
+				else if (!$logOnly) {
+					$wafPatterns[] = $pattern;
+				}
+			}
+			
+			if (wfWAF::getInstance() && method_exists(wfWAF::getInstance(), 'setMalwareSignatures')) {
+				try { wfWAF::getInstance()->setMalwareSignatures($wafPatterns); } catch (Exception $e) { /* Ignore */ }
 			}
 		}
 
@@ -125,6 +139,11 @@ class wordfenceScanner {
 				$exParts = explode("\n", wfUtils::cleanupOneEntryPerLine(wfConfig::get('scan_exclude')));
 			}
 		}
+		
+		foreach ($exParts as &$exPart) {
+			$exPart = preg_quote(trim($exPart), '/');
+			$exPart = preg_replace('/\\\\\*/', '.*', $exPart);
+		}
 
 		foreach (self::$builtinExclusions as $pattern) {
 			if (($pattern['include'] & $whichPatterns) > 0) {
@@ -133,11 +152,6 @@ class wordfenceScanner {
 		}
 
 		if (!empty($exParts)) {
-			foreach($exParts as &$exPart){
-				$exPart = preg_quote(trim($exPart), '/');
-				$exPart = preg_replace('/\\\\\*/', '.*', $exPart);
-			}
-
 			//self::$excludePattern = '/^(?:' . implode('|', array_filter($exParts)) . ')$/i';
 			self::$excludePatterns[$whichPatterns] = '/(?:' . implode('|', array_filter($exParts)) . ')$/i';
 		}
@@ -182,10 +196,7 @@ class wordfenceScanner {
 					continue;
 				}
 				$fileSum = $rec1['newMD5'];
-
-				if(! file_exists($this->path . $file)){
-					continue;
-				}
+				
 				$fileExt = '';
 				if(preg_match('/\.([a-zA-Z\d\-]{1,7})$/', $file, $matches)){
 					$fileExt = strtolower($matches[1]);
@@ -194,17 +205,25 @@ class wordfenceScanner {
 				if(preg_match('/\.(?:php(?:\d+)?|phtml)(\.|$)/i', $file)) {
 					$isPHP = true;
 				}
+				$isHTML = false;
+				if(preg_match('/\.(?:html?)(\.|$)/i', $file)) {
+					$isHTML = true;
+				}
+				$isJS = false;
+				if(preg_match('/\.(?:js)(\.|$)/i', $file)) {
+					$isJS = true;
+				}
 				$dontScanForURLs = false;
 				if( (! wfConfig::get('scansEnabled_highSense')) && (preg_match('/^(?:\.htaccess|wp\-config\.php)$/', $file) || $file === ini_get('user_ini.filename'))) {
 					$dontScanForURLs = true;
 				}
 				
 				$isScanImagesFile = false;
-				if (!$isPHP && preg_match('/^(?:jpg|jpeg|mp3|avi|m4v|gif|png|sql|js|tbz2?|bz2?|xz|zip|tgz|gz|tar|log|err\d+)$/', $fileExt)) {
+				if (!$isPHP && preg_match('/^(?:jpg|jpeg|mp3|avi|m4v|mov|mp4|gif|png|tiff?|svg|sql|js|tbz2?|bz2?|xz|zip|tgz|gz|tar|log|err\d+)$/', $fileExt)) {
 					if (wfConfig::get('scansEnabled_scanImages')) {
 						$isScanImagesFile = true;
 					}
-					else {
+					else if (!$isJS) {
 						continue;
 					}
 				}
@@ -261,8 +280,8 @@ class wordfenceScanner {
 						$extraMsg = ' This file was detected because you have enabled HIGH SENSITIVITY scanning. This option is more aggressive than the usual scans, and may cause false positives.';
 					}
 					
-					if($isPHP || wfConfig::get('scansEnabled_scanImages') ){
-						if(strpos($data, '$allowed'.'Sites') !== false && strpos($data, "define ('VER"."SION', '1.") !== false && strpos($data, "TimThum"."b script created by") !== false){
+					$treatAsBinary = ($isPHP || $isHTML || wfConfig::get('scansEnabled_scanImages'));
+					if ($treatAsBinary && strpos($data, '$allowed'.'Sites') !== false && strpos($data, "define ('VER"."SION', '1.") !== false && strpos($data, "TimThum"."b script created by") !== false) {
 							if(! $this->isSafeFile($this->path . $file)){
 								$this->addResult(array(
 									'type' => 'file',
@@ -276,42 +295,56 @@ class wordfenceScanner {
 									), $dataForFile),
 								));
 								break;
+						}
 							}
-						} else if(strpos($file, 'lib/wordfenceScanner.php') === false){ // && preg_match($this->patterns['sigPattern'], $data, $matches)){
+					else if(strpos($file, 'lib/wordfenceScanner.php') === false) {
 							$regexMatched = false;
-							foreach($this->patterns['rules'] as $rule){
-								if(preg_match('/(' . $rule[2] . ')/i', $data, $matches)){
-									if(! $this->isSafeFile($this->path . $file)){
+						foreach ($this->patterns['rules'] as $rule) {
+							$type = (isset($rule[4]) && !empty($rule[4])) ? $rule[4] : 'server';
+							$logOnly = (isset($rule[5]) && !empty($rule[5])) ? $rule[5] : false;
+							if ($type == 'server' && !$treatAsBinary) { continue; }
+							else if (($type == 'both' || $type == 'browser') && $fileExt == 'js') { $extraMsg = ''; }
+							else if (($type == 'both' || $type == 'browser') && !$treatAsBinary) { continue; }
+							
+							if (preg_match('/(' . $rule[2] . ')/i', $data, $matches, PREG_OFFSET_CAPTURE)) {
+								if (!$this->isSafeFile($this->path . $file)) {
+									$matchString = $matches[1][0];
+									$matchOffset = $matches[1][1];
+									$beforeString = substr($data, max(0, $matchOffset - 100), $matchOffset - max(0, $matchOffset - 100));
+									$afterString = substr($data, $matchOffset + strlen($matchString), 100);
+									if (!$logOnly) {
 										$this->addResult(array(
 											'type' => 'file',
 											'severity' => 1,
 											'ignoreP' => $this->path . $file,
 											'ignoreC' => $fileSum,
 											'shortMsg' => "File appears to be malicious: " . esc_html($file),
-											'longMsg' => "This file appears to be installed by a hacker to perform malicious activity. If you know about this file you can choose to ignore it to exclude it from future scans. The text we found in this file that matches a known malicious file is: <strong style=\"color: #F00;\">\"" . esc_html((strlen($matches[1]) > 200 ? substr($matches[1], 0, 200) . '...' : $matches[1])) . "\"</strong>. The infection type is: <strong>" . esc_html($rule[3]) . '</strong>' . $extraMsg,
+											'longMsg' => "This file appears to be installed by a hacker to perform malicious activity. If you know about this file you can choose to ignore it to exclude it from future scans. The text we found in this file that matches a known malicious file is: <strong style=\"color: #F00;\">\"" . esc_html((strlen($matchString) > 200 ? substr($matchString, 0, 200) . '...' : $matchString)) . "\"</strong>. The infection type is: <strong>" . esc_html($rule[3]) . '</strong>.' . $extraMsg,
 											'data' => array_merge(array(
 												'file' => $file,
 											), $dataForFile),
 										));
-										$regexMatched = true;
-										break;
 									}
+									$regexMatched = true;
+									$this->scanEngine->recordMetric('malwareSignature', $rule[0], array('file' => $file, 'match' => $matchString, 'before' => $beforeString, 'after' => $afterString), false);
+									break;
 								}
 							}
-							if($regexMatched){ break; }
 						}
-						if(wfConfig::get('scansEnabled_highSense')){
+						if ($regexMatched) { break; }
+						}
+					if ($treatAsBinary && wfConfig::get('scansEnabled_highSense')) {
 							$badStringFound = false;
-							if(strpos($data, $this->patterns['badstrings'][0]) !== false){
-								for($i = 1; $i < sizeof($this->patterns['badstrings']); $i++){
-									if(strpos($data, $this->patterns['badstrings'][$i]) !== false){
+						if (strpos($data, $this->patterns['badstrings'][0]) !== false) {
+							for ($i = 1; $i < sizeof($this->patterns['badstrings']); $i++) {
+								if (strpos($data, $this->patterns['badstrings'][$i]) !== false) {
 										$badStringFound = $this->patterns['badstrings'][$i];
 										break;
 									}
 								}
 							}
-							if($badStringFound){
-								if(! $this->isSafeFile($this->path . $file)){
+						if ($badStringFound) {
+							if (!$this->isSafeFile($this->path . $file)) {
 									$this->addResult(array(
 										'type' => 'file',
 										'severity' => 1,
@@ -327,13 +360,9 @@ class wordfenceScanner {
 								}
 							}
 						}
-						if(! $dontScanForURLs){
+					
+					if (!$dontScanForURLs) {
 							$this->urlHoover->hoover($file, $data);
-						}
-					} else {
-						if(! $dontScanForURLs){
-							$this->urlHoover->hoover($file, $data);
-						}
 					}
 
 					if($totalRead > 2 * 1024 * 1024){

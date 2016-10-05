@@ -2,24 +2,28 @@
 <div class="wrap" id="paidWrap">
 	<?php require('menuHeader.php'); ?>
 	<?php $pageTitle = "Schedule when Wordfence Scans Occur"; $helpLink="http://docs.wordfence.com/en/Wordfence_scan_scheduling"; $helpLabel="Learn more about Scheduling Wordfence Scans"; include('pageTitle.php'); ?>
+	<?php
+	$rightRail = new wfView('marketing/rightrail', array('additionalClasses' => 'wordfenceRightRailScanSchedule'));
+	echo $rightRail;
+	?>
 <?php if(! wfConfig::get('isPaid')){ ?>
 	<div class="wf-premium-callout" style="margin: 20px;">
 		<h3>Scan Scheduling is only available to Premium Members</h3>
 		<p>Premium users can increase their WordPress protection by controlling scan frequency up to once per hour. Premium also allows you to control when Wordfence initiates a scan, selecting optimal times that don’t interfere with high-traffic or optimal usage of your site.</p>
 
-		<p>Upgrade to Premium today for less than $5 per month:</p>
+		<p>Upgrade today:</p>
 		<ul>
 			<li>Receive real-time Firewall and Scan engine rule updates for protection as threats emerge</li>
 			<li>Other advanced features like IP reputation monitoring, an advanced comment spam filter, country blocking and cell phone sign-in give you the best protection available</li>
 			<li>Access to Premium Support</li>
-			<li>Discounts of up to 75% available for multiyear and multi-license purchases</li>
+			<li>Discounts of up to 90% available for multiyear and multi-license purchases</li>
 		</ul>
 		<p class="center"><a class="button button-primary"
-		                     href="https://www.wordfence.com/gnl1scanSched1/wordfence-signup/">Get Premium</a></p>
+		                     href="https://www.wordfence.com/gnl1scanSched1/wordfence-signup/" target="_blank">Get Premium</a></p>
 	</div>
 <?php } ?>
 
-	<div class="wordfenceWrap" style="margin: 20px 20px 20px 30px;">
+	<div class="wordfenceWrap" style="margin: 20px 20px 20px 30px; max-width: 900px;">
 		<p>
 			<strong>Current time:</strong>&nbsp;<?php echo date('l jS \of F Y H:i:s A', current_time('timestamp')); ?>
 			<br /><strong>Next scan will start at:</strong>&nbsp;

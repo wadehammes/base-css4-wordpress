@@ -154,7 +154,7 @@ function ewww_image_optimizer_count_optimized( $gallery, $return_ids = false ) {
 						$ids[] = $attachment[1];
 					}
 					// resized versions, so we can continue
-					if ( isset( $meta['sizes'] ) ) {
+					if ( isset( $meta['sizes'] ) && is_array( $meta['sizes'] ) ) {
 						foreach( $meta['sizes'] as $size => $data ) {
 							if ( ! empty( $disabled_sizes[ $size ] ) ) {
 								continue;

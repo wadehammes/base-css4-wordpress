@@ -8,35 +8,7 @@ textarea {
   width: 100%;
 }
 
-input,
-textarea {
-  background-color: var(--input-color) !important;
-  border: 1px solid var(--input-color);
-  color: var(--white);
-  padding: 0.5em;
-  transition: border 0.3s ease-in;
-
-  &:focus {
-    outline: 0;
-    border: 1px solid var(--input-color-darker);
-  }
-}
-
-label {
-  color: var(--white);
-  font-family: var(--header-font-family);
-  font-size: var(--text-xx-small);
-  text-transform: uppercase;
-  display: inline-block;
-  margin-bottom: 4px;
-
-  & span {
-    color: color(var(--black) tint(15%));
-  }
-}
-
 /* Custom Variables */
 :root {
-  --input-color: color(var(--black) tint(20%));
-  --input-color-darker: color(var(--black) tint(30%));
+
 }

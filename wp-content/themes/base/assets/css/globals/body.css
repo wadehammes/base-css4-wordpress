@@ -1,4 +1,4 @@
-html * {
+* {
   box-sizing: border-box;
 }
 
@@ -7,14 +7,4 @@ body {
   font-family: var(--global-font-family);
   font-weight: var(--font-weight-regular);
   text-rendering: optimizeLegibility;
-}
-
-/*=============================================>>>>>
-= Site Container =
-===============================================>>>>>*/
-.site-container {
-  padding: 0;
-  overflow: hidden;
-  max-width: 100%;
-  margin: 0 auto;
 }

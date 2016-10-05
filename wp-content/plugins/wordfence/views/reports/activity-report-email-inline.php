@@ -119,14 +119,14 @@ h6 a:visited { color: purple !important; }
 				<div style="float: right; text-align: right; line-height: 1.1; color: #666666; font-size: 100%; vertical-align: baseline; margin: 20px 0 0; padding: 0; border: 0;" align="right">
 					<?php echo $title ?>
 				</div>
-				<a href="http://www.wordfence.com/zz5/" style="font-size: 100%; vertical-align: baseline; outline: none; color: orange; text-decoration: none; margin: 0; padding: 0; border: 0;"><img src="http://www.wordfence.com/wp-content/themes/wordfence/img/logo.png" alt="" style="font-size: 100%; vertical-align: baseline; -ms-interpolation-mode: bicubic; outline: none; text-decoration: none; margin: 0; padding: 0; border: 0 none; width: 560px;" /></a>
+				<a href="http://www.wordfence.com/zz5/" style="font-size: 100%; vertical-align: baseline; outline: none; color: orange; text-decoration: none; margin: 0; padding: 0; border: 0;"><img src="<?php echo wfUtils::getBaseURL(); ?>images/logo.png" alt="" style="font-size: 100%; vertical-align: baseline; -ms-interpolation-mode: bicubic; outline: none; text-decoration: none; margin: 0; padding: 0; border: 0 none; width: 560px;" /></a>
 
 				<p style="font-size: 100%; vertical-align: baseline; margin: 1em 0; padding: 0; border: 0;">
 					This email was sent from your website <a href="<?php echo site_url() ?>"><?php echo site_url() ?></a> and is a summary of security related activity that Wordfence monitors for the period <?php printf('%s to %s', $report_start, $report_end) ?>. <?php if (!wfConfig::get('isPaid')): ?>NOTE: You are using the free version of Wordfence and are missing out on features like cellphone sign-in, country blocking and detecting if your site IP is sending spam. <a href="http://www.wordfence.com/zz6/">Click here to upgrade to Wordfence Premium now</a>.<?php endif ?>
 				</p>
 
 				<h2 style="font-size: 20px; vertical-align: baseline; clear: both; color: #222 !important; margin: 20px 0 4px; padding: 0; border: 0;">
-					Top 10 IP's Blocked
+					Top 10 IPs Blocked
 				</h2>
 
 				<?php wfHelperString::cycle(); ?>
@@ -149,7 +149,7 @@ h6 a:visited { color: purple !important; }
 								<td style="font-size: 100%; vertical-align: baseline; font-weight: normal; text-align: left; border-collapse: collapse; margin: 0; padding: 6px 4px; border: 1px solid #cccccc;<?php echo $bg_colors[$stripe] ?>" align="left" valign="baseline"><code style="font-size: 100%; vertical-align: baseline; margin: 0; padding: 0; border: 0;"><?php echo wfUtils::inet_ntop($row->IP) ?></code></td>
 								<td style="font-size: 100%; vertical-align: baseline; font-weight: normal; text-align: left; border-collapse: collapse; margin: 0; padding: 6px 4px; border: 1px solid #cccccc;<?php echo $bg_colors[$stripe] ?>" align="left" valign="baseline">
 									<?php if ($row->countryCode): ?>
-										<img src="http://www.wordfence.com/images/flags/<?php echo esc_attr(strtolower($row->countryCode)) ?>.png" class="wfFlag" height="11" width="16" style="font-size: 100%; vertical-align: baseline; -ms-interpolation-mode: bicubic; outline: none; text-decoration: none; margin: 0; padding: 0; border: 0;">
+										<img src="<?php echo wfUtils::getBaseURL() . 'images/flags/' . esc_attr(strtolower($row->countryCode)) ?>.png" class="wfFlag" height="11" width="16" style="font-size: 100%; vertical-align: baseline; -ms-interpolation-mode: bicubic; outline: none; text-decoration: none; margin: 0; padding: 0; border: 0;">
 										&nbsp;
 										<?php echo esc_html($row->countryCode) ?>
 									<?php else: ?>
@@ -194,7 +194,7 @@ h6 a:visited { color: purple !important; }
 								<tr class="<?php echo $stripe ?>" style="font-size: 100%; vertical-align: baseline; margin: 0; padding: 0; border: 0;">
 									<td style="font-size: 100%; vertical-align: baseline; font-weight: normal; text-align: left; border-collapse: collapse; margin: 0; padding: 6px 4px; border: 1px solid #cccccc;<?php echo $bg_colors[$stripe] ?>" align="left" valign="baseline">
 										<?php if ($row->countryCode): ?>
-											<img src="http://www.wordfence.com/images/flags/<?php echo strtolower($row->countryCode) ?>.png" class="wfFlag" height="11" width="16" style="font-size: 100%; vertical-align: baseline; -ms-interpolation-mode: bicubic; outline: none; text-decoration: none; margin: 0; padding: 0; border: 0;">
+											<img src="<?php echo wfUtils::getBaseURL() . 'images/flags/' . strtolower($row->countryCode) ?>.png" class="wfFlag" height="11" width="16" style="font-size: 100%; vertical-align: baseline; -ms-interpolation-mode: bicubic; outline: none; text-decoration: none; margin: 0; padding: 0; border: 0;">
 											&nbsp;
 											<?php echo esc_html($row->countryCode) ?>
 										<?php else: ?>
@@ -256,6 +256,52 @@ h6 a:visited { color: purple !important; }
 				<p style="font-size: 100%; vertical-align: baseline; margin: 1em 0; padding: 0; border: 0;">
 					<a class="button" href="<?php echo network_admin_url('admin.php?page=WordfenceSecOpt#wfMarkerLoginSecurity') ?>" style="font-size: 13px; vertical-align: baseline; outline: none; color: #FFF; text-decoration: none; display: inline-block; line-height: 26px; height: 28px; cursor: pointer; border-radius: 3px; white-space: nowrap; box-sizing: border-box; box-shadow: 0 1px 0 rgba(120, 200, 230, 0.5) inset, 0 1px 0 rgba(0, 0, 0, 0.15); background-image: none; background-attachment: scroll; background-repeat: repeat; background-color: #2EA2CC; margin: 0; padding: 0 10px 1px; border: 1px solid #0074a2;">Update Login Security Options</a>
 				</p>
+				
+				<?php wfHelperString::cycle(); ?>
+				
+				<h2 style="font-size: 20px; vertical-align: baseline; clear: both; color: #222 !important; margin: 20px 0 4px; padding: 0; border: 0;">Recently Blocked Attacks</h2>
+				
+				<table class="activity-table" style="font-size: 100%; vertical-align: baseline; border-collapse: collapse; border-spacing: 0; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%; max-width: 100%; margin: 0; padding: 0; border: 0;">
+					<thead style="font-size: 100%; vertical-align: baseline; margin: 0; padding: 0; border: 0;">
+					<tr style="font-size: 100%; vertical-align: baseline; margin: 0; padding: 0; border: 0;">
+						<th style="font-size: 100%; vertical-align: baseline; font-weight: bold; text-align: left; color: #FFFFFF; background-color: #222; margin: 0; padding: 6px 4px; border: 1px solid #474747;" align="left" bgcolor="#222" valign="baseline">Time</th>
+						<th style="font-size: 100%; vertical-align: baseline; font-weight: bold; text-align: left; color: #FFFFFF; background-color: #222; margin: 0; padding: 6px 4px; border: 1px solid #474747;" align="left" bgcolor="#222" valign="baseline">IP / Action</th>
+					</tr>
+					</thead>
+					<tbody style="font-size: 100%; vertical-align: baseline; margin: 0; padding: 0; border: 0;">
+					<?php if (count($recent_firewall_activity) > 0): ?>
+					<?php foreach ($recent_firewall_activity as $attack_row):
+						?>
+						<?php
+						$stripe = wfHelperString::cycle('odd', 'even');
+						?>
+						<tr class="<?php echo $stripe ?>" style="font-size: 100%; vertical-align: baseline; margin: 0; padding: 0; border: 0;">
+							<td style="font-size: 100%; vertical-align: baseline; font-weight: normal; text-align: left; border-collapse: collapse; margin: 0; padding: 6px 4px; border: 1px solid #cccccc;white-space: nowrap;<?php echo $bg_colors[$stripe] ?>" align="left" valign="baseline"><?php echo $this->attackTime($attack_row->attackLogTime) ?></td>
+							<td style="font-size: 100%; vertical-align: baseline; font-weight: normal; text-align: left; border-collapse: collapse; margin: 0; padding: 6px 4px; border: 1px solid #cccccc;<?php echo $bg_colors[$stripe] ?>" align="left" valign="baseline">
+								<div style="font-weight: bold; font-size: 12px;"><?php echo $this->displayIP($attack_row->IP) ?></div> 
+								<pre class="display-file" style="font-size: 12px; vertical-align: baseline; width: 420px; margin: 0; padding: 0; border: 0; white-space: normal;"><?php echo esc_html($attack_row->longDescription) ?></pre>
+							</td>
+						</tr>
+					<?php endforeach ?>
+					<?php else: ?>
+						<tr>
+							<td colspan="2">
+								No blocked attacks yet.
+							</td>
+						</tr>
+					<?php endif ?>
+					</tbody>
+				</table>
+				
+				<?php
+				if ($omitted_firewall_activity > 10):
+				?>
+				<div style="font-size: 14px; vertical-align: baseline; clear: both; color: #f00 !important; margin: 8px 0 4px; padding: 0; border: 0;">and <?php echo $omitted_firewall_activity ?> additional attacks</div>
+				<?php endif ?> 
+				
+				<p style="font-size: 100%; vertical-align: baseline; margin: 1em 0; padding: 0; border: 0;">
+					<a class="button" href="<?php echo network_admin_url('admin.php?page=WordfenceActivity') ?>" style="font-size: 13px; vertical-align: baseline; outline: none; color: #FFF; text-decoration: none; display: inline-block; line-height: 26px; height: 28px; cursor: pointer; border-radius: 3px; white-space: nowrap; box-sizing: border-box; box-shadow: 0 1px 0 rgba(120, 200, 230, 0.5) inset, 0 1px 0 rgba(0, 0, 0, 0.15); background-image: none; background-attachment: scroll; background-repeat: repeat; background-color: #2EA2CC; margin: 0; padding: 0 10px 1px; border: 1px solid #0074a2;">View Recent Traffic</a>
+				</p>
 
 				<?php wfHelperString::cycle(); ?>
 
@@ -298,9 +344,12 @@ h6 a:visited { color: purple !important; }
 				<?php if ($updates_needed['plugins']): ?>
 					<h4 style="font-size: 16px; vertical-align: baseline; clear: both; color: #666666 !important; margin: 20px 0 4px; padding: 0; border: 0;">Plugins</h4>
 					<ul style="font-size: 100%; vertical-align: baseline; list-style-type: none; margin: 0; padding: 0; border: 0;">
-						<?php foreach ($updates_needed['plugins'] as $plugin): ?>
+						<?php
+						foreach ($updates_needed['plugins'] as $plugin):
+							$newVersion = ($plugin['newVersion'] == 'Unknown' ? $plugin['newVersion'] : "v{$plugin['newVersion']}");
+						?>
 							<li style="font-size: 100%; vertical-align: baseline; margin: 0; padding: 0; border: 0;">
-								A new version of the plugin "<?php echo esc_html("{$plugin['Name']} (v{$plugin['newVersion']})") ?>" is available.
+								A new version of the plugin "<?php echo esc_html("{$plugin['Name']} ({$newVersion})") ?>" is available.<?php if (isset($plugin['vulnerabilityPatched']) && $plugin['vulnerabilityPatched']) { echo " <strong>This update includes security-related fixes.</strong>"; } ?>
 							</li>
 						<?php endforeach ?>
 					</ul>
@@ -308,9 +357,12 @@ h6 a:visited { color: purple !important; }
 				<?php if ($updates_needed['themes']): ?>
 					<h4 style="font-size: 16px; vertical-align: baseline; clear: both; color: #666666 !important; margin: 20px 0 4px; padding: 0; border: 0;">Themes</h4>
 					<ul style="font-size: 100%; vertical-align: baseline; list-style-type: none; margin: 0; padding: 0; border: 0;">
-						<?php foreach ($updates_needed['themes'] as $theme): ?>
+						<?php
+						foreach ($updates_needed['themes'] as $theme):
+							$newVersion = ($theme['newVersion'] == 'Unknown' ? $theme['newVersion'] : "v{$theme['newVersion']}");
+						?>
 							<li style="font-size: 100%; vertical-align: baseline; margin: 0; padding: 0; border: 0;">
-								A new version of the theme "<?php echo esc_html("{$theme['name']} (v{$theme['newVersion']})") ?>" is available.
+								A new version of the theme "<?php echo esc_html("{$theme['name']} ({$newVersion})") ?>" is available.<?php if (isset($theme['vulnerabilityPatched']) && $theme['vulnerabilityPatched']) { echo " <strong>This update includes security-related fixes.</strong>"; } ?>
 							</li>
 						<?php endforeach ?>
 					</ul>

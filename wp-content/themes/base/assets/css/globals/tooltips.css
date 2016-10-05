@@ -24,14 +24,14 @@
   bottom: 150%;
   z-index: 9999;
   font-size: var(--text-xx-small);
-}
 
-.tooltip::after {
-  content: '';
-  border: 8px solid;
-  border-color: var(--black) transparent transparent transparent;
-  position: absolute;
-  bottom: -16px;
-  left: 50%;
-  margin-left: -8px;
+  &:after {
+    content: '';
+    border: 8px solid;
+    border-color: var(--black) transparent transparent transparent;
+    position: absolute;
+    bottom: -16px;
+    left: 50%;
+    margin-left: -8px;
+  }
 }

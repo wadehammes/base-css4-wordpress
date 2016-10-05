@@ -33,6 +33,14 @@ window['wordfenceExt'] = {
 			function(){ jQuery('#wordfenceAdminEmailWarning').fadeOut(); }
 		);
 	},
+	suPHPWAFUpdateChoice: function(choice) {
+		this.ajax('wordfence_suPHPWAFUpdateChoice', {
+				choice: choice
+			},
+			function(res){ jQuery('#wordfenceSuPHPUpdateWarning').fadeOut(); },
+			function(){ jQuery('#wordfenceSuPHPUpdateWarning').fadeOut(); }
+		);
+	},
 	removeFromCache: function(postID){
 		this.ajax('wordfence_removeFromCache', {
 			id: postID

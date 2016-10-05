@@ -22,7 +22,7 @@ class wfWAFStorageFile implements wfWAFStorageInterface {
 		fflush($tmpHandle);
 		self::lock($tmpHandle, LOCK_UN);
 		fclose($tmpHandle);
-		chmod($tmpFile, 0640);
+		chmod($tmpFile, 0660); 
 
 		// Attempt to verify file has finished writing (sometimes the disk will lie for better benchmarks)
 		$tmpContents = file_get_contents($tmpFile);
@@ -350,6 +350,7 @@ class wfWAFStorageFile implements wfWAFStorageInterface {
 			if (!file_exists($filePath)) {
 				@file_put_contents($filePath, $defaultContents, LOCK_EX);
 			}
+			@chmod($filePath, 0660);
 			$this->$fileHandle = @fopen($filePath, 'r+');
 			if (!$this->$fileHandle) {
 				throw new wfWAFStorageFileException('Unable to open ' . $filePath . ' for reading and writing.');
@@ -405,7 +406,8 @@ class wfWAFStorageFile implements wfWAFStorageInterface {
 	 * @return mixed
 	 */
 	public function getConfig($key, $default = null) {
-		if (!$this->data) {
+		if (!$this->data)
+		{
 			$this->fetchConfigData();
 		}
 		return array_key_exists($key, $this->data) ? $this->data[$key] : $default;
@@ -416,14 +418,16 @@ class wfWAFStorageFile implements wfWAFStorageInterface {
 	 * @param mixed $value
 	 */
 	public function setConfig($key, $value) {
-		if (!$this->data) {
+		if (!$this->data)
+		{
 			$this->fetchConfigData();
 		}
 		if (!$this->dataChanged && (
 				(array_key_exists($key, $this->data) && $this->data[$key] !== $value) ||
 				!array_key_exists($key, $this->data)
 			)
-		) {
+		)
+		{
 			$this->dataChanged = array($key, true);
 			register_shutdown_function(array($this, 'saveConfig'));
 		}
@@ -434,10 +438,12 @@ class wfWAFStorageFile implements wfWAFStorageInterface {
 	 * @param string $key
 	 */
 	public function unsetConfig($key) {
-		if (!$this->data) {
+		if (!$this->data)
+		{
 			$this->fetchConfigData();
 		}
-		if (!$this->dataChanged && array_key_exists($key, $this->data)) {
+		if (!$this->dataChanged && array_key_exists($key, $this->data))
+		{
 			$this->dataChanged = array($key, true);
 			register_shutdown_function(array($this, 'saveConfig'));
 		}
@@ -512,9 +518,9 @@ class wfWAFStorageFile implements wfWAFStorageInterface {
 	 * @return bool
 	 */
 	public function isInLearningMode() {
-		if ($this->getConfig('wafStatus') == 'learning-mode') {
-			if ($this->getConfig('learningModeGracePeriodEnabled')) {
-				if ($this->getConfig('learningModeGracePeriod') > time()) {
+		if ($this->getConfig('wafStatus', '') == 'learning-mode') {
+			if ($this->getConfig('learningModeGracePeriodEnabled', false)) {
+				if ($this->getConfig('learningModeGracePeriod', 0) > time()) {
 					return true;
 				} else {
 					// Reached the end of the grace period, activate the WAF.
@@ -530,7 +536,7 @@ class wfWAFStorageFile implements wfWAFStorageInterface {
 	}
 
 	public function isDisabled() {
-		return $this->getConfig('wafStatus') === 'disabled' || $this->getConfig('wafDisabled');
+		return $this->getConfig('wafStatus', '') === 'disabled' || $this->getConfig('wafDisabled', 0);
 	}
 
 	/**
@@ -772,6 +778,7 @@ class wfWAFAttackDataStorageFileEngine {
 		if (!file_exists($this->file)) {
 			@file_put_contents($this->file, $this->getDefaultHeader(), LOCK_EX);
 		}
+		@chmod($this->file, 0660);
 		$this->fileHandle = @fopen($this->file, 'r+');
 		if (!$this->fileHandle) {
 			throw new wfWAFStorageFileException('Unable to open ' . $this->file . ' for reading and writing.');

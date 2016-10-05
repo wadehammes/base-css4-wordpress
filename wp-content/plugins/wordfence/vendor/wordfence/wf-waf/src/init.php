@@ -1,10 +1,10 @@
 <?php
 
-define('WFWAF_VERSION', '1.0.0');
+define('WFWAF_VERSION', '1.0.2');
 define('WFWAF_PATH', dirname(__FILE__) . '/');
 define('WFWAF_LIB_PATH', WFWAF_PATH . 'lib/');
 define('WFWAF_VIEW_PATH', WFWAF_PATH . 'views/');
-define('WFWAF_API_URL_SEC', 'https://noc4.wordfence.com/v1.2/');
+define('WFWAF_API_URL_SEC', 'https://noc4.wordfence.com/v1.4/');
 if (!defined('WFWAF_DEBUG')) {
 	define('WFWAF_DEBUG', false);
 }
@@ -19,6 +19,8 @@ require_once WFWAF_LIB_PATH . 'utils.php';
 
 require_once WFWAF_LIB_PATH . 'storage.php';
 require_once WFWAF_LIB_PATH . 'storage/file.php';
+
+require_once WFWAF_LIB_PATH . 'config.php';
 
 require_once WFWAF_LIB_PATH . 'rules.php';
 require_once WFWAF_LIB_PATH . 'parser/lexer.php';

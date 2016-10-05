@@ -15,7 +15,7 @@ class wfAPI {
 	}
 
 	public function getStaticURL($url) { // In the form '/something.bin' without quotes
-		return $this->getURL($this->getAPIURL() . $url);
+		return $this->getURL(rtrim($this->getAPIURL(), '/') . '/' . ltrim($url, '/'));
 	}
 
 	public function call($action, $getParams = array(), $postParams = array(), $forceSSL = false) {
@@ -25,7 +25,7 @@ class wfAPI {
 			//User's should never see this message unless we aren't calling SSLEnabled() to check if SSL is enabled before using call() with forceSSL
 			throw new Exception("SSL is not supported by your web server and is required to use this function. Please ask your hosting provider or site admin to install cURL with openSSL to use this feature.");
 		}
-		$json = $this->getURL($apiURL . '/v' . WORDFENCE_API_VERSION . '/?' . $this->makeAPIQueryString() . '&' . self::buildQuery(
+		$json = $this->getURL(rtrim($apiURL, '/') . '/v' . WORDFENCE_API_VERSION . '/?' . $this->makeAPIQueryString() . '&' . self::buildQuery(
 				array_merge(
 					array('action' => $action),
 					$getParams
@@ -94,7 +94,7 @@ class wfAPI {
 	}
 
 	public function binCall($func, $postData) {
-		$url = $this->getAPIURL() . '/v' . WORDFENCE_API_VERSION . '/?' . $this->makeAPIQueryString() . '&action=' . $func;
+		$url = rtrim($this->getAPIURL(), '/') . '/v' . WORDFENCE_API_VERSION . '/?' . $this->makeAPIQueryString() . '&action=' . $func;
 
 		$data = $this->getURL($url, $postData);
 

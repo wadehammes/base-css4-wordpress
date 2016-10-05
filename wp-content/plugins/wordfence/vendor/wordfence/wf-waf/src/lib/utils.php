@@ -525,4 +525,23 @@ class wfWAFUtils {
 		$args = func_get_args();
 		return self::callMBSafeStrFunction('strrpos', $args);
 	}
+	
+	/**
+	 * @param string $val An ini byte size value (e.g., 20M)
+	 * @return int
+	 */
+	public static function iniSizeToBytes($val) {
+		$val = trim($val);
+		$last = strtolower(substr($val, -1));
+		switch ($last) {
+			case 'g':
+				$val *= 1024;
+			case 'm':
+				$val *= 1024;
+			case 'k':
+				$val *= 1024;
+		}
+		
+		return intval($val);
+	}
 }

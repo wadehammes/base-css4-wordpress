@@ -411,7 +411,7 @@ if(! function_exists('geoip_close')){
 
 if(! function_exists('geoip_country_id_by_name_v6')){
 	function geoip_country_id_by_name_v6($gi, $name) {
-	  $rec = dns_get_record($name, DNS_AAAA);
+	  $rec = @dns_get_record($name, DNS_AAAA);
 	  if ( !$rec ) {
 	    return false;
 	  }

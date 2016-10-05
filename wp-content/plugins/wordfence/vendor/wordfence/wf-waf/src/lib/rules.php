@@ -456,6 +456,7 @@ class wfWAFRuleComparison implements wfWAFRuleInterface {
 		'currentuseris',
 		'currentuserisnot',
 		'md5equals',
+		'filepatternsmatch',
 	);
 
 	/**
@@ -696,6 +697,42 @@ class wfWAFRuleComparison implements wfWAFRuleInterface {
 
 	public function md5Equals($subject) {
 		return md5((string) $subject) === $this->getExpected();
+	}
+	
+	public function filePatternsMatch($subject) {
+		$request = $this->getWAF()->getRequest();
+		$files = $request->getFiles();
+		$patterns = $this->getWAF()->getMalwareSignatures();
+		if (!is_array($patterns) || !is_array($files)) {
+			return false;
+		}
+		
+		foreach ($files as $file) {
+			if ($file['name'] == (string) $subject) {
+				$fh = @fopen($file['tmp_name'], 'r');
+				if (!$fh) {
+					return false;
+				}
+				$totalRead = 0;
+				
+				$readsize = max(min(10 * 1024 * 1024, wfWAFUtils::iniSizeToBytes(ini_get('upload_max_filesize'))), 1 * 1024 * 1024);
+				while (!feof($fh)) {
+					$data = fread($fh, $readsize);
+					$totalRead += strlen($data);
+					if ($totalRead < 1) {
+						return false;
+					}
+				
+					foreach ($patterns as $rule) {
+						if (preg_match('/(' . $rule . ')/i', $data, $matches)) {
+							return true;
+						}
+					}
+				}	
+			}
+		}
+		
+		return false;
 	}
 
 	/**
@@ -1223,10 +1260,16 @@ class wfWAFRuleComparisonSubject {
 	 * @return string
 	 */
 	public function renderRule() {
-		if (is_array($this->getSubject())) {
+		$subjects = $this->getSubject();
+		if (is_array($subjects)) {
+			if (strpos($subjects[0], '.') !== false) {
+				list($superGlobal, $global) = explode('.', $subjects[0], 2);
+				unset($subjects[0]);
+				$subjects = array_merge(array($superGlobal, $global), $subjects);
+			}
 			$rule = '';
-			foreach ($this->getSubject() as $subject) {
-				if (preg_match("/^[a-zA-Z_][\\w_]*/", $subject)) {
+			foreach ($subjects as $subject) {
+				if (preg_match("/^[a-zA-Z_][a-zA-Z0-9_]*$/", $subject)) {
 					$rule .= "$subject.";
 				} else {
 					$rule = rtrim($rule, '.');

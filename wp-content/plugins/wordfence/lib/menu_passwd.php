@@ -6,18 +6,29 @@
 	$helpLabel = "Learn more about Password Auditing";
 	include('pageTitle.php'); ?>
 	<?php if (!wfConfig::get('isPaid')) { ?>
+		<div class="wordfenceRightRail">
+			<ul>
+				<li><a href="https://www.wordfence.com/gnl1rightRailGetPremium/wordfence-signup/" target="_blank"><img src="<?php echo wfUtils::getBaseURL() . 'images/rr_premium.png'; ?>" alt="Upgrade your protection - Get Wordfence Premium"></a></li>
+				<li><a href="https://www.wordfence.com/gnl1rightRailSiteCleaning/wordfence-site-cleanings/" target="_blank"><img src="<?php echo wfUtils::getBaseURL() . 'images/rr_sitecleaning.jpg'; ?>" alt="Have you been hacked? Get help from Wordfence"></a></li> 
+				<li>
+					<p class="center"><strong>Would you like to remove these ads?</strong><br><a href="https://www.wordfence.com/gnl1rightRailBottomUpgrade/wordfence-signup/" target="_blank">Get Premium</a></p>
+				</li>
+			</ul>
+		</div>
+	<?php } ?>
+	<?php if (!wfConfig::get('isPaid')) { ?>
 		<div class="wf-premium-callout" style="margin: 20px 0 20px 20px; width: 700px;">
 			<h3>Password Auditing is only available to Premium Members</h3>
 			<p>Wordfence Password Auditing uses our high performance password auditing cluster to test the strength of your admin and user passwords. We securely simulate a high-performance password cracking attack on your password database and will alert you to weak passwords. We then provide a way to change weak passwords or alert members that they need to improve their password strength.</p>
 
-			<p>Upgrade to Premium today for less than $5 per month:</p>
+			<p>Upgrade today:</p>
 			<ul>
 				<li>Receive real-time Firewall and Scan engine rule updates for protection as threats emerge</li>
 				<li>Other advanced features like IP reputation monitoring, an advanced comment spam filter, advanced scanning options, cell phone sign-in and country blocking give you the best protection available</li>
 				<li>Access to Premium Support</li>
-				<li>Discounts of up to 75% available for multiyear and multi-license purchases</li>
+				<li>Discounts of up to 90% available for multiyear and multi-license purchases</li>
 			</ul>
-			<p class="center"><a class="button button-primary" href="https://www.wordfence.com/gnl1pwAuditUp1/wordfence-signup/">Get Premium</a></p>
+			<p class="center"><a class="button button-primary" href="https://www.wordfence.com/gnl1pwAuditUp1/wordfence-signup/" target="_blank">Get Premium</a></p>
 		</div>
 	<?php } ?>
 

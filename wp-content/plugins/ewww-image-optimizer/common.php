@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'EWWW_IMAGE_OPTIMIZER_VERSION', '293.0' );
+define( 'EWWW_IMAGE_OPTIMIZER_VERSION', '294.0' );
 
 // initialize a couple globals
 $ewww_debug = '';
@@ -1926,6 +1926,9 @@ function ewww_image_optimizer_cloud_optimizer( $file, $type, $convert = false, $
 	if ( empty( $ewww_cloud_ip ) || empty( $ewww_cloud_transport ) || preg_match( '/exceeded/', $ewww_status ) ) {
 		if ( ! ewww_image_optimizer_cloud_verify() ) { 
 			return array( $file, false, 'key verification failed', 0 );
+		} else {
+			$ewww_cloud_ip = get_transient( 'ewww_image_optimizer_cloud_ip' );
+			$ewww_cloud_transport = get_transient( 'ewww_image_optimizer_cloud_transport' );
 		}
 	}
 	// calculate how much time has elapsed since we started
@@ -2696,6 +2699,16 @@ function ewww_image_optimizer_find_already_optimized( $attachment ) {
 		}
 	}
 	return false;
+}
+
+function ewww_image_optimizer_test_background_opt() {
+	if ( ewww_image_optimizer_detect_wpsf_location_lock() ) {
+		return false;
+	}
+	if ( ewww_image_optimizer_get_option( 'ewww_image_optimizer_debug' ) ) {
+		return false;
+	}
+	return true;
 }
 
 function ewww_image_optimizer_test_parallel_opt( $id = 0 ) {

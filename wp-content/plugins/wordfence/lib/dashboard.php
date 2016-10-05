@@ -10,7 +10,7 @@
 ?>
 </td></tr>
 <?php } ?>
-<?php if(wfConfig::get('firewallEnabled')){ ?><tr><td style="padding-right: 20px;">Firewall Enabled:</td><td style="color: #0F0;">&#10004;</td></tr> <?php } ?>
+<?php if(wfConfig::get('firewallEnabled')){ ?><tr><td style="padding-right: 20px;">Advanced Blocking Enabled:</td><td style="color: #0F0;">&#10004;</td></tr> <?php } ?>
 <?php if(wfConfig::get('loginSecurityEnabled')){ ?><tr><td style="padding-right: 20px;">Login Security Enabled:</td><td style="color: #0F0;">&#10004;</td></tr> <?php } ?>
 <?php if(wfConfig::get('other_scanComments')){ ?><tr><td style="padding-right: 20px;">Comment Filter Enabled:</td><td style="color: #0F0;">&#10004;</td></tr> <?php } ?>
 <?php if(wfConfig::get('other_hideWPVersion')){ ?><tr><td style="padding-right: 20px;">WordPress Version Hiding Enabled:</td><td style="color: #0F0;">&#10004;</td></tr> <?php } ?>

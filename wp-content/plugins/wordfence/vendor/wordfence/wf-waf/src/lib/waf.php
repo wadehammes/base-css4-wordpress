@@ -188,6 +188,9 @@ auEa+7b+FGTKs7dUo2BNGR7OVifK4GZ8w/ajS0TelhrSRi3BBQCGXLzUO/UURUAh
 		} catch (wfWAFBlockSQLiException $e) {
 			$this->eventBus->blockSQLi($ip, $e);
 			$this->blockAction($e);
+			
+		} catch (wfWAFLogException $e) {
+			$this->logAction($e);
 		}
 
 		$this->runCron();
@@ -306,11 +309,26 @@ auEa+7b+FGTKs7dUo2BNGR7OVifK4GZ8w/ajS0TelhrSRi3BBQCGXLzUO/UURUAh
 				$cron = array(
 					new wfWAFCronFetchRulesEvent(time() +
 						(86400 * ($this->getStorageEngine()->getConfig('isPaid') ? .5 : 7))),
+					new wfWAFCronFetchIPListEvent(time() + 86400),
 				);
 				$this->getStorageEngine()->setConfig('cron', $cron);
 			}
 
 			// Any migrations to newer versions go here.
+			if ($currentVersion === '1.0.0') {
+				$cron = $this->getStorageEngine()->getConfig('cron');
+				if (is_array($cron)) {
+					$cron[] = new wfWAFCronFetchIPListEvent(time() + 86400);
+				}
+				$this->getStorageEngine()->setConfig('cron', $cron);
+			}
+			
+			if (version_compare($currentVersion, '1.0.2') === -1) {
+				$event = new wfWAFCronFetchRulesEvent(time() - 2);
+				$event->setWaf($this);
+				$event->fire();
+			}
+			
 			$this->getStorageEngine()->setConfig('version', WFWAF_VERSION);
 		}
 	}
@@ -403,6 +421,57 @@ auEa+7b+FGTKs7dUo2BNGR7OVifK4GZ8w/ajS0TelhrSRi3BBQCGXLzUO/UURUAh
 			return $matches[1] >= 1 && $matches[1] <= 32;
 		}
 		return false;
+	}
+	
+	/**
+	 * @return array
+	 */
+	public function getMalwareSignatures() {
+		try {
+			$encoded = $this->getStorageEngine()->getConfig('filePatterns');
+			if (empty($encoded)) {
+				return array();
+			}
+			
+			$authKey = $this->getStorageEngine()->getConfig('authKey');
+			$encoded = base64_decode($encoded);
+			$paddedKey = substr(str_repeat($authKey, ceil(strlen($encoded) / strlen($authKey))), 0, strlen($encoded));
+			$json = $encoded ^ $paddedKey;
+			$signatures = wfWAFUtils::json_decode($json, true);
+			if (!is_array($signatures)) {
+				return array();
+			}
+			return $signatures;
+		}
+		catch (Exception $e) {
+			//Ignore
+		}
+		return array();
+	}
+	
+	/**
+	 * @param array $signatures
+	 * @param bool $updateLastUpdatedTimestamp
+	 */
+	public function setMalwareSignatures($signatures, $updateLastUpdatedTimestamp = true) {
+		try {
+			if (!is_array($signatures)) {
+				$signatures = array();
+			}
+			
+			$authKey = $this->getStorageEngine()->getConfig('authKey');
+			$json = wfWAFUtils::json_encode($signatures);
+			$paddedKey = substr(str_repeat($authKey, ceil(strlen($json) / strlen($authKey))), 0, strlen($json));
+			$payload = $json ^ $paddedKey;
+			$this->getStorageEngine()->setConfig('filePatterns', base64_encode($payload));
+			
+			if ($updateLastUpdatedTimestamp) {
+				$this->getStorageEngine()->setConfig('signaturesLastUpdated', is_int($updateLastUpdatedTimestamp) ? $updateLastUpdatedTimestamp : time());
+			}
+		}
+		catch (Exception $e) {
+			//Ignore
+		}
 	}
 
 	/**
@@ -736,6 +805,10 @@ HTML
 		header('HTTP/1.0 403 Forbidden');
 		exit($this->getBlockedMessage());
 	}
+	
+	public function logAction($e) {
+		$this->getStorageEngine()->logAttack(array('logged'), $e->getParamKey(), $e->getParamValue(), $this->getRequest());
+	}
 
 	/**
 	 * @return string
@@ -863,6 +936,12 @@ HTML
 		if ($this->getStorageEngine()->getConfig('attackDataKey', false) === false) {
 			$this->getStorageEngine()->setConfig('attackDataKey', mt_rand(0, 0xfff));
 		}
+		
+		if (!$this->getStorageEngine()->getConfig('other_WFNet', true)) {
+			$this->getStorageEngine()->truncateAttackData();
+			$this->getStorageEngine()->unsetConfig('attackDataNextInterval');
+			return;
+		}
 
 		$request = new wfWAFHTTP();
 		try {
@@ -888,6 +967,9 @@ HTML
 						if (is_array($jsonData) && array_key_exists('success', $jsonData)) {
 							$this->getStorageEngine()->truncateAttackData();
 							$this->getStorageEngine()->unsetConfig('attackDataNextInterval');
+						}
+						if (array_key_exists('data', $jsonData) && array_key_exists('watchedIPList', $jsonData['data'])) {
+							$this->getStorageEngine()->setConfig('watchedIPs', $jsonData['data']['watchedIPList']);
 						}
 					}
 				} else if (is_string($response->getBody()) && preg_match('/next check in: ([0-9]+)/', $response->getBody(), $matches)) {
@@ -1290,6 +1372,42 @@ class wfWAFCronFetchRulesEvent extends wfWAFCronEvent {
 
 				}
 			}
+			
+			$this->response = wfWAFHTTP::get(WFWAF_API_URL_SEC . "?" . http_build_query(array(
+					'action'   => 'get_malware_signatures',
+					'k'        => $waf->getStorageEngine()->getConfig('apiKey'),
+					's'        => $waf->getStorageEngine()->getConfig('siteURL') ? $waf->getStorageEngine()->getConfig('siteURL') : $guessSiteURL,
+					'h'        => $waf->getStorageEngine()->getConfig('homeURL') ? $waf->getStorageEngine()->getConfig('homeURL') : $guessSiteURL,
+					'openssl'  => $waf->hasOpenSSL() ? 1 : 0,
+					'betaFeed' => (int) $waf->getStorageEngine()->getConfig('betaThreatDefenseFeed'),
+				), null, '&'));
+			if ($this->response) {
+				$jsonData = wfWAFUtils::json_decode($this->response->getBody(), true);
+				if (is_array($jsonData)) {
+					if ($waf->hasOpenSSL() &&
+						isset($jsonData['data']['signature']) &&
+						isset($jsonData['data']['signatures']) &&
+						$waf->verifySignedRequest(base64_decode($jsonData['data']['signature']), $jsonData['data']['signatures'])
+					) {
+						$waf->setMalwareSignatures(wfWAFUtils::json_decode(base64_decode($jsonData['data']['signatures'])),
+							isset($jsonData['data']['timestamp']) ? $jsonData['data']['timestamp'] : true);
+						if (array_key_exists('premiumCount', $jsonData['data'])) {
+							$waf->getStorageEngine()->setConfig('signaturePremiumCount', $jsonData['data']['premiumCount']);
+						}
+						
+					} else if (!$waf->hasOpenSSL() &&
+						isset($jsonData['data']['hash']) &&
+						isset($jsonData['data']['signatures']) &&
+						$waf->verifyHashedRequest($jsonData['data']['hash'], $jsonData['data']['signatures'])
+					) {
+						$waf->setMalwareSignatures(wfWAFUtils::json_decode(base64_decode($jsonData['data']['signatures'])),
+							isset($jsonData['data']['timestamp']) ? $jsonData['data']['timestamp'] : true);
+						if (array_key_exists('premiumCount', $jsonData['data'])) {
+							$waf->getStorageEngine()->setConfig('signaturePremiumCount', $jsonData['data']['premiumCount']);
+						}
+					}
+				}
+			}
 		} catch (wfWAFHTTPTransportException $e) {
 			error_log($e->getMessage());
 		} catch (wfWAFBuildRulesException $e) {
@@ -1316,6 +1434,50 @@ class wfWAFCronFetchRulesEvent extends wfWAFCronEvent {
 				}
 			}
 		}
+		return $newEvent;
+	}
+}
+
+class wfWAFCronFetchIPListEvent extends wfWAFCronEvent {
+	
+	public function fire() {
+		$waf = $this->getWaf();
+		if (!$waf) {
+			return;
+		}
+		$guessSiteURL = sprintf('%s://%s/', $waf->getRequest()->getProtocol(), $waf->getRequest()->getHost());
+		try {
+			
+			$request = new wfWAFHTTP();
+			$request->setHeaders(array(
+				'Content-Type' => 'application/json',
+			));
+			$response = wfWAFHTTP::post(WFWAF_API_URL_SEC . "?" . http_build_query(array(
+					'action' => 'send_waf_attack_data',
+					'k'      => $waf->getStorageEngine()->getConfig('apiKey'),
+					's'        => $waf->getStorageEngine()->getConfig('siteURL') ? $waf->getStorageEngine()->getConfig('siteURL') : $guessSiteURL,
+				), null, '&'), '[]', $request);
+			
+			if ($response instanceof wfWAFHTTPResponse && $response->getBody()) {
+				$jsonData = wfWAFUtils::json_decode($response->getBody(), true);
+				if (array_key_exists('data', $jsonData) && array_key_exists('watchedIPList', $jsonData['data'])) {
+					$waf->getStorageEngine()->setConfig('watchedIPs', $jsonData['data']['watchedIPList']);
+				}
+			}
+		} catch (wfWAFHTTPTransportException $e) {
+			error_log($e->getMessage());
+		}
+	}
+	
+	/**
+	 * @return wfWAFCronEvent|bool
+	 */
+	public function reschedule() {
+		$waf = $this->getWaf();
+		if (!$waf) {
+			return false;
+		}
+		$newEvent = new self(time() + 86400);
 		return $newEvent;
 	}
 }
@@ -1538,6 +1700,9 @@ class wfWAFBlockXSSException extends wfWAFRunException {
 }
 
 class wfWAFBlockSQLiException extends wfWAFRunException {
+}
+
+class wfWAFLogException extends wfWAFRunException {
 }
 
 class wfWAFBuildRulesException extends wfWAFException {

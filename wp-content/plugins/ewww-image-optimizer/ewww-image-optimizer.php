@@ -1,7 +1,7 @@
 <?php
 /**
  * Integrate image optimizers into WordPress.
- * @version 2.9.3
+ * @version 2.9.4
  * @package EWWW_Image_Optimizer
  */
 /*
@@ -10,7 +10,7 @@ Plugin URI: https://wordpress.org/extend/plugins/ewww-image-optimizer/
 Description: Reduce file sizes for images within WordPress including NextGEN Gallery and GRAND FlAGallery. Uses jpegtran, optipng/pngout, and gifsicle.
 Author: Shane Bishop
 Text Domain: ewww-image-optimizer
-Version: 2.9.3
+Version: 2.9.4
 Author URI: https://ewww.io/
 License: GPLv3
 */
@@ -138,7 +138,7 @@ function ewww_image_optimizer_set_defaults() {
 	add_site_option( 'ewww_image_optimizer_optipng_level', 2 );
 	add_site_option( 'ewww_image_optimizer_pngout_level', 2 );
 	add_site_option( 'ewww_image_optimizer_jpegtran_copy', TRUE );
-	add_site_option( 'ewww_image_optimizer_parallel_optimization', TRUE );
+//	add_site_option( 'ewww_image_optimizer_parallel_optimization', TRUE );
 	add_site_option( 'ewww_image_optimizer_jpg_level', '10' );
 	add_site_option( 'ewww_image_optimizer_png_level', '10' );
 	add_site_option( 'ewww_image_optimizer_gif_level', '10' );
@@ -2144,6 +2144,11 @@ function ewww_image_optimizer( $file, $gallery_type = 4, $converted = false, $ne
 		return array( $file, __( 'License exceeded', EWWW_IMAGE_OPTIMIZER_DOMAIN ), $converted, $original );
 	}
 	if ( ! empty( $new_size ) ) {
+		// Set correct file permissions
+		$stat = stat( dirname( $file ) );
+		$perms = $stat['mode'] & 0000666; //same permissions as parent folder, strip off the executable bits
+		@chmod( $file, $perms );
+
 		$results_msg = ewww_image_optimizer_update_table( $file, $new_size, $orig_size, $new );
 		ewwwio_memory( __FUNCTION__ );
 		return array( $file, $results_msg, $converted, $original );
@@ -2184,6 +2189,11 @@ function ewww_image_optimizer_webp_create( $file, $orig_size, $type, $tool, $rec
 	if ( is_file( $webpfile ) && $orig_size < $webp_size ) {
 		ewwwio_debug_message( 'webp file was too big, deleting' );
 		unlink( $webpfile );
+	} elseif ( is_file( $webpfile ) ) {
+		// Set correct file permissions
+		$stat = stat( dirname( $webpfile ) );
+		$perms = $stat['mode'] & 0000666; //same permissions as parent folder, strip off the executable bits
+		@chmod( $webpfile, $perms );
 	}
 	ewwwio_memory( __FUNCTION__ );
 }

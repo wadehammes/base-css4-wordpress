@@ -3,7 +3,7 @@
 Plugin Name: Advanced Custom Fields PRO
 Plugin URI: https://www.advancedcustomfields.com/
 Description: Customise WordPress with powerful, professional and intuitive fields
-Version: 5.3.8.1
+Version: 5.4.1
 Author: Elliot Condon
 Author URI: http://www.elliotcondon.com/
 Copyright: Elliot Condon
@@ -58,7 +58,7 @@ class acf {
 			
 			// basic
 			'name'				=> __('Advanced Custom Fields', 'acf'),
-			'version'			=> '5.3.8.1',
+			'version'			=> '5.4.1',
 						
 			// urls
 			'basename'			=> plugin_basename( __FILE__ ),
@@ -79,7 +79,9 @@ class acf {
 			'uploader'			=> 'wp',
 			'autoload'			=> false,
 			'l10n'				=> true,
-			'l10n_textdomain'	=> ''
+			'l10n_textdomain'	=> '',
+			'google_api_key'	=> '',
+			'google_api_client'	=> ''
 		);
 		
 		
@@ -96,6 +98,8 @@ class acf {
 		
 		// core
 		acf_include('core/ajax.php');
+		acf_include('core/cache.php');
+		acf_include('core/fields.php');
 		acf_include('core/field.php');
 		acf_include('core/input.php');
 		acf_include('core/validation.php');
@@ -107,6 +111,7 @@ class acf {
 		acf_include('core/revisions.php');
 		acf_include('core/compatibility.php');
 		acf_include('core/third_party.php');
+		acf_include('core/updates.php');
 		
 		
 		// forms
@@ -125,6 +130,7 @@ class acf {
 			acf_include('admin/field-group.php');
 			acf_include('admin/field-groups.php');
 			acf_include('admin/update.php');
+			acf_include('admin/update-network.php');
 			acf_include('admin/settings-tools.php');
 			//acf_include('admin/settings-addons.php');
 			acf_include('admin/settings-info.php');
@@ -219,6 +225,8 @@ class acf {
 		acf_include('fields/user.php');
 		acf_include('fields/google-map.php');
 		acf_include('fields/date_picker.php');
+		acf_include('fields/date_time_picker.php');
+		acf_include('fields/time_picker.php');
 		acf_include('fields/color_picker.php');
 		acf_include('fields/message.php');
 		acf_include('fields/tab.php');
@@ -368,7 +376,6 @@ class acf {
 		
 		// vars
 		$version = acf_get_setting('version');
-		$lang = get_locale();
 		$min = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG ? '' : '.min';
 		
 		
@@ -436,11 +443,64 @@ class acf {
 	
 	
 	/*
-function posts_request( $thing ) {
+	*  get_setting
+	*
+	*  This function will return a value from the settings array found in the acf object
+	*
+	*  @type	function
+	*  @date	28/09/13
+	*  @since	5.0.0
+	*
+	*  @param	$name (string) the setting name to return
+	*  @param	$value (mixed) default value
+	*  @return	$value
+	*/
+	
+	function get_setting( $name, $value = null ) {
 		
-		return $thing;
+		// check settings
+		if( isset($this->settings[ $name ]) ) {
+			
+			$value = $this->settings[ $name ];
+			
+		}
+		
+		
+		// filter for 3rd party customization
+		if( substr($name, 0, 1) !== '_' ) {
+			
+			$value = apply_filters( "acf/settings/{$name}", $value );
+			
+		}
+		
+		
+		// return
+		return $value;
+		
 	}
-*/
+	
+	
+	/*
+	*  update_setting
+	*
+	*  This function will update a value into the settings array found in the acf object
+	*
+	*  @type	function
+	*  @date	28/09/13
+	*  @since	5.0.0
+	*
+	*  @param	$name (string)
+	*  @param	$value (mixed)
+	*  @return	n/a
+	*/
+	
+	function update_setting( $name, $value ) {
+		
+		$this->settings[ $name ] = $value;
+		
+		return true;
+		
+	}
 	
 }
 
