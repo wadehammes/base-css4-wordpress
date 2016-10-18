@@ -140,7 +140,9 @@ gulp.task('svg-opt', function () {
 // Browser Sync
 gulp.task('serve', ['stylesheets', 'scripts'], function() {
     browserSync.init({
-        proxy: settings.devUrl
+        proxy: settings.devUrl,
+        files: [phpPath],
+        watchTask: true
     });
 
     gulp.watch(stylePathWatch, ['stylesheets']);

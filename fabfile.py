@@ -20,7 +20,7 @@ def dev():
     env.hosts = ['']
 
 @task
-def prod():
+def production():
     """ Use production server settings """
     print('******************************')
     print('********   WARNING    ********')
