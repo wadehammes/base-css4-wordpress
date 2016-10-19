@@ -15,6 +15,7 @@ function joints_scripts_and_styles() {
 
     // Loads jQuery from CDNJS
     wp_enqueue_script( 'jquery', 'https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js', array(), '2.2.4', true );
+    wp_add_inline_script( 'jquery', 'window.jQuery || document.write("<script src=\"/wp-content/themes/base/library/vendor/jquery.min.js\"><\/script>")');
 
     // Adding scripts file in the footer
     wp_enqueue_script( 'site-js', get_template_directory_uri() . '/library/js/app.js', array(), '', true );

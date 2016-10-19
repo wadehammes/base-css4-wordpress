@@ -53,11 +53,6 @@
         }
       </style>
     <?php } ?>
-
-    <!-- If jQuery fails to load, load local copy -->
-    <script type="text/javascript">
-      window.jQuery || document.write('<script src="<?php echo get_template_directory_uri(); ?>/library/vendor/jquery.min.js"><\/script>')
-    </script>
   </head>
   <body <?php body_class(); ?>>
 

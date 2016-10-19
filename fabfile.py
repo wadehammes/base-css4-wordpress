@@ -94,7 +94,7 @@ def deploy(branch='master'):
             if check == env.environment:
                 run('sudo chown -R www-data:www-data /var/www/html/')
                 run('sudo find /var/www/html/ -type f -exec chmod 664 {} \;')
-                run('sudo find /var/www/html/ -type d -exec chmod 755 {} \;')
+                run('sudo find /var/www/html/ -type d -exec chmod 775 {} \;')
                 run('git add -A')
                 run('git commit -m "Production Commit on {}"'.format(st))
                 run('git pull origin master')
