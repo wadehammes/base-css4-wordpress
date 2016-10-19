@@ -174,5 +174,4 @@ function remove_empty_tags_recursive ($str, $repto = NULL) {
     $str
   );
 }
-
 ?>
