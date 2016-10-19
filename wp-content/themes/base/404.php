@@ -1,35 +1,14 @@
-<?php get_header(); ?>
+<?php
+$url="http://".$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
 
-			<div id="content">
+get_header(); ?>
+	<div class="e404 p3">
+		<h1 class="text-huge white pt1">404</h1>
 
-				<div id="inner-content" class="row clearfix">
+		<p class="white">This page wasn't found, trying searching or go back <a href="/">home</a>.</p>
 
-					<div id="main" class="large-8 medium-8 columns first clearfix" role="main">
+		<div class="mb1"><?php get_search_form(); ?></div>
 
-						<article id="post-not-found" class="hentry clearfix">
-
-							<header class="article-header">
-								<h1><?php _e("Epic 404 - Article Not Found", "jointstheme"); ?></h1>
-							</header> <!-- end article header -->
-
-							<section class="entry-content">
-								<p><?php _e("The article you were looking for was not found, but maybe try looking again!", "jointstheme"); ?></p>
-							</section> <!-- end article section -->
-
-							<section class="search">
-							    <p><?php get_search_form(); ?></p>
-							</section> <!-- end search section -->
-
-							<footer class="article-footer">
-							    <p><?php _e("This is the 404.php template.", "jointstheme"); ?></p>
-							</footer> <!-- end article footer -->
-
-						</article> <!-- end article -->
-
-					</div> <!-- end #main -->
-
-				</div> <!-- end #inner-content -->
-
-			</div> <!-- end #content -->
-
+		<p class="text-x-small bc block mb4">If you think you are here by mistake, <a href="mailto:wade@trackmaven.com?subject=404 Page Error&body=The url <?php echo $url ?> has 404d by mistake I think, please fix.%0D%0A%0D%0AThank you!">email us</a>!</p>
+	</div>
 <?php get_footer(); ?>

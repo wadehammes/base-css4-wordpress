@@ -164,15 +164,15 @@ function remove_empty_tags_recursive ($str, $repto = NULL) {
 
   //** Recursive empty HTML tags.
   return preg_replace(
-  //** Pattern written by Junaid Atari.
-  '~\s?<p>(\s|&nbsp;)+</p>\s?~',
+    //** Pattern written by Junaid Atari.
+    '~\s?<p>(\s|&nbsp;)+</p>\s?~',
 
-  //** Replace with nothing if string empty.
-  !is_string ($repto) ? '' : $repto,
+    //** Replace with nothing if string empty.
+    !is_string ($repto) ? '' : $repto,
 
-  //** Source string
-  $str
-);
+    //** Source string
+    $str
+  );
 }
 
 ?>

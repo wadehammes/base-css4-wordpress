@@ -1,53 +1,21 @@
 <?php get_header(); ?>
 
-	<main class="main-content sm-col lg-col-8" role="main">
-		<h1 class="archive-title"><span><?php _e('Search Results for:', 'jointstheme'); ?></span> <?php echo esc_attr(get_search_query()); ?></h1>
+	<h1 class="page-title">
+		<span><?php _e('Search Results for:', 'jointstheme'); ?></span>
+		<?php echo esc_attr(get_search_query()); ?>
+	</h1>
 
+	<div class="content-loop">
 		<?php if (have_posts()) : while (have_posts()) : the_post(); ?>
-
-			<article id="post-<?php the_ID(); ?>" <?php post_class('clearfix'); ?> role="article">
-
-				<header class="article-header">
-					<h3 class="search-title"><a href="<?php the_permalink() ?>" rel="bookmark" title="<?php the_title_attribute(); ?>"><?php the_title(); ?></a></h3>
-          <p class="byline vcard"><?php
-            printf(__('Posted <time class="updated" datetime="%1$s" pubdate>%2$s</time> by <span class="author">%3$s</span> <span class="amp">&</span> filed under %4$s.', 'jointstheme'), get_the_time('Y-m-j'), get_the_time(__('F jS, Y', 'jointstheme')), joints_get_the_author_posts_link(), get_the_category_list(', '));
-          ?></p>
-				</header>
-				<!-- end article header -->
-
-				<section class="entry-content">
-				    <?php the_excerpt('<span class="read-more">' . __('Read more &raquo;', 'jointstheme') . '</span>'); ?>
-				</section>
-				<!-- end article section -->
-
-			</article>
-			<!-- end article -->
-
-		<?php endwhile; ?>
-
-			<nav class="wp-prev-next">
-					<?php if ( function_exists( 'wp_pagenavi' ) ) wp_pagenavi(array('query' => $query_post)); ?>
-			</nav>
-
-	    <?php else : ?>
-
-			    <article id="post-not-found" class="hentry clearfix">
-			    	<header class="article-header">
-			    		<h1><?php _e("Sorry, No Results.", "jointstheme"); ?></h1>
-			    	</header>
-			    	<section class="entry-content">
-			    		<p><?php _e("Try your search again.", "jointstheme"); ?></p>
-			    	</section>
-			    	<footer class="article-footer">
-			    	    <p><?php _e("This is the error message in the search.php template.", "jointstheme"); ?></p>
-			    	</footer>
-			    </article>
-
-	    <?php endif; ?>
-
-    </main>
-    <!-- end #main -->
-
-	  <?php get_sidebar(); ?>
+			<?php get_template_part( 'partials/loop', 'archive' ); ?>
+		<?php endwhile; if(found_posts() > $maxposts) :  ?>
+		<nav class="page-navigation">
+			<?php if ( function_exists( 'wp_pagenavi' ) ) wp_pagenavi(); ?>
+		</nav>
+		<?php endif; ?>
+		<?php else : ?>
+			<?php get_template_part( 'partials/missing', 'content' ); ?>
+		<?php endif; ?>
+	</div>
 
 <?php get_footer(); ?>

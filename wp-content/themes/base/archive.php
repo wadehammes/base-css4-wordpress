@@ -1,8 +1,10 @@
 <?php
-get_header(); ?>
+get_header();
+$maxposts = get_option( 'posts_per_page', 15 );
+?>
 	<div class="archive">
 
-		<h1 class="header text-small mt4 mb1">
+		<h1 class="page-title">
 	    <?php if (is_category()) { ?>
 				<span><?php _e("", "base"); ?></span> <?php single_cat_title(); ?>
 	    <?php } elseif (is_tag()) { ?>
@@ -21,25 +23,19 @@ get_header(); ?>
 	    <?php } ?>
 	  </h1>
 
-    <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
-
-    	<?php get_template_part( 'partials/loop', 'archive' ); ?>
-
-    <?php endwhile; ?>
-
-			<?php if ( function_exists( 'wp_pagenavi' ) ) : ?>
-				<nav class="prev-next">
-					<?php wp_pagenavi(array('query' => $query_post)); ?>
-				</nav>
+		<div class="content-loop">
+			<?php if (have_posts()) : while (have_posts()) : the_post(); ?>
+				<?php get_template_part( 'partials/loop', 'archive' ); ?>
+			<?php endwhile; if(found_posts() > $maxposts) :  ?>
+			<nav class="page-navigation">
+				<?php if ( function_exists( 'wp_pagenavi' ) ) wp_pagenavi(); ?>
+			</nav>
 			<?php endif; ?>
-
-    <?php else : ?>
-
-			<?php get_template_part( 'partials/missing', 'content' ); ?>
-
-    <?php endif; ?>
+			<?php else : ?>
+				<?php get_template_part( 'partials/missing', 'content' ); ?>
+			<?php endif; ?>
+		</div>
 
 	</div>
 
-<?php
-get_footer(); ?>
+<?php get_footer(); ?>

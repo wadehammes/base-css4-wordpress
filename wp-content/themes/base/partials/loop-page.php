@@ -1,22 +1,16 @@
-<article id="post-<?php the_ID(); ?>" <?php post_class('article article--page'); ?> itemscope itemtype="http://schema.org/BlogPosting">
+<section id="page-<?php the_ID(); ?>" <?php post_class('page'); ?> itemscope itemtype="http://schema.org/BlogPosting">
 
-	<header class="article-header">
+	<header class="page-header">
 		<h1 class="page-title"><?php the_title(); ?></h1>
 	</header>
-	<!-- end article header -->
 
-  <section class="entry-content clearfix" itemprop="articleBody">
+  <section class="page-content" itemprop="postBody">
 	  <?php the_content(); ?>
 	  <?php wp_link_pages(); ?>
 	</section>
-	<!-- end article section -->
 
-	<footer class="article-footer">
-		<p class="clearfix"><?php the_tags('<span class="tags">' . __('Tags:', 'jointstheme') . '</span> ', ', ', ''); ?></p>
+	<footer class="page-footer">
+		<p><?php the_tags('<span class="tags">' . __('Tags:', 'jointstheme') . '</span> ', ', ', ''); ?></p>
 	</footer>
-	<!-- end article footer -->
 
-	<?php comments_template(); ?>
-
-</article>
-<!-- end article -->
+</section>
