@@ -2,6 +2,10 @@
 $sigUpdateTime = wfConfig::get('signatureUpdateTime');
 ?>
 <div class="wordfenceModeElem" id="wordfenceMode_scan"></div>
+<div id="wfLiveTrafficOverlayAnchor"></div>
+<div id="wfLiveTrafficDisabledMessage">
+	<h2>Live Updates Paused<br /><small>Click inside window to resume</small></h2>
+</div>
 <div class="wrap wordfence">
 
 	<?php
@@ -255,6 +259,55 @@ $sigUpdateTime = wfConfig::get('signatureUpdateTime');
 	</div>
 </div>
 </div>
+</script>
+<script type="text/x-jquery-template" id="issueTmpl_publiclyAccessible">
+	<div>
+		<div class="wfIssue">
+			<h2>${shortMsg}</h2>
+			<table border="0" class="wfIssue" cellspacing="0" cellpadding="0">
+				<tr>
+					<th>URL:</th>
+					<td><a href="${data.url}" target="_blank">${data.url}</a></td>
+				<tr>
+					<th>Severity:</th>
+					<td>{{if severity == '1'}}Critical{{else}}Warning{{/if}}</td>
+				</tr>
+				<tr>
+					<th>Status</th>
+					<td>
+						{{if status == 'new' }}New{{/if}}
+						{{if status == 'ignoreP' || status == 'ignoreC' }}Ignored{{/if}}
+					</td>
+				</tr>
+			</table>
+			<p>
+				{{html longMsg}}
+			</p>
+			<div class="wfIssueOptions">
+				<strong>Tools:</strong>
+				{{if data.fileExists}}
+				<a target="_blank" href="${WFAD.makeViewFileLink(data.file)}">View the file</a>
+				{{/if}}
+				<a href="#" onclick="WFAD.hideFile('${id}', 'delete'); return false;">Hide this file in <em>.htaccess</em></a>
+				{{if data.canDelete}}
+				<a href="#" onclick="WFAD.deleteFile('${id}'); return false;">Delete this file (can't be undone).</a>
+				<p>
+					<label><input type="checkbox" class="wfdelCheckbox" value="${id}" />&nbsp;Select for bulk delete</label>
+				</p>
+				{{/if}}
+			</div>
+			<div class="wfIssueOptions">
+				{{if status == 'new'}}
+				<strong>Resolve:</strong>
+				<a href="#" onclick="WFAD.updateIssueStatus('${id}', 'delete'); return false;">I have fixed this issue</a>
+				<a href="#" onclick="WFAD.updateIssueStatus('${id}', 'ignoreC'); return false;">Ignore this issue</a>
+				{{/if}}
+				{{if status == 'ignoreC' || status == 'ignoreP'}}
+				<a href="#" onclick="WFAD.updateIssueStatus('${id}', 'delete'); return false;">Stop ignoring this issue</a>
+				{{/if}}
+			</div>
+		</div>
+	</div>
 </script>
 <script type="text/x-jquery-template" id="issueTmpl_wpscan_fullPathDiscl">
 <div>

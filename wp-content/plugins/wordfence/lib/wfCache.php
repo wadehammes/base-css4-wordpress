@@ -719,10 +719,7 @@ EOT;
 
 		$homePath = get_home_path();
 		$htaccessFile = $homePath.'.htaccess';
-		if (file_exists($htaccessFile)) {
-			return $htaccessFile;
-		}
-		return false;
+		return $htaccessFile;
 	}
 	public static function doNotCache(){
 		if(! defined('WFDONOTCACHE')){

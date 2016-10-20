@@ -1,3 +1,9 @@
+<?php if (wfConfig::liveTrafficEnabled()): ?>
+	<div id="wfLiveTrafficOverlayAnchor"></div>
+	<div id="wfLiveTrafficDisabledMessage">
+		<h2>Live Updates Paused<br /><small>Click inside window to resume</small></h2>
+	</div>
+<?php endif ?>
 <div class="wrap wordfence">
 	<?php require('menuHeader.php'); ?>
 
@@ -23,10 +29,15 @@
 
 	<div class="wordfenceModeElem" id="wordfenceMode_activity"></div>
 	<div class="wordfenceLive">
-		<table border="0" cellpadding="0" cellspacing="0">
+		<table border="0" cellpadding="0" cellspacing="0" class="wordfenceLiveActivity">
 			<tr>
 				<td><h2>Wordfence Live Activity:</h2></td>
 				<td id="wfLiveStatus"></td>
+			</tr>
+		</table>
+		<table border="0" cellpadding="0" cellspacing="0" class="wordfenceLiveStateMessage">
+			<tr>
+				<td>Live Updates Paused &mdash; Click inside window to resume</td>
 			</tr>
 		</table>
 	</div>

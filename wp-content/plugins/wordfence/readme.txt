@@ -1,11 +1,11 @@
 === Wordfence Security ===
 Contributors: mmaunder 
-Tags: security, secure, security plugin, wordpress security, login security, firewall, malware, antivirus, web application firewall, block hackers, country blocking, block hackers
+Tags: security, secure, security plugin, wordpress security, login security, firewall, malware, antivirus, web application firewall, block hackers, country blocking
 Requires at least: 3.9
 Tested up to: 4.6.1
-Stable tag: 6.2.0
+Stable tag: 6.2.2
 
-Secure your website with the most comprehensive WordPress security plugin. Firewall, malware scanner, blocking, live traffic, login security & more.
+Secure your website with the most comprehensive WordPress security plugin. Firewall, malware scan, blocking, live traffic, login security & more.
 
 == Description ==
 = THE MOST DOWNLOADED WORDPRESS SECURITY PLUGIN =
@@ -61,11 +61,7 @@ Wordfence Security is now Multi-Site compatible and includes Cellphone Sign-in w
 
 = Multi-Site Security =
 * Wordfence Security for multi-site also scans all posts and comments across all blogs from one admin panel.
-* WordPress Multi-Site (or WordPress MU in the older parlance) compatible.
-
-= Caching Features =
-* Includes Falcon Engine, the fastest WordPress caching engine available today. Falcon is faster because it reduces your web server disk and database activity to a minimum.
-* Wordfence includes two caching modes for compatability and has cache management features like the ability to clear the cache and monitor cache usage. 
+* WordPress Multi-Site (or WordPress MU in the older parlance) compatible. 
 
 = IPv6 Compatible =
 * Fully IPv6 compatible including all whois lookup, location, blocking and security functions.
@@ -107,8 +103,7 @@ Secure your website with Wordfence.
 [Visit our support website which contains a FAQ and knowledgebase which is more comprehensive and updated frequently.](http://support.wordfence.com/?utm_source=repo&utm_medium=web&utm_campaign=pluginDesc)
 
 = What does Wordfence Security do that other WordPress security plugins don't do? =
-
-* Wordfence Security is the only WordPress security plugin that is fully integrated with it's own high speed caching engine to avoid security and caching conflicts. 
+ 
 * Wordfence Security actually verifies your website source code integrity against the official WordPress repository and shows you the changes. We are the only plugin to do this.
 * Wordfence Security provides two-factor authentication (Cellphone Sign-in) for paid members. We're the first plugin to offer this.
 * Wordfence Security fully supports IPv6 including giving you the ability to look up the location of IPv6 addresses, block IPv6 ranges, detect IPv6 country and do a whois lookup on IPv6 addresses and more.
@@ -124,10 +119,8 @@ Yes. WordPress MU or Multi-Site as it's called now is fully supported. Using Wor
 
 = Will Wordfence Security slow my site down? =
 
-No. Actually it will make your site up to 50X faster when Falcon Engine is enabled, up to 30 times faster with our PHP caching engine and even
-without caching Wordfence is extremely fast and uses techniques like caching it's own configuration data to avoid database lookups. Older
-versions of Wordfence did incur a slight performance penalty, but we have not only fixed this issue but knocked it out of the park. Wordfence
-now makes your site faster than any other caching plugin available!! 
+No. Wordfence is extremely fast and uses techniques like caching its own configuration data to avoid database lookups and blocking malicious attacks that would slow down your site. Older
+versions of Wordfence did incur a slight performance penalty, but we have not only fixed this issue but knocked it out of the park.
 
 = How often is Wordfence Security updated? =
 
@@ -196,6 +189,24 @@ Secure your website with Wordfence.
 5. If you're technically minded, this is the under-the-hood view of Wordfence Security options where you can fine-tune your security settings.
 
 == Changelog ==
+
+= 6.2.2 =
+* Fix: Replaced a slow query in the dashboard widget that could affect sites with very large numbers of users.
+
+= 6.2.1 =
+* Improvement: Now performing scanning for PHP code in all uploaded files in real-time.
+* Improvement: Improved handling of bad characters and IPv6 ranges in Advanced Blocking.
+* Improvement: Live traffic and scanning activity now display a paused notice when real-time updates are suspended while in the background.
+* Improvement: The file system scan alerts for files flagged by antivirus software with a '.suspected' extension.
+* Improvement: New alert option to get notified only when logins are from a new location/device.
+* Change: First phase for removing the Falcon cache in place, which will add a notice of its pending removal.
+* Fix: Included country flags for Kosovo and Curaçao.
+* Fix: Fixed the .htaccess directives used to hide files found by the scanner.
+* Fix: Dashboard widget shows correct status for failed logins by deleted users.
+* Fix: Removed duplicate issues for modified files in the scan results.
+* Fix: Suppressed warning from reverse lookup on IPv6 addresses without valid DNS records.
+* Fix: Fixed file inclusion error with themes lacking a 404 page.
+* Fix: CSS fixes for activity report email.
 
 = 6.2.0 =
 * Improvement: Massive performance boost in file system scan.

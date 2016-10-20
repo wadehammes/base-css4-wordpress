@@ -2,10 +2,6 @@
 
 #ws_menu_editor {
 	min-width: 780px;
-
-	#ws_actor_selector {
-		margin-top: 6px;
-	}
 }
 
 .ame-is-free-version #ws_menu_editor {
@@ -97,7 +93,7 @@ $mainContainerBorderWidth: 1px;
 }
 
 #ws_actor_selector {
-	margin-top: 5px;
+	margin-top: 6px;
 }
 
 /**
@@ -696,14 +692,62 @@ select.ws_dropdown {
 	font-size: 12px;
 }
 
+$dropdownOptionPaddingTop: 3px;
 select.ws_dropdown option {
 	font-family : "Lucida Grande",Verdana,Arial,"Bitstream Vera Sans",sans-serif;
 	font-size: 12px;
-	padding: 3px;
+	padding: $dropdownOptionPaddingTop;
 }
 
 select.ws_dropdown optgroup option {
 	padding-left: 10px;
+}
+
+/************************************
+           Tabs (small)
+ ************************************
+ Tabbed navigation for dropdowns and small dialogs.
+ */
+
+$activeToolTabBackground: #FDFDFD;
+
+.ws_tool_tab_nav {
+	list-style: outside none none;
+	padding: 0;
+	margin: 0 0 0 6px;
+
+	li {
+		display: inline-block;
+
+		border: 1px solid transparent;
+		border-bottom-width: 0;
+		padding: 3px 5px 5px;
+		line-height: 1.35em;
+
+		margin-bottom: 0;
+	}
+
+	li.ui-tabs-active {
+		border-color: #dfdfdf;
+		background-color: #FDFDFD;
+		border-bottom-color: $activeToolTabBackground;
+	}
+
+	a {
+		text-decoration: none;
+	}
+
+	li.ui-tabs-active a {
+		color: #32373C;
+	}
+}
+
+.ws_tool_tab {
+	border-top: 1px solid #DFDFDF;
+	margin-top: -1px;
+	background-color: $activeToolTabBackground;
+
+	//Suggestion: Use 12px inner padding like in post editor boxes.
 }
 
 /************************************
@@ -716,12 +760,12 @@ select.ws_dropdown optgroup option {
 	background-color: white;
 
 	width: 216px;
-	padding: 2px;
+	padding: 4px 0 0 0;
     position: absolute;
 }
 
 #ws_icon_selector.ws_with_more_icons {
-    width: 540px;
+    width: 570px;
 }
 
 #ws_icon_selector .ws_icon_extra {
@@ -828,6 +872,28 @@ select.ws_dropdown optgroup option {
 	height: 16px;
 }
 
+#ws_icon_selector {
+	$tabTopPadding: 4px;
+	$tabHorizontalPadding: 4px;
+
+	.ws_tool_tab_nav {
+		display: inline-block;
+		margin-top: 2px;
+
+		li {
+			padding: 4px 10px 11px;
+		}
+
+		position: relative;
+	}
+
+	.ws_tool_tab {
+		padding: $tabTopPadding $tabHorizontalPadding 2px;
+		max-height: 324px;
+		overflow-y: auto;
+	}
+}
+
 /* MP6 admin style compatibility */
 #ws_icon_selector .ws_icon_option .icon16::before {
 	margin: 0;
@@ -840,12 +906,6 @@ select.ws_dropdown optgroup option {
 
 #ws_choose_icon_from_media {
 	margin: 2px;
-}
-
-#ws_show_more_icons {
-    margin: 2px;
-    height: 30px;
-    width: 68px;
 }
 
 /************************************
@@ -1294,7 +1354,6 @@ a#ws-ame-delete-color-preset:hover {
 	filter: alpha(opacity=60);
 	opacity: 0.6;
 	-moz-opacity:0.6;
-	-khtml-opacity: 0.6;
 }
 
 #ws_role_access_overlay_content {
@@ -1639,8 +1698,8 @@ $userSelectionPanelPadding: 10px;
 			display: none;
 		}
 
-		//You can't deselect the current user. It always stays in the actor list.
-		tr.ws_is_current_user {
+		//You can't deselect the current user. It always stays in the visible actor list.
+		tr.ws_user_must_be_selected {
 			.ws_user_action_button {
 				display: none;
 			}
@@ -1699,7 +1758,7 @@ $userSelectionPanelPadding: 10px;
         Tooltips and hints
 *************************************/
 
-.ws_tooltip_trigger {
+.ws_tooltip_trigger, .ws_field_tooltip_trigger {
 	cursor: pointer;
 }
 
@@ -1714,6 +1773,16 @@ $userSelectionPanelPadding: 10px;
 	line-height: 1.3;
 	border-radius: 3px;
 	max-width: 300px;
+}
+
+.ws_field_tooltip_trigger .dashicons {
+	font-size: 16px;
+	height: 16px;
+	vertical-align: bottom;
+}
+
+.ws_field_tooltip_trigger {
+	color: #a1a1a1;
 }
 
 //Tooltips on the settings page.
@@ -1768,6 +1837,40 @@ $userSelectionPanelPadding: 10px;
 	margin-left: 0.5em;
 }
 
+.ws_ame_doc_box {
+	.hndle {
+		cursor: default !important;
+	}
+
+	ul {
+		list-style: disc outside;
+		margin-left: 1em;
+	}
+
+	li > ul {
+		margin-top: 6px;
+	}
+
+	.button-link .toggle-indicator::before {
+		margin-top: 4px;
+		width: 20px;
+		-webkit-border-radius: 50%;
+		border-radius: 50%;
+		text-indent: -1px;
+
+		content: "\f142";
+		display: inline-block;
+		font: normal 20px/1 dashicons;
+
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		text-decoration: none !important;
+	}
+
+	&.closed .button-link .toggle-indicator::before {
+		content: "\f140";
+	}
+}
 
 /************************************
       Copy Permissions dialog
@@ -1776,6 +1879,44 @@ $userSelectionPanelPadding: 10px;
 	min-width: 280px;
 }
 
+/*********************************************
+      Capability suggestions and preview
+**********************************************/
+
+#ws_capability_suggestions {
+	padding: 4px;
+	width: 350px;
+
+	border: 1px solid #cdd5d5;
+	box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+	background: #fff;
+
+	border-top-right-radius: 3px;
+	border-bottom-right-radius: 3px;
+
+	#ws_previewed_caps {
+		margin-top: 0;
+		margin-bottom: 6px;
+	}
+
+	td, th {
+		//For consistency, padding should match the capability dropdown.
+		padding-top: $dropdownOptionPaddingTop;
+		padding-bottom: $dropdownOptionPaddingTop;
+	}
+
+	tr.ws_preview_has_access .ws_ame_role_name{
+		background-color: lightgreen;
+	}
+
+	.ws_ame_suggested_capability {
+		cursor: pointer;
+
+		&:hover {
+			background-color: #d0f2d0;
+		}
+	}
+}
 
 
 #ws_sidebar_pro_ad {

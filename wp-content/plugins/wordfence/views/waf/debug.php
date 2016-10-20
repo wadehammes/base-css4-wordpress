@@ -111,7 +111,7 @@ try {
 			margin: 20px 0px 8px;
 		}
 		pre, p {
-			8px 0px 20px;
+			margin: 8px 0px 20px;
 		}
 		pre.request-debug {
 			padding: 12px;

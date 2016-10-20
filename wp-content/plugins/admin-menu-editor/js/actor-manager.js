@@ -46,6 +46,9 @@ var AmeBaseActor = (function () {
         }
         return specificity;
     };
+    AmeBaseActor.prototype.toString = function () {
+        return this.displayName + ' [' + this.id + ']';
+    };
     return AmeBaseActor;
 }());
 var AmeRole = (function (_super) {
@@ -68,14 +71,17 @@ var AmeRole = (function (_super) {
 }(AmeBaseActor));
 var AmeUser = (function (_super) {
     __extends(AmeUser, _super);
-    function AmeUser(userLogin, displayName, capabilities, roles, isSuperAdmin) {
+    function AmeUser(userLogin, displayName, capabilities, roles, isSuperAdmin, userId) {
         if (isSuperAdmin === void 0) { isSuperAdmin = false; }
         _super.call(this, 'user:' + userLogin, displayName, capabilities);
+        this.userId = 0;
         this.isSuperAdmin = false;
+        this.avatarHTML = '';
         this.actorTypeSpecificity = 10;
         this.userLogin = userLogin;
         this.roles = roles;
         this.isSuperAdmin = isSuperAdmin;
+        this.userId = userId || 0;
         if (this.isSuperAdmin) {
             this.groupActors.push(AmeSuperAdmin.permanentActorId);
         }
@@ -83,6 +89,13 @@ var AmeUser = (function (_super) {
             this.groupActors.push('role:' + this.roles[i]);
         }
     }
+    AmeUser.createFromProperties = function (properties) {
+        var user = new AmeUser(properties.user_login, properties.display_name, properties.capabilities, properties.roles, properties.is_super_admin, properties.hasOwnProperty('id') ? properties.id : null);
+        if (properties.avatar_html) {
+            user.avatarHTML = properties.avatar_html;
+        }
+        return user;
+    };
     return AmeUser;
 }(AmeBaseActor));
 var AmeSuperAdmin = (function (_super) {
@@ -106,13 +119,14 @@ var AmeActorManager = (function () {
         this.users = {};
         this.grantedCapabilities = {};
         this.isMultisite = false;
+        this.suggestedCapabilities = [];
         this.isMultisite = !!isMultisite;
         AmeActorManager._.forEach(roles, function (roleDetails, id) {
             var role = new AmeRole(id, roleDetails.name, roleDetails.capabilities);
             _this.roles[role.name] = role;
         });
         AmeActorManager._.forEach(users, function (userDetails) {
-            var user = new AmeUser(userDetails.user_login, userDetails.display_name, userDetails.capabilities, userDetails.roles, userDetails.is_super_admin);
+            var user = AmeUser.createFromProperties(userDetails);
             _this.users[user.userLogin] = user;
         });
         if (this.isMultisite) {
@@ -331,10 +345,98 @@ var AmeActorManager = (function () {
         return delta;
     };
     ;
+    AmeActorManager.prototype.generateCapabilitySuggestions = function (capPower) {
+        var _ = AmeActorManager._;
+        var capsByPower = _.memoize(function (role) {
+            var sortedCaps = _.reduce(role.capabilities, function (result, hasCap, capability) {
+                if (hasCap) {
+                    result.push({
+                        capability: capability,
+                        power: _.get(capPower, [capability], 0)
+                    });
+                }
+                return result;
+            }, []);
+            sortedCaps = _.sortBy(sortedCaps, function (item) { return -item.power; });
+            return sortedCaps;
+        });
+        var rolesByPower = _.values(this.getRoles()).sort(function (a, b) {
+            var aCaps = capsByPower(a), bCaps = capsByPower(b);
+            //Prioritise roles with the highest number of the most powerful capabilities.
+            for (var i = 0, limit = Math.min(aCaps.length, bCaps.length); i < limit; i++) {
+                var delta_1 = bCaps[i].power - aCaps[i].power;
+                if (delta_1 !== 0) {
+                    return delta_1;
+                }
+            }
+            //Give a tie to the role that has more capabilities.
+            var delta = bCaps.length - aCaps.length;
+            if (delta !== 0) {
+                return delta;
+            }
+            //Failing that, just sort alphabetically.
+            if (a.displayName > b.displayName) {
+                return 1;
+            }
+            else if (a.displayName < b.displayName) {
+                return -1;
+            }
+            return 0;
+        });
+        var preferredCaps = [
+            'manage_network_options',
+            'install_plugins', 'edit_plugins', 'delete_users',
+            'manage_options', 'switch_themes',
+            'edit_others_pages', 'edit_others_posts', 'edit_pages',
+            'unfiltered_html',
+            'publish_posts', 'edit_posts',
+            'read'
+        ];
+        var deprecatedCaps = _(_.range(0, 10)).map(function (level) { return 'level_' + level; }).value();
+        deprecatedCaps.push('edit_files');
+        var findDiscriminant = function (caps, includeRoles, excludeRoles) {
+            var getEnabledCaps = function (role) {
+                return _.keys(_.pick(role.capabilities, _.identity));
+            };
+            //Find caps that all of the includeRoles have and excludeRoles don't.
+            var includeCaps = _.intersection.apply(_, _.map(includeRoles, getEnabledCaps)), excludeCaps = _.union.apply(_, _.map(excludeRoles, getEnabledCaps)), possibleCaps = _.without.apply(_, [includeCaps].concat(excludeCaps).concat(deprecatedCaps));
+            var bestCaps = _.intersection(preferredCaps, possibleCaps);
+            if (bestCaps.length > 0) {
+                return bestCaps[0];
+            }
+            else if (possibleCaps.length > 0) {
+                return possibleCaps[0];
+            }
+            return null;
+        };
+        var suggestedCapabilities = [];
+        for (var i = 0; i < rolesByPower.length; i++) {
+            var role = rolesByPower[i];
+            var cap = findDiscriminant(preferredCaps, _.slice(rolesByPower, 0, i + 1), _.slice(rolesByPower, i + 1, rolesByPower.length));
+            suggestedCapabilities.push({ role: role, capability: cap });
+        }
+        var previousSuggestion = null;
+        for (var i = suggestedCapabilities.length - 1; i >= 0; i--) {
+            if (suggestedCapabilities[i].capability === null) {
+                suggestedCapabilities[i].capability =
+                    previousSuggestion ? previousSuggestion : 'exist';
+            }
+            else {
+                previousSuggestion = suggestedCapabilities[i].capability;
+            }
+        }
+        this.suggestedCapabilities = suggestedCapabilities;
+    };
+    AmeActorManager.prototype.getSuggestedCapabilities = function () {
+        return this.suggestedCapabilities;
+    };
     AmeActorManager._ = wsAmeLodash;
     return AmeActorManager;
 }());
 if (typeof wsAmeActorData !== 'undefined') {
     AmeActors = new AmeActorManager(wsAmeActorData.roles, wsAmeActorData.users, wsAmeActorData.isMultisite);
+    if (typeof wsAmeActorData['capPower'] !== 'undefined') {
+        AmeActors.generateCapabilitySuggestions(wsAmeActorData['capPower']);
+    }
 }
 //# sourceMappingURL=actor-manager.js.map

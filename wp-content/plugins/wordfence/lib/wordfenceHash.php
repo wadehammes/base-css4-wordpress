@@ -26,6 +26,8 @@ class wordfenceHash {
 	private $totalForks = 0;
 	private $alertedOnUnknownWordPressVersion = false;
 	private $foldersProcessed = array();
+	private $filesProcessedBloomFilter = false;
+	private $suspectedFiles = array();
 
 	/**
 	 * @param string $striplen
@@ -59,6 +61,8 @@ class wordfenceHash {
 		if(wfConfig::get('scansEnabled_coreUnknown')){
 			$this->coreUnknownEnabled = true;
 		}
+		
+		$this->filesProcessedBloomFilter = new wfMD5BloomFilter(65536, 8); //65536,8 produces the lowest miss probability. Uses approximately 8 KB of memory + PHP object overhead
 
 		$this->db = new wfDB();
 
@@ -112,12 +116,15 @@ class wordfenceHash {
 		if($this->coreUnknownEnabled){ $this->status['coreUnknown'] = wordfence::statusStart("Scanning for unknown files in wp-admin and wp-includes"); } else { wordfence::statusDisabled("Skipping unknown core file scan"); }
 	}
 	public function __sleep(){
-		return array('striplen', 'totalFiles', 'totalDirs', 'totalData', 'stoppedOnFile', 'coreEnabled', 'pluginsEnabled', 'themesEnabled', 'malwareEnabled', 'coreUnknownEnabled', 'knownFiles', 'malwareData', 'haveIssues', 'status', 'possibleMalware', 'path', 'only', 'totalForks', 'alertedOnUnknownWordPressVersion', 'foldersProcessed');
+		return array('striplen', 'totalFiles', 'totalDirs', 'totalData', 'stoppedOnFile', 'coreEnabled', 'pluginsEnabled', 'themesEnabled', 'malwareEnabled', 'coreUnknownEnabled', 'knownFiles', 'malwareData', 'haveIssues', 'status', 'possibleMalware', 'path', 'only', 'totalForks', 'alertedOnUnknownWordPressVersion', 'foldersProcessed', 'filesProcessedBloomFilter', 'suspectedFiles');
 	}
 	public function __wakeup(){
 		$this->db = new wfDB();
 		$this->startTime = microtime(true);
 		$this->totalForks++;
+	}
+	public function getSuspectedFiles() {
+		return array_keys($this->suspectedFiles);
 	}
 	public function run($engine){ //base path and 'only' is a list of files and dirs in the bast that are the only ones that should be processed. Everything else in base is ignored. If only is empty then everything is processed.
 		if($this->totalForks > 1000){
@@ -237,6 +244,12 @@ class wordfenceHash {
 	}
 	private function processFile($realFile){
 		$file = substr($realFile, $this->striplen);
+		
+		if (preg_match('/\.suspected$/i', $file)) { //Already iterating over all files in the search areas so generate this list here
+			wordfence::status(4, 'info', "Found .suspected file: $file");
+			$this->suspectedFiles[$file] = 1;
+		}
+		
 		if (!$this->_shouldHashFile($realFile)) {
 			wordfence::status(4, 'info', "Skipping unneeded hash: {$realFile}");
 			return;
@@ -303,7 +316,7 @@ class wordfenceHash {
 									
 									$this->haveIssues['core'] = true;
 									$this->engine->addIssue(
-										'file',
+										'knownfile',
 										1,
 										'coreModified' . $file . $md5,
 										'coreModified' . $file,
@@ -337,7 +350,7 @@ class wordfenceHash {
 								$cKey = $this->knownFiles['plugins'][$file][2];
 								$this->haveIssues['plugins'] = true;
 								$this->engine->addIssue(
-									'file',
+									'knownfile',
 									2,
 									'modifiedplugin' . $file . $md5,
 									'modifiedplugin' . $file,
@@ -374,7 +387,7 @@ class wordfenceHash {
 								$cKey = $this->knownFiles['themes'][$file][2];
 								$this->haveIssues['themes'] = true;
 								$this->engine->addIssue(
-									'file',
+									'knownfile',
 									2,
 									'modifiedtheme' . $file . $md5,
 									'modifiedtheme' . $file,
@@ -402,7 +415,7 @@ class wordfenceHash {
 						if (strpos($realFile, $path) === 0) {
 							$this->haveIssues['coreUnknown'] = true;
 							$this->engine->addIssue(
-								'file',
+								'knownfile',
 								2, 
 								'coreUnknown' . $file . $md5,
 								'coreUnknown' . $file,
@@ -424,6 +437,8 @@ class wordfenceHash {
 			// we could split this into files who's path we recognize and file's who's path we recognize AND who have a valid sig.
 			// But because we want to scan files who's sig we don't recognize, regardless of known path or not, we only need one "knownFile" field.
 			$this->db->queryWrite("insert into " . $this->db->prefix() . "wfFileMods (filename, filenameMD5, knownFile, oldMD5, newMD5) values ('%s', unhex(md5('%s')), %d, '', unhex('%s')) ON DUPLICATE KEY UPDATE newMD5=unhex('%s'), knownFile=%d", $file, $file, $knownFile, $md5, $md5, $knownFile);
+			
+			$this->filesProcessedBloomFilter->add($file);
 
 			$this->totalFiles++;
 			$this->totalData += filesize($realFile); //We already checked if file overflows int in the fileTooBig routine above
@@ -455,7 +470,16 @@ class wordfenceHash {
 		return array($md5, $shac);
 	}
 	private function _shouldHashFile($fullPath) {
-		$file = substr($fullPath, $this->striplen); 
+		$file = substr($fullPath, $this->striplen);
+		
+		//Already hashed and processed, return false
+		if ($this->filesProcessedBloomFilter->contains($file)) { //Might have hashed it, verify
+			$rec = $this->db->querySingleRec("SELECT * FROM " . $this->db->prefix() . "wfFileMods WHERE filename = '%s'", $file);
+			if ($rec !== null) {
+				wordfence::status(4, 'info', "Already hashed: {$file}");
+				return false;
+			}
+		}
 		
 		//Core File, return true
 		if ((isset($this->knownFiles['core']) && isset($this->knownFiles['core'][$file])) ||

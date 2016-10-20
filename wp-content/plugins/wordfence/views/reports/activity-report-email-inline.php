@@ -89,8 +89,8 @@ a.comment-edit-link:hover { color: #21759b !important; }
 @viewport { width: device-width !important; }
 .main-navigation li a:hover { color: #000 !important; }
 .main-navigation li a:focus { color: #000 !important; }
-.main-navigation ul li:hover &gt; ul { border-left: 0 !important; clip: inherit !important; overflow: inherit !important; height: inherit !important; width: inherit !important; }
-.main-navigation ul li:focus &gt; ul { border-left: 0 !important; clip: inherit !important; overflow: inherit !important; height: inherit !important; width: inherit !important; }
+.main-navigation ul li:hover > ul { border-left: 0 !important; clip: inherit !important; overflow: inherit !important; height: inherit !important; width: inherit !important; }
+.main-navigation ul li:focus > ul { border-left: 0 !important; clip: inherit !important; overflow: inherit !important; height: inherit !important; width: inherit !important; }
 .main-navigation li ul li a:hover { background: #e3e3e3 !important; color: #444 !important; }
 .main-navigation li ul li a:focus { background: #e3e3e3 !important; color: #444 !important; }
 footer a[rel=bookmark]:after { content: " [" attr(href) "] " !important; }

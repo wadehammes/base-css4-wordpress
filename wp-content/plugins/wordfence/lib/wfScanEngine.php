@@ -36,7 +36,7 @@ class wfScanEngine {
 			);
 	private $userPasswdQueue = "";
 	private $passwdHasIssues = false;
-
+	private $suspectedFiles = false; //Files found with the ".suspected" extension
 
 	/**
 	 * @var wordfenceDBScanner
@@ -73,7 +73,7 @@ class wfScanEngine {
 	}
 
 	public function __sleep(){ //Same order here as above for properties that are included in serialization
-		return array('hasher', 'jobList', 'i', 'wp_version', 'apiKey', 'startTime', 'maxExecTime', 'publicScanEnabled', 'fileContentsResults', 'scanner', 'scanQueue', 'hoover', 'scanData', 'statusIDX', 'userPasswdQueue', 'passwdHasIssues', 'dbScanner', 'knownFilesLoader', 'metrics');
+		return array('hasher', 'jobList', 'i', 'wp_version', 'apiKey', 'startTime', 'maxExecTime', 'publicScanEnabled', 'fileContentsResults', 'scanner', 'scanQueue', 'hoover', 'scanData', 'statusIDX', 'userPasswdQueue', 'passwdHasIssues', 'suspectedFiles', 'dbScanner', 'knownFilesLoader', 'metrics');
 	}
 	public function __construct(){
 		$this->startTime = time();
@@ -94,7 +94,7 @@ class wfScanEngine {
 		$this->jobList[] = 'knownFiles_init';
 		$this->jobList[] = 'knownFiles_main';
 		$this->jobList[] = 'knownFiles_finish';
-		foreach (array('knownFiles', 'checkReadableConfig', 'fileContents',
+		foreach (array('knownFiles', 'checkReadableConfig', 'fileContents', 'suspectedFiles',
 			         // 'wpscan_fullPathDisclosure', 'wpscan_directoryListingEnabled',
 			         'posts', 'comments', 'passwds', 'dns', 'diskSpace', 'oldVersions', 'suspiciousAdminUsers') as $scanType) {
 			if (wfConfig::get('scansEnabled_' . $scanType)) {
@@ -493,6 +493,7 @@ class wfScanEngine {
 		$this->i->updateSummaryItem('totalData', wfUtils::formatBytes($this->hasher->totalData));
 		$this->i->updateSummaryItem('totalFiles', $this->hasher->totalFiles);
 		$this->i->updateSummaryItem('totalDirs', $this->hasher->totalDirs);
+		$this->suspectedFiles = $this->hasher->getSuspectedFiles();
 		$this->hasher = false;
 	}
 	private function scan_knownFiles_finish(){
@@ -529,6 +530,39 @@ class wfScanEngine {
 		wordfence::statusEnd($this->statusIDX['GSB'], $haveIssuesGSB);
 	}
 
+	private function scan_suspectedFiles() {
+		$haveIssues = false;
+		$status = wordfence::statusStart("Scanning for publicly accessible quarantined files");
+		
+		if (is_array($this->suspectedFiles) && count($this->suspectedFiles) > 0) {
+			foreach ($this->suspectedFiles as $file) {
+				wordfence::status(4, 'info', "Testing accessibility of: $file");
+				$test = wfPubliclyAccessibleFileTest::createFromRootPath($file);
+				if ($test->fileExists() && $test->isPubliclyAccessible()) {
+					$key = "publiclyAccessible" . bin2hex($test->getUrl());
+					if ($this->addIssue(
+						'publiclyAccessible',
+						2,
+						$key,
+						$key,
+						'Publicly accessible quarantined file found: ' . esc_html($file),
+						'<a href="' . $test->getUrl() . '" target="_blank">' . $test->getUrl() . '</a> is publicly
+					accessible and may expose source code or sensitive information about your site. Files such as this one are commonly
+					checked for by scanners and should be removed or made inaccessible.',
+						array(
+							'url'       => $test->getUrl(),
+							'file'      => $file,
+							'canDelete' => true,
+						)
+					)) {
+						$haveIssues = true;
+					}
+				}
+			}
+		}
+		
+		wordfence::statusEnd($status, $haveIssues);
+	}
 
 	private function scan_posts_init(){
 		$this->statusIDX['posts'] = wordfence::statusStart('Scanning posts for URLs in Google\'s Safe Browsing List');
@@ -1488,7 +1522,7 @@ class wfCommonBackupFileTest {
 	 * @return wfCommonBackupFileTest
 	 */
 	public static function createFromRootPath($path) {
-		return new self(home_url($path), ABSPATH . $path);
+		return new self(site_url($path), ABSPATH . $path); 
 	}
 
 	private $url;
@@ -1583,4 +1617,8 @@ class wfCommonBackupFileTest {
 	public function getResponse() {
 		return $this->response;
 	}
+}
+
+class wfPubliclyAccessibleFileTest extends wfCommonBackupFileTest {
+	
 }

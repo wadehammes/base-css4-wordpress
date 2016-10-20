@@ -399,7 +399,13 @@
 			},
 			updateActivityLog: function() {
 				if (this.activityLogUpdatePending || !this.windowHasFocus()) {
+					if (!jQuery('body').hasClass('wordfenceLiveActivityPaused') && !this.activityLogUpdatePending) {
+						jQuery('body').addClass('wordfenceLiveActivityPaused');
+					}
 					return;
+				}
+				if (jQuery('body').hasClass('wordfenceLiveActivityPaused')) {
+					jQuery('body').removeClass('wordfenceLiveActivityPaused');
 				}
 				this.activityLogUpdatePending = true;
 				var self = this;
@@ -578,7 +584,13 @@
 			},
 			updateTicker: function(forceUpdate) {
 				if ((!forceUpdate) && (this.tickerUpdatePending || !this.windowHasFocus())) {
+					if (!jQuery('body').hasClass('wordfenceLiveActivityPaused') && !this.tickerUpdatePending) {
+						jQuery('body').addClass('wordfenceLiveActivityPaused');
+					}
 					return;
+				}
+				if (jQuery('body').hasClass('wordfenceLiveActivityPaused')) {
+					jQuery('body').removeClass('wordfenceLiveActivityPaused');
 				}
 				this.tickerUpdatePending = true;
 				var self = this;
@@ -875,7 +887,8 @@
 								"sWidth": '400px',
 								"sType": 'html',
 								fnRender: function(obj) {
-									var tmplName = 'issueTmpl_' + obj.aData.type;
+									var issueType = (obj.aData.type == 'knownfile' ? 'file' : obj.aData.type);
+									var tmplName = 'issueTmpl_' + issueType;
 									return jQuery('#' + tmplName).tmpl(obj.aData).html();
 								}
 							}
@@ -1543,15 +1556,62 @@
 					return;
 				}
 				range = range.replace(/ /g, '');
-				if (range && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s*\-\s*\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(range)) {
+				range = range.replace(/[\u2013-\u2015]/g, '-'); //Non-hyphen dashes to hyphen
+				if (range && /^[^\-]+\-[^\-]+$/.test(range)) {
+					var count = 1;
+					var countOverflow = false;
+					var badRange = false;
+					var badIP = false;
+					
 					var ips = range.split('-');
-					var total = this.inet_aton(ips[1]) - this.inet_aton(ips[0]) + 1;
-					if (total < 1) {
+					var ip1 = this.inet_pton(ips[0]);
+					var ip2 = this.inet_pton(ips[1]);
+					
+					if (ip1 === false || ip2 === false) {
+						badIP = true;
+					}
+					else {
+						//Both to 16-byte binary strings
+						var binStart = ("\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff" + ip1).slice(-16);
+						var binEnd = ("\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff" + ip2).slice(-16);
+						
+						for (var i = 0; i < binStart.length; i++) {
+							var n0 = binStart.charCodeAt(i);
+							var n1 = binEnd.charCodeAt(i);
+							
+							if (i < 11 && n1 - n0 > 0) { //Based on Number.MAX_SAFE_INTEGER, which equals 2 ^ 53 - 1. Any of the first 9 bytes and part of the 10th that add to the range will put us over that
+								countOverflow = true;
+								break;
+							}
+							else if (i < 11 && n1 - n0 < 0) {
+								badRange = true;
+								break;
+							}
+							
+							count += (n1 - n0) << (8 * (15 - i));
+							if (count < 1) {
+								badRange = true;
+								break;
+							}
+						}
+					}
+					
+					if (badIP) {
+						jQuery('#wfShowRangeTotal').html("<span style=\"color: #F00;\">Invalid IP entered.</span>"); 
+						return;
+					}
+					else if (badRange) {
 						jQuery('#wfShowRangeTotal').html("<span style=\"color: #F00;\">Invalid. Starting IP is greater than ending IP.</span>");
 						return;
 					}
-					jQuery('#wfShowRangeTotal').html("<span style=\"color: #0A0;\">Valid: " + total + " addresses in range.</span>");
-				} else {
+					else if (countOverflow) {
+						jQuery('#wfShowRangeTotal').html("<span style=\"color: #0A0;\">Valid: &gt;281474976710656 addresses in range.</span>");
+						return;
+					}
+
+					jQuery('#wfShowRangeTotal').html("<span style=\"color: #0A0;\">Valid: " + count + " addresses in range.</span>"); 
+				}
+				else {
 					jQuery('#wfShowRangeTotal').empty();
 				}
 			},
@@ -1649,6 +1709,7 @@
 					return;
 				}
 				ipRange = ipRange.replace(/ /g, '').toLowerCase();
+				ipRange = ipRange.replace(/[\u2013-\u2015]/g, '-'); //Non-hyphen dashes to hyphen
 				if (ipRange) {
 					var range = ipRange.split('-'),
 						validRange;
@@ -2255,33 +2316,42 @@
 					// Return if 4 bytes, otherwise false.
 					return m.length === 4 ? m : false;
 				}
-				r = /^((?:[\da-f]{1,4}(?::|)){0,8})(::)?((?:[\da-f]{1,4}(?::|)){0,8})$/;
+				r = /^((?:[\da-f]{1,4}(?::|)){0,8})(::)?((?:[\da-f]{1,4}(?::|)){0,8})$/i;
 				m = a.match(r); // IPv6
 				if (m) {
-					// Translate each hexadecimal value.
-					for (j = 1; j < 4; j++) {
-						// Indice 2 is :: and if no length, continue.
-						if (j === 2 || m[j].length === 0) {
-							continue;
-						}
-						m[j] = m[j].split(':');
-						for (i = 0; i < m[j].length; i++) {
-							m[j][i] = parseInt(m[j][i], 16);
-							// Would be NaN if it was blank, return false.
-							if (isNaN(m[j][i])) {
-								return false; // Invalid IP.
-							}
-							m[j][i] = f(m[j][i] >> 8) + f(m[j][i] & 0xFF);
-						}
-						m[j] = m[j].join('');
+					if (a == '::') {
+						return "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 					}
-					x = m[1].length + m[3].length;
-					if (x === 16) {
-						return m[1] + m[3];
-					} else if (x < 16 && m[2].length > 0) {
-						return m[1] + (new Array(16 - x + 1))
-								.join('\x00') + m[3];
+
+					var colonCount = a.split(':').length - 1;
+					var doubleColonPos = a.indexOf('::');
+					if (doubleColonPos > -1) {
+						var expansionLength = ((doubleColonPos == 0 || doubleColonPos == a.length - 2) ? 9 : 8) - colonCount;
+						var expansion = '';
+						for (i = 0; i < expansionLength; i++) {
+							expansion += ':0000';
+						}
+						a = a.replace('::', expansion + ':');
+						a = a.replace(/(?:^\:|\:$)/, '', a);
 					}
+					
+					var ipGroups = a.split(':');
+					var ipBin = '';
+					for (i = 0; i < ipGroups.length; i++) {
+						var group = ipGroups[i];
+						if (group.length > 4) {
+							return false;
+						}
+						group = ("0000" + group).slice(-4);
+						var b1 = parseInt(group.slice(0, 2), 16);
+						var b2 = parseInt(group.slice(-2), 16);
+						if (isNaN(b1) || isNaN(b2)) {
+							return false;
+						}
+						ipBin += f(b1) + f(b2);
+					}
+					
+					return ipBin.length == 16 ? ipBin : false;
 				}
 				return false; // Invalid IP.
 			},
@@ -2668,6 +2738,11 @@
 	}
 	jQuery(function() {
 		wordfenceAdmin.init();
+		jQuery(window).on('focus', function() {
+			if (jQuery('body').hasClass('wordfenceLiveActivityPaused')) {
+				jQuery('body').removeClass('wordfenceLiveActivityPaused');
+			}
+		});
 	});
 })(jQuery);
 
