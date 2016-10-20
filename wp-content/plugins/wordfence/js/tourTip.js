@@ -41,6 +41,14 @@ window['wordfenceExt'] = {
 			function(){ jQuery('#wordfenceSuPHPUpdateWarning').fadeOut(); }
 		);
 	},
+	falconDeprecationChoice: function(choice) {
+		this.ajax('wordfence_falconDeprecationChoice', {
+				choice: choice
+			},
+			function(res){ jQuery('#wordfenceFalconDeprecationWarning').fadeOut(); },
+			function(){ jQuery('#wordfenceFalconDeprecationWarning').fadeOut(); }
+		);
+	},
 	removeFromCache: function(postID){
 		this.ajax('wordfence_removeFromCache', {
 			id: postID

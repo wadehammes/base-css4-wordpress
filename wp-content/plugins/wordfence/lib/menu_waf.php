@@ -51,6 +51,7 @@ $wafRemoveURL = network_admin_url('admin.php?page=WordfenceWAF&wafAction=removeA
 			<?php echo wp_kses($storageExceptionMessage, 'post') ?>
 		</div>
 	<?php elseif (!empty($wafActionContent)): ?>
+		<div style="max-width: 900px;"> 
 		<?php echo $wafActionContent ?>
 
 		<?php if (!empty($_REQUEST['wafAction']) && $_REQUEST['wafAction'] == 'removeAutoPrepend') { ?>
@@ -66,11 +67,11 @@ $wafRemoveURL = network_admin_url('admin.php?page=WordfenceWAF&wafAction=removeA
 				<a target="_blank" href="https://docs.wordfence.com/en/Web_Application_Firewall_Setup">click here for
 					help</a>.</em></p>
 		<?php } ?>
-
+		</div>
 	<?php else: ?>
 
 		<?php if (!empty($configExceptionMessage)): ?>
-			<div style="font-weight: bold; margin: 20px 0px;;">
+			<div style="font-weight: bold; margin: 20px 0px; max-width: 700px;">
 				<?php echo wp_kses($configExceptionMessage, 'post') ?>
 			</div>
 		<?php endif ?>

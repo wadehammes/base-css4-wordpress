@@ -309,11 +309,6 @@ class amePluginVisibility {
 
 	public function enqueueScripts() {
 		wp_register_auto_versioned_script(
-			'knockout',
-			plugins_url('js/knockout.js', $this->menuEditor->plugin_file)
-		);
-
-		wp_register_auto_versioned_script(
 			'ame-plugin-visibility',
 			plugins_url('plugin-visibility.js', __FILE__),
 			array('ame-lodash', 'knockout', 'ame-actor-selector', 'jquery-json',)

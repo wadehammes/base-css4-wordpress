@@ -21,10 +21,15 @@ abstract class ameModule {
 			$this->moduleId = basename($this->moduleDir);
 		}
 
+		add_action('admin_menu_editor-register_scripts', array($this, 'registerScripts'));
+
 		//Register the module tab.
 		if ( ($this->tabSlug !== '') && is_string($this->tabSlug) ) {
 			add_action('admin_menu_editor-tabs', array($this, 'addTab'), $this->tabOrder);
 			add_action('admin_menu_editor-section-' . $this->tabSlug, array($this, 'displaySettingsPage'));
+
+			add_action('admin_menu_editor-enqueue_scripts-' . $this->tabSlug, array($this, 'enqueueTabScripts'));
+			add_action('admin_menu_editor-enqueue_styles-' . $this->tabSlug, array($this, 'enqueueTabStyles'));
 		}
 	}
 
@@ -61,10 +66,25 @@ abstract class ameModule {
 	protected function outputTemplate($name) {
 		$templateFile = $this->moduleDir . '/' . $name . '-template.php';
 		if ( file_exists($templateFile) ) {
+			/** @noinspection PhpUnusedLocalVariableInspection Used in some templates. */
+			$moduleTabUrl = $this->getTabUrl();
+
 			/** @noinspection PhpIncludeInspection */
 			require $templateFile;
 			return true;
 		}
 		return false;
+	}
+
+	public function registerScripts() {
+		//Override this method to register scripts.
+	}
+
+	public function enqueueTabScripts() {
+		//Override this method to add scripts to the $this->tabSlug tab.
+	}
+
+	public function enqueueTabStyles() {
+		//Override this method to add stylesheets to the $this->tabSlug tab.
 	}
 }

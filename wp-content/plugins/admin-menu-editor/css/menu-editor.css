@@ -1,8 +1,6 @@
 /* Admin Menu Editor CSS file */
 #ws_menu_editor {
   min-width: 780px; }
-  #ws_menu_editor #ws_actor_selector {
-    margin-top: 6px; }
 
 .ame-is-free-version #ws_menu_editor {
   margin-top: 9px; }
@@ -65,7 +63,7 @@
   margin-bottom: -1px; }
 
 #ws_actor_selector {
-  margin-top: 5px; }
+  margin-top: 6px; }
 
 /**
  * The checkbox that lets the user show/hide a menu for the currently selected actor.
@@ -514,6 +512,36 @@ select.ws_dropdown optgroup option {
   padding-left: 10px; }
 
 /************************************
+           Tabs (small)
+ ************************************
+ Tabbed navigation for dropdowns and small dialogs.
+ */
+.ws_tool_tab_nav {
+  list-style: outside none none;
+  padding: 0;
+  margin: 0 0 0 6px; }
+  .ws_tool_tab_nav li {
+    display: inline-block;
+    border: 1px solid transparent;
+    border-bottom-width: 0;
+    padding: 3px 5px 5px;
+    line-height: 1.35em;
+    margin-bottom: 0; }
+  .ws_tool_tab_nav li.ui-tabs-active {
+    border-color: #dfdfdf;
+    background-color: #FDFDFD;
+    border-bottom-color: #FDFDFD; }
+  .ws_tool_tab_nav a {
+    text-decoration: none; }
+  .ws_tool_tab_nav li.ui-tabs-active a {
+    color: #32373C; }
+
+.ws_tool_tab {
+  border-top: 1px solid #DFDFDF;
+  margin-top: -1px;
+  background-color: #FDFDFD; }
+
+/************************************
            Icon selector
 *************************************/
 #ws_icon_selector {
@@ -521,11 +549,11 @@ select.ws_dropdown optgroup option {
   border-radius: 3px;
   background-color: white;
   width: 216px;
-  padding: 2px;
+  padding: 4px 0 0 0;
   position: absolute; }
 
 #ws_icon_selector.ws_with_more_icons {
-  width: 540px; }
+  width: 570px; }
 
 #ws_icon_selector .ws_icon_extra {
   display: none; }
@@ -613,6 +641,17 @@ select.ws_dropdown optgroup option {
   width: 16px;
   height: 16px; }
 
+#ws_icon_selector .ws_tool_tab_nav {
+  display: inline-block;
+  margin-top: 2px;
+  position: relative; }
+  #ws_icon_selector .ws_tool_tab_nav li {
+    padding: 4px 10px 11px; }
+#ws_icon_selector .ws_tool_tab {
+  padding: 4px 4px 2px;
+  max-height: 324px;
+  overflow-y: auto; }
+
 /* MP6 admin style compatibility */
 #ws_icon_selector .ws_icon_option .icon16::before {
   margin: 0;
@@ -624,11 +663,6 @@ select.ws_dropdown optgroup option {
 
 #ws_choose_icon_from_media {
   margin: 2px; }
-
-#ws_show_more_icons {
-  margin: 2px;
-  height: 30px;
-  width: 68px; }
 
 /************************************
       Embedded page selector
@@ -976,8 +1010,7 @@ a#ws-ame-delete-color-preset:hover {
   background: white;
   filter: alpha(opacity=60);
   opacity: 0.6;
-  -moz-opacity: 0.6;
-  -khtml-opacity: 0.6; }
+  -moz-opacity: 0.6; }
 
 #ws_role_access_overlay_content {
   position: absolute;
@@ -1181,7 +1214,7 @@ a#ws-ame-delete-color-preset:hover {
     padding-left: 6px; }
   #ws_user_selection_panels #ws_selected_users .ws_user_display_name_column {
     display: none; }
-  #ws_user_selection_panels #ws_selected_users tr.ws_is_current_user .ws_user_action_button {
+  #ws_user_selection_panels #ws_selected_users tr.ws_user_must_be_selected .ws_user_action_button {
     display: none; }
   #ws_user_selection_panels #ws_selected_users_caption {
     font-size: 14px;
@@ -1212,7 +1245,7 @@ a#ws-ame-delete-color-preset:hover {
 /************************************
         Tooltips and hints
 *************************************/
-.ws_tooltip_trigger {
+.ws_tooltip_trigger, .ws_field_tooltip_trigger {
   cursor: pointer; }
 
 .ws_tooltip_content_list {
@@ -1225,6 +1258,14 @@ a#ws-ame-delete-color-preset:hover {
   line-height: 1.3;
   border-radius: 3px;
   max-width: 300px; }
+
+.ws_field_tooltip_trigger .dashicons {
+  font-size: 16px;
+  height: 16px;
+  vertical-align: bottom; }
+
+.ws_field_tooltip_trigger {
+  color: #a1a1a1; }
 
 #ws_plugin_settings_form .ws_tooltip_trigger .dashicons {
   font-size: 18px; }
@@ -1267,11 +1308,57 @@ a#ws-ame-delete-color-preset:hover {
   list-style-position: inside;
   margin-left: 0.5em; }
 
+.ws_ame_doc_box .hndle {
+  cursor: default !important; }
+.ws_ame_doc_box ul {
+  list-style: disc outside;
+  margin-left: 1em; }
+.ws_ame_doc_box li > ul {
+  margin-top: 6px; }
+.ws_ame_doc_box .button-link .toggle-indicator::before {
+  margin-top: 4px;
+  width: 20px;
+  -webkit-border-radius: 50%;
+  border-radius: 50%;
+  text-indent: -1px;
+  content: "\f142";
+  display: inline-block;
+  font: normal 20px/1 dashicons;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-decoration: none !important; }
+.ws_ame_doc_box.closed .button-link .toggle-indicator::before {
+  content: "\f140"; }
+
 /************************************
       Copy Permissions dialog
 *************************************/
 #ws-ame-copy-permissions-dialog select {
   min-width: 280px; }
+
+/*********************************************
+      Capability suggestions and preview
+**********************************************/
+#ws_capability_suggestions {
+  padding: 4px;
+  width: 350px;
+  border: 1px solid #cdd5d5;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+  background: #fff;
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px; }
+  #ws_capability_suggestions #ws_previewed_caps {
+    margin-top: 0;
+    margin-bottom: 6px; }
+  #ws_capability_suggestions td, #ws_capability_suggestions th {
+    padding-top: 3px;
+    padding-bottom: 3px; }
+  #ws_capability_suggestions tr.ws_preview_has_access .ws_ame_role_name {
+    background-color: lightgreen; }
+  #ws_capability_suggestions .ws_ame_suggested_capability {
+    cursor: pointer; }
+    #ws_capability_suggestions .ws_ame_suggested_capability:hover {
+      background-color: #d0f2d0; }
 
 #ws_sidebar_pro_ad {
   min-width: 225px;

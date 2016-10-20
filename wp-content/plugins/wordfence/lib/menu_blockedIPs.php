@@ -3,8 +3,16 @@
 	<?php require('menuHeader.php'); ?>
 	<?php $helpLink="http://docs.wordfence.com/en/Blocked_IPs"; $helpLabel="Learn more about Blocked IPs"; $pageTitle = "Wordfence Blocked IPs"; include('pageTitle.php'); ?>
 	<div class="wordfenceLive">
-		<table border="0" cellpadding="0" cellspacing="0">
-		<tr><td><h2>Wordfence Live Activity:</h2></td><td id="wfLiveStatus"></td></tr>
+		<table border="0" cellpadding="0" cellspacing="0" class="wordfenceLiveActivity">
+			<tr>
+				<td><h2>Wordfence Live Activity:</h2></td>
+				<td id="wfLiveStatus"></td>
+			</tr>
+		</table>
+		<table border="0" cellpadding="0" cellspacing="0" class="wordfenceLiveStateMessage">
+			<tr>
+				<td>Live Updates Paused &mdash; Click inside window to resume</td>
+			</tr>
 		</table>
 	</div>
 	<?php if(! wfConfig::get('firewallEnabled')){ ?><div style="color: #F00; font-weight: bold;">Rate limiting rules and advanced blocking are disabled. You can enable it on the <a href="admin.php?page=WordfenceSecOpt">Wordfence Options page</a> at the top.</div><?php } ?>

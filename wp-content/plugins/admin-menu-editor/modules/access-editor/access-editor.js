@@ -488,6 +488,10 @@ window.AmeItemAccessEditor = (function ($) {
 			$('#ws_role_access_container').toggleClass('ws_has_extended_permissions', hasExtendedPermissions);
 		},
 
+		getCurrentMenuItem: function() {
+			return menuItem;
+		},
+
 		detectExtPermissions: detectExtPermissions
 	};
 })(jQuery);

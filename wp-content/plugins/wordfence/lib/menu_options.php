@@ -9,10 +9,15 @@ $w = new wfConfig();
 	$pageTitle      = "Wordfence Options";
 	include( 'pageTitle.php' ); ?>
 	<div class="wordfenceLive">
-		<table border="0" cellpadding="0" cellspacing="0">
+		<table border="0" cellpadding="0" cellspacing="0" class="wordfenceLiveActivity">
 			<tr>
 				<td><h2>Wordfence Live Activity:</h2></td>
 				<td id="wfLiveStatus"></td>
+			</tr>
+		</table>
+		<table border="0" cellpadding="0" cellspacing="0" class="wordfenceLiveStateMessage">
+			<tr>
+				<td>Live Updates Paused &mdash; Click inside window to resume</td>
 			</tr>
 		</table>
 	</div>
@@ -298,9 +303,19 @@ $w = new wfConfig();
 					           value="1" <?php $w->cb( 'alertOn_adminLogin' ); ?>/></td>
 				</tr>
 				<tr>
+					<th style="color: #666666;padding-left: 20px;">Only alert me when that administrator signs in from a new device or location</th>
+					<td><input type="checkbox" id="alertOn_firstAdminLoginOnly" class="wfConfigElem" name="alertOn_firstAdminLoginOnly"
+							   value="1" <?php $w->cb( 'alertOn_firstAdminLoginOnly' ); ?>/></td>
+				</tr>
+				<tr>
 					<th>Alert me when a non-admin user signs in</th>
 					<td><input type="checkbox" id="alertOn_nonAdminLogin" class="wfConfigElem"
 					           name="alertOn_nonAdminLogin" value="1" <?php $w->cb( 'alertOn_nonAdminLogin' ); ?>/></td>
+				</tr>
+				<tr>
+					<th style="color: #666666;padding-left: 20px;">Only alert me when that user signs in from a new device or location</th>
+					<td><input type="checkbox" id="alertOn_firstNonAdminLoginOnly" class="wfConfigElem" name="alertOn_firstNonAdminLoginOnly"
+							   value="1" <?php $w->cb( 'alertOn_firstNonAdminLoginOnly' ); ?>/></td>  
 				</tr>
 				<tr>
 					<th>Alert me when there's a large increase in attacks detected on my site</th>
@@ -432,6 +447,15 @@ $w = new wfConfig();
 							target="_blank" class="wfhelp"></a></th>
 					<td><input type="checkbox" id="scansEnabled_checkReadableConfig" class="wfConfigElem"
 					           name="scansEnabled_checkReadableConfig" value="1" <?php $w->cb( 'scansEnabled_checkReadableConfig' ); ?> />
+					</td>
+				</tr>
+				<tr>
+					<th>Scan for publicly accessible quarantined files<a
+							href="http://docs.wordfence.com/en/Wordfence_options#Scan_for_publicly_accessible_quarantined_files"
+							target="_blank" class="wfhelp"></a></th>
+					<td><input type="checkbox" id="scansEnabled_suspectedFiles" class="wfConfigElem"
+							   name="scansEnabled_suspectedFiles"
+							   value="1" <?php $w->cb( 'scansEnabled_suspectedFiles' ); ?>/>
 					</td>
 				</tr>
 <!--				<tr>-->

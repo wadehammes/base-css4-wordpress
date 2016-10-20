@@ -153,6 +153,15 @@ class wfLog {
 				return;
 			}
 		}
+		else {
+			$user = get_user_by('email', $username);
+			if ($user) {
+				$userID = $user->ID;
+				if (!$userID) {
+					return;
+				}
+			}
+		}
 		// change the action flag here if the user does not exist.
 		if ($action == 'loginFailValidUsername' && $userID == 0) {
 			$action = 'loginFailInvalidUsername';
@@ -1246,9 +1255,11 @@ class wfUserIPRange {
 
 		// IPv6 range
 		} else if (strpos($ip_string, ':') !== false && strpos($ip, ':') !== false) {
-			if (preg_match('/\[[a-f0-9]+\-[a-f0-9]+\]/', $ip_string)) {
-				$IPparts = explode(':', strtolower(wfUtils::expandIPv6Address($ip)));
-				$whiteParts = explode(':', strtolower(self::expandIPv6Range($ip_string)));
+			$ip = strtolower(wfUtils::expandIPv6Address($ip));
+			$ip_string = strtolower(self::expandIPv6Range($ip_string));
+			if (preg_match('/\[[a-f0-9]+\-[a-f0-9]+\]/i', $ip_string)) {
+				$IPparts = explode(':', $ip);
+				$whiteParts = explode(':', $ip_string);
 				$mismatch = false;
 				for ($i = 0; $i <= 7; $i++) {
 					if (preg_match('/^\[([a-f0-9]+)\-([a-f0-9]+)\]$/i', $whiteParts[$i], $m)) {
@@ -1416,7 +1427,7 @@ class wfUserIPRange {
 	 * @param string|null $ip_string
 	 */
 	public function setIPString($ip_string) {
-		$this->ip_string = $ip_string;
+		$this->ip_string = preg_replace('/[\x{2013}-\x{2015}]/u', '-', $ip_string); //Replace em-dash, en-dash, and horizontal bar with a regular dash
 	}
 }
 

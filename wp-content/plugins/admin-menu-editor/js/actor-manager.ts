@@ -58,6 +58,10 @@ abstract class AmeBaseActor {
 		}
 		return specificity;
 	}
+
+	toString(): string {
+		return this.displayName + ' [' + this.id + ']';
+	}
 }
 
 class AmeRole extends AmeBaseActor {
@@ -81,11 +85,23 @@ class AmeRole extends AmeBaseActor {
 	}
 }
 
+interface AmeUserPropertyMap {
+	user_login: string;
+	display_name: string;
+	capabilities: CapabilityMap;
+	roles : string[];
+	is_super_admin: boolean;
+	id?: number;
+	avatar_html?: string;
+}
+
 class AmeUser extends AmeBaseActor {
 	userLogin: string;
+	userId: number = 0;
 	roles: string[];
 	isSuperAdmin: boolean = false;
 	groupActors: string[];
+	avatarHTML: string = '';
 
 	protected actorTypeSpecificity = 10;
 
@@ -94,13 +110,15 @@ class AmeUser extends AmeBaseActor {
 		displayName: string,
 		capabilities: CapabilityMap,
 		roles: string[],
-		isSuperAdmin: boolean = false
+		isSuperAdmin: boolean = false,
+	    userId?: number
 	) {
 		super('user:' + userLogin, displayName, capabilities);
 
 		this.userLogin = userLogin;
 		this.roles = roles;
 		this.isSuperAdmin = isSuperAdmin;
+		this.userId = userId || 0;
 
 		if (this.isSuperAdmin) {
 			this.groupActors.push(AmeSuperAdmin.permanentActorId);
@@ -108,6 +126,23 @@ class AmeUser extends AmeBaseActor {
 		for (var i = 0; i < this.roles.length; i++) {
 			this.groupActors.push('role:' + this.roles[i]);
 		}
+	}
+
+	static createFromProperties(properties: AmeUserPropertyMap): AmeUser {
+		let user = new AmeUser(
+			properties.user_login,
+			properties.display_name,
+			properties.capabilities,
+			properties.roles,
+			properties.is_super_admin,
+			properties.hasOwnProperty('id') ? properties.id : null
+		);
+
+		if (properties.avatar_html) {
+			user.avatarHTML = properties.avatar_html;
+		}
+
+		return user;
 	}
 }
 
@@ -131,6 +166,11 @@ interface AmeGrantedCapabilityMap {
 	}
 }
 
+interface AmeCapabilitySuggestion {
+	role: AmeRole;
+	capability: string;
+}
+
 class AmeActorManager {
 	private static _ = wsAmeLodash;
 
@@ -141,6 +181,8 @@ class AmeActorManager {
 	private isMultisite: boolean = false;
 	private superAdmin: AmeSuperAdmin;
 
+	private suggestedCapabilities: AmeCapabilitySuggestion[] = [];
+
 	constructor(roles, users, isMultisite: boolean = false) {
 		this.isMultisite = !!isMultisite;
 
@@ -149,14 +191,8 @@ class AmeActorManager {
 			this.roles[role.name] = role;
 		});
 
-		AmeActorManager._.forEach(users, (userDetails) => {
-			var user = new AmeUser(
-				userDetails.user_login,
-				userDetails.display_name,
-				userDetails.capabilities,
-				userDetails.roles,
-				userDetails.is_super_admin
-			);
+		AmeActorManager._.forEach(users, (userDetails: AmeUserPropertyMap) => {
+			var user = AmeUser.createFromProperties(userDetails);
 			this.users[user.userLogin] = user;
 		});
 
@@ -425,6 +461,113 @@ class AmeActorManager {
 		}
 		return delta;
 	};
+
+	generateCapabilitySuggestions(capPower): void {
+		let _ = AmeActorManager._;
+
+		let capsByPower = _.memoize((role: AmeRole): {capability: string, power: number}[] => {
+			let sortedCaps = _.reduce(role.capabilities, (result, hasCap, capability) => {
+				if (hasCap) {
+					result.push({
+						capability: capability,
+						power: _.get(capPower, [capability], 0)
+					});
+				}
+				return result;
+			}, []);
+
+			sortedCaps = _.sortBy(sortedCaps, (item) => -item.power);
+			return sortedCaps;
+		});
+
+		let rolesByPower: AmeRole[] = _.values<AmeRole>(this.getRoles()).sort(function(a: AmeRole, b: AmeRole) {
+			let aCaps = capsByPower(a),
+				bCaps = capsByPower(b);
+
+			//Prioritise roles with the highest number of the most powerful capabilities.
+			for (var i = 0, limit = Math.min(aCaps.length, bCaps.length); i < limit; i++) {
+				let delta = bCaps[i].power - aCaps[i].power;
+				if (delta !== 0) {
+					return delta;
+				}
+			}
+
+			//Give a tie to the role that has more capabilities.
+			let delta = bCaps.length - aCaps.length;
+			if (delta !== 0) {
+				return delta;
+			}
+
+			//Failing that, just sort alphabetically.
+			if (a.displayName > b.displayName) {
+				return 1;
+			} else if (a.displayName < b.displayName) {
+				return -1;
+			}
+			return 0;
+		});
+
+		let preferredCaps = [
+			'manage_network_options',
+			'install_plugins', 'edit_plugins', 'delete_users',
+			'manage_options', 'switch_themes',
+			'edit_others_pages', 'edit_others_posts', 'edit_pages',
+			'unfiltered_html',
+			'publish_posts', 'edit_posts',
+			'read'
+		];
+
+		let deprecatedCaps = _(_.range(0, 10)).map((level) => 'level_' + level).value();
+		deprecatedCaps.push('edit_files');
+
+		let findDiscriminant = (caps: string[], includeRoles: AmeRole[], excludeRoles): string => {
+			let getEnabledCaps = (role: AmeRole): string[] => {
+				return _.keys(_.pick(role.capabilities, _.identity));
+			};
+
+			//Find caps that all of the includeRoles have and excludeRoles don't.
+			let includeCaps = _.intersection.apply(_, _.map(includeRoles, getEnabledCaps)),
+				excludeCaps = _.union.apply(_, _.map(excludeRoles, getEnabledCaps)),
+				possibleCaps = _.without.apply(_, [includeCaps].concat(excludeCaps).concat(deprecatedCaps));
+
+			let bestCaps = _.intersection(preferredCaps, possibleCaps);
+
+			if (bestCaps.length > 0) {
+				return bestCaps[0];
+			} else if (possibleCaps.length > 0) {
+				return possibleCaps[0];
+			}
+			return null;
+		};
+
+		let suggestedCapabilities = [];
+		for (let i = 0; i < rolesByPower.length; i++) {
+			let role = rolesByPower[i];
+
+			let cap = findDiscriminant(
+				preferredCaps,
+				_.slice(rolesByPower, 0, i + 1),
+				_.slice(rolesByPower, i + 1, rolesByPower.length)
+			);
+			suggestedCapabilities.push({role: role, capability: cap});
+		}
+
+		let previousSuggestion = null;
+		for (let i = suggestedCapabilities.length - 1; i >= 0; i--) {
+			if (suggestedCapabilities[i].capability === null) {
+				suggestedCapabilities[i].capability =
+					previousSuggestion ? previousSuggestion : 'exist';
+			} else {
+				previousSuggestion = suggestedCapabilities[i].capability;
+			}
+		}
+
+		this.suggestedCapabilities = suggestedCapabilities;
+	}
+
+	public getSuggestedCapabilities(): AmeCapabilitySuggestion[] {
+		return this.suggestedCapabilities;
+	}
 }
 
 if (typeof wsAmeActorData !== 'undefined') {
@@ -433,4 +576,8 @@ if (typeof wsAmeActorData !== 'undefined') {
 		wsAmeActorData.users,
 		wsAmeActorData.isMultisite
 	);
+
+	if (typeof wsAmeActorData['capPower'] !== 'undefined') {
+		AmeActors.generateCapabilitySuggestions(wsAmeActorData['capPower']);
+	}
 }

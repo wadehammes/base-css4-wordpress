@@ -633,19 +633,43 @@
 			
 		},
 		
-		render_layout: function( $layout ){
+		render_layout_title: function( $layout ){
 			
-			// update order number
+			// vars
+			var ajax_data = acf.serialize( $layout );
 			
 			
+			// append
+			ajax_data = acf.parse_args( ajax_data, {
+				action: 	'acf/fields/flexible_content/layout_title',
+				field_key: 	this.$field.data('key'),
+				i: 			$layout.index(),
+				layout:		$layout.data('layout'),
+			});
 			
-			// update text
-/*
-			var data = acf.serialize_form($layout);
 			
-			console.log( data );
-*/
+			// prepare
+			ajax_data = acf.prepare_for_ajax(ajax_data);
 			
+			
+			// ajax get title HTML
+			$.ajax({
+		    	url			: acf.get('ajaxurl'),
+				dataType	: 'html',
+				type		: 'post',
+				data		: ajax_data,
+				success: function( html ){
+					
+					// bail early if no html
+					if( !html ) return;
+					
+					
+					// update html
+					$layout.find('> .acf-fc-layout-handle').html( html );
+					
+				}
+			});
+				
 		},
 			
 		validate_add: function( layout ){
@@ -1123,57 +1147,30 @@
 			var $layout	= e.$el.closest('.layout');
 			
 			
+			// render
+			// - do this before calling actions to avoif focusing on the wrong field
+			this.render_layout_title( $layout );
+			
+			
 			// open
 			if( $layout.hasClass('-collapsed') ) {
 			
 				$layout.removeClass('-collapsed');
 				
-				acf.do_action('refresh', $layout);
+				acf.do_action('show', $layout, 'collapse');
 			
 			// close
 			} else {
 				
 				$layout.addClass('-collapsed');
 				
+				acf.do_action('hide', $layout, 'collapse');
+				
 			}
 			
 			
 			// sync collapsed order
 			this.sync();
-			
-			
-			// vars
-			var data = acf.serialize( $layout );
-			
-			
-			// append
-			$.extend(data, {
-				action: 	'acf/fields/flexible_content/layout_title',
-				field_key: 	this.$field.data('key'),
-				post_id: 	acf.get('post_id'),
-				i: 			$layout.index(),
-				layout:		$layout.data('layout'),
-			});
-			
-			
-			// ajax get title HTML
-			$.ajax({
-		    	url			: acf.get('ajaxurl'),
-				dataType	: 'html',
-				type		: 'post',
-				data		: data,
-				success: function( html ){
-					
-					// bail early if no html
-					if( !html ) return;
-					
-					
-					// update html
-					$layout.find('> .acf-fc-layout-handle').html( html );
-					
-				}
-			});
-
 			
 		}
 		
@@ -1197,7 +1194,6 @@
 		actions: {
 			'ready':	'initialize',
 			'append':	'initialize',
-			'submit':	'close_sidebar',
 			'show': 	'resize'
 		},
 		
@@ -1955,8 +1951,6 @@
 			var data = acf.prepare_for_ajax({
 				action		: 'acf/fields/gallery/get_attachment',
 				field_key	: this.$field.data('key'),
-				nonce		: acf.get('nonce'),
-				post_id		: acf.get('post_id'),
 				id			: id
 			});
 			
@@ -2066,7 +2060,6 @@
 			var data = acf.prepare_for_ajax({
 				action		: 'acf/fields/gallery/get_sort_order',
 				field_key	: this.$field.data('key'),
-				post_id		: acf.get('post_id'),
 				ids			: [],
 				sort		: sort
 			});
@@ -2356,6 +2349,52 @@
 		}
 		
 	});
+	
+	
+	/*
+	*  acf_gallery_manager
+	*
+	*  Priveds some global functionality for the gallery field
+	*
+	*  @type	function
+	*  @date	25/11/2015
+	*  @since	5.3.2
+	*
+	*  @param	n/a
+	*  @return	n/a
+	*/
+	
+	var acf_gallery_manager = acf.model.extend({
+		
+		actions: {
+			'validation_begin': 	'validation_begin',
+			'validation_failure': 	'validation_failure'
+		},
+		
+		validation_begin: function(){
+			
+			// lock all gallery forms
+			$('.acf-gallery-side-data').each(function(){
+				
+				acf.disable_form( $(this), 'gallery' );
+				
+			});
+			
+		},
+		
+		validation_failure: function(){
+			
+			// lock all gallery forms
+			$('.acf-gallery-side-data').each(function(){
+				
+				acf.enable_form( $(this), 'gallery' );
+				
+			});
+			
+		}
+		
+	});
+	
 	
 })(jQuery);
 
