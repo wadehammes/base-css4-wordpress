@@ -24,8 +24,8 @@ $modifiedDate = get_the_modified_date( 'Y-m-d H:i:s' );
 	</header>
 
 	<section class="article-content" itemprop="articleBody">
-		<?php the_post_thumbnail('full'); ?>
-		<?php the_content(); ?>
+		<?php the_post_thumbnail('large'); ?>
+		<?php the_excerpt(); ?>
 	</section>
 
 	<footer class="article-footer">
