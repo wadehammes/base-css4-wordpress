@@ -71,6 +71,7 @@ wp-content/themes/base/library/js/*
 wp-content/w3tc-config/master.php
 wp-content/cache/config/master.php
 wp-content/themes/base/library/css/base.css
+wp-content/themes/base/library/css/base.css.map
 wp-content/plugins/wordfence/tmp/configCache.php
 
 wp-content/wflogs/

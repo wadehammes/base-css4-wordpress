@@ -34,7 +34,7 @@ var stylePathWatch   = themeBase + themeName + '/assets/css/**/*.css';
 var stylePathDest    = themeBase + themeName + '/library/css/';
 
 // Script Path
-var scriptsPathSrc   = [themeBase + themeName + '/assets/js/_lib/**/*.js', themeBase + themeName + '/assets/js/_src/**/*.js', themeBase + themeName + '/assets/js/application-new.js'];
+var scriptsPathSrc   = [themeBase + themeName + '/assets/js/_lib/**/*.js', themeBase + themeName + '/assets/js/_src/**/*.js', themeBase + themeName + '/assets/js/app.js'];
 var scriptsPathWatch = themeBase + themeName + '/assets/js/**/*.js';
 var scriptsPathDest  = themeBase + themeName + '/library/js/';
 
