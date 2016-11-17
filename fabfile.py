@@ -54,7 +54,7 @@ def update():
     with cd(env.work_dir):
         run('rm -rf node_modules')
         run('npm install')
-        run('gulp build')
+        run('sudo gulp build --production')
 
 @task
 def install():
@@ -74,7 +74,7 @@ def pull(branch):
     with cd(env.work_dir):
         run('git add .')
         run('git pull origin {}'.format(branch))
-        run('gulp build')
+        run('sudo gulp build --production')
 
 @task
 def push(branch):
@@ -98,7 +98,7 @@ def deploy(branch='master'):
                 run('git add -A')
                 run('git commit -m "Production Commit on {}"'.format(st))
                 run('git pull origin master')
-                run('gulp build')
+                run('sudo gulp build --production')
                 run('git push origin master')
                 run('sudo chown -R www-data:www-data /var/www/html/')
                 run('sudo find /var/www/html/ -type f -exec chmod 664 {} \;')

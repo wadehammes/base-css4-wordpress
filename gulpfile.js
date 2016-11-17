@@ -25,6 +25,10 @@ browserSync = require('browser-sync').create();
 // Read our Settings Configuration
 var settings = JSON.parse(fs.readFileSync('./settings.json'));
 
+var config {
+  production: !!utility.env.production
+}
+
 /*==================================
 =            Base Paths            =
 ==================================*/
@@ -88,8 +92,8 @@ gulp.task('stylesheets', function () {
     .pipe(postcss(processors))
     .pipe( sourcemaps.write('.') )
     .pipe(gulp.dest(stylePathDest))
-    .pipe(browserSync.stream())
-    .pipe(notify({ message: 'Styles task complete' }));
+    .pipe(config.production ? utility.noop() : browserSync.stream())
+    .pipe(config.production ? utility.noop() : notify({ message: 'Styles task complete' }));
 });
 
 // Compile (in order), concatenate, minify, rename and move our JS files
@@ -104,8 +108,8 @@ gulp.task('scripts', function() {
   .pipe(concat('application.js', {newLine: ';'}))
   .pipe(uglify())
   .pipe(gulp.dest(scriptsPathDest))
-  .pipe(browserSync.stream())
-  .pipe(notify({ message: 'Scripts task complete' }));
+  .pipe(config.production ? utility.noop() : browserSync.stream())
+  .pipe(config.production ? utility.noop() : notify({ message: 'Scripts task complete' }));
 });
 
 gulp.task('scripts-serviceworker', function() {
@@ -119,8 +123,8 @@ gulp.task('scripts-serviceworker', function() {
   .pipe(uglify())
   // save files into root /dist directory for proper scope
   .pipe( gulp.dest('./'))
-  .pipe(browserSync.stream())
-  .pipe(notify({ message: 'Service Worker task complete' }));
+  .pipe(config.production ? utility.noop() : browserSync.stream())
+  .pipe(config.production ? utility.noop() : notify({ message: 'Service Worker task complete' }));
 });
 
 gulp.task('svgs', function() {
@@ -141,8 +145,8 @@ gulp.task('svgs', function() {
     }))
     .pipe(svgstore({inlineSvg: true}))
     .pipe(gulp.dest(svgDest))
-    .pipe(browserSync.stream())
-    .pipe(notify({ message: 'SVG task complete' }))
+    .pipe(config.production ? utility.noop() : browserSync.stream())
+    .pipe(config.production ? utility.noop() : notify({ message: 'SVG task complete' }))
     .on('end', function() {
       fs.renameSync(svgDest + '/svg.svg', svgDest + '/sprite.svg')
     });
@@ -158,7 +162,7 @@ gulp.task('img-opt', function () {
     progressive: true
     }))
   .pipe(gulp.dest(imgDest))
-  .pipe(notify({ message: 'Images task complete' }));
+  .pipe(config.production ? utility.noop() : notify({ message: 'Images task complete' }));
 });
 
 // Browser Sync
@@ -179,7 +183,6 @@ gulp.task('serve', ['stylesheets', 'scripts', 'svgs'], function() {
 =            Watch Tasks            =
 ===================================*/
 gulp.task('watch-images', function() {
-  gulp.watch(svgPathWatch, ['svg-opt']);
   gulp.watch(imgPathWatch, ['img-opt']);
 });
 
