@@ -19,8 +19,11 @@ $w = new wfConfig();
 	<br clear="both"/>
 	
 	<?php
-	$rightRail = new wfView('marketing/rightrail', array('additionalClasses' => 'wordfenceRightRailDiagnostics'));
-	echo $rightRail;
+	if (!isset($sendingDiagnosticEmail)) { $sendingDiagnosticEmail = false; }
+	if (!$sendingDiagnosticEmail) {
+		$rightRail = new wfView('marketing/rightrail', array('additionalClasses' => 'wordfenceRightRailDiagnostics'));
+		echo $rightRail;
+	}
 	?>
 
 	<form id="wfConfigForm">
@@ -346,6 +349,43 @@ $w = new wfConfig();
 				</table>
 			</div>
 		<?php endif ?>
+		<div style="max-width: 100%; overflow: auto; padding: 1px;">
+			<table class="wf-table"<?php echo !empty($inEmail) ? ' border=1' : '' ?>>
+				<tbody class="empty-row">
+				<tr>
+					<td colspan="2"></td>
+				</tr>
+				</tbody>
+				<tbody class="thead">
+				<tr>
+					<th colspan="2">Log Files (Error messages from WordPress core, plugins, and themes)</th>
+				</tr>
+				</tbody>
+				<tbody class="thead thead-subhead" style="font-size: 85%">
+				<tr>
+					<th>File</th>
+					<th>Download</th>
+				</tr>
+				</tbody>
+				<tbody style="font-size: 85%">
+				<?php
+				$errorLogs = wfErrorLogHandler::getErrorLogs();
+				if (count($errorLogs) < 1): ?>
+					<tr>
+						<td colspan="2"><em>No log files found.</em></td>
+					</tr>
+				<?php else:
+					foreach ($errorLogs as $log => $readable): ?>
+						<tr>
+							<td style="width: 100%"><?php echo esc_html($log) . ' (' . wfUtils::formatBytes(filesize($log)) . ')'; ?></td>
+							<td style="white-space: nowrap; text-align: right;"><?php echo ($readable ? '<a href="#" data-logfile="' . esc_html($log) . '" class="downloadLogFile" target="_blank">Download</a>' : '<em>Requires downloading from the server directly</em>'); ?></td> 
+						</tr>
+					<?php endforeach;
+				endif; ?>
+				</tbody>
+			
+			</table>
+		</div>
 	</form>
 </div>
 

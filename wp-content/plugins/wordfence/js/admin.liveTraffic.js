@@ -356,6 +356,7 @@
 				case 'lockedOut':
 					return 'locked out from logging in';
 
+				case 'blocked:waf-always':
 				case 'blocked:wordfence':
 				case 'blocked:wfsnrepeat': 
 					desc = self.actionDescription();

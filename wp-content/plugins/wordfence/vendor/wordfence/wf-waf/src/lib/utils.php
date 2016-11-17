@@ -544,4 +544,200 @@ class wfWAFUtils {
 		
 		return intval($val);
 	}
+	
+	public static function reverseLookup($IP) {
+		$IPn = self::inet_pton($IP);
+		// This function works for IPv4 or IPv6
+		if (function_exists('gethostbyaddr')) {
+			$host = @gethostbyaddr($IP);
+		}
+		if (!$host) {
+			$ptr = false;
+			if (filter_var($IP, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false) {
+				$ptr = implode(".", array_reverse(explode(".", $IP))) . ".in-addr.arpa";
+			} else if (filter_var($IP, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false) {
+				$ptr = implode(".", array_reverse(str_split(bin2hex($IPn)))) . ".ip6.arpa";
+			}
+			
+			if ($ptr && function_exists('dns_get_record')) {
+				$host = @dns_get_record($ptr, DNS_PTR);
+				if ($host) {
+					$host = $host[0]['target'];
+				}
+			}
+		}
+		if (!$host) {
+			return '';
+		}
+		return $host;
+	}
+	
+	public static function patternToRegex($pattern, $mod = 'i', $sep = '/') {
+		$pattern = preg_quote(trim($pattern), $sep);
+		$pattern = str_replace(' ', '\s', $pattern);
+		return $sep . '^' . str_replace('\*', '.*', $pattern) . '$' . $sep . $mod;
+	}
+	
+	public static function isUABlocked($uaPattern, $ua) { // takes a pattern using asterisks as wildcards, turns it into regex and checks it against the visitor UA returning true if blocked
+		return fnmatch($uaPattern, $ua, FNM_CASEFOLD);
+	}
+	
+	public static function isRefererBlocked($refPattern, $referer) {
+		return fnmatch($refPattern, $referer, FNM_CASEFOLD);
+	}
+	
+	public static function extractBareURI($URL) {
+		$URL = preg_replace('/^https?:\/\/[^\/]+/i', '', $URL); //strip of method and host
+		$URL = preg_replace('/\#.*$/', '', $URL); //strip off fragment
+		$URL = preg_replace('/\?.*$/', '', $URL); //strip off query string
+		return $URL;
+	}
+	
+	public static function extractHostname($str) {
+		if (preg_match('/https?:\/\/([a-zA-Z0-9\.\-]+)(?:\/|$)/i', $str, $matches)) {
+			return strtolower($matches[1]);
+		}
+		else {
+			return false;
+		}
+	}
+	
+	public static function redirect($location, $status = 302) {
+		$is_apache = (strpos($_SERVER['SERVER_SOFTWARE'], 'Apache') !== false || strpos($_SERVER['SERVER_SOFTWARE'], 'LiteSpeed') !== false);
+		$is_IIS = !$is_apache && (strpos($_SERVER['SERVER_SOFTWARE'], 'Microsoft-IIS') !== false || strpos($_SERVER['SERVER_SOFTWARE'], 'ExpressionDevServer') !== false);
+		
+		if (!$is_IIS && PHP_SAPI != 'cgi-fcgi') {
+			self::statusHeader($status); // This causes problems on IIS and some FastCGI setups
+		}
+		
+		header("Location: {$location}", true, $status);
+		exit;
+	}
+	
+	public static function statusHeader($code) {
+		$code = abs(intval($code));
+		
+		$statusCodes = array(
+			100 => 'Continue',
+			101 => 'Switching Protocols',
+			102 => 'Processing',
+			
+			200 => 'OK',
+			201 => 'Created',
+			202 => 'Accepted',
+			203 => 'Non-Authoritative Information',
+			204 => 'No Content',
+			205 => 'Reset Content',
+			206 => 'Partial Content',
+			207 => 'Multi-Status',
+			226 => 'IM Used',
+			
+			300 => 'Multiple Choices',
+			301 => 'Moved Permanently',
+			302 => 'Found',
+			303 => 'See Other',
+			304 => 'Not Modified',
+			305 => 'Use Proxy',
+			306 => 'Reserved',
+			307 => 'Temporary Redirect',
+			308 => 'Permanent Redirect',
+			
+			400 => 'Bad Request',
+			401 => 'Unauthorized',
+			402 => 'Payment Required',
+			403 => 'Forbidden',
+			404 => 'Not Found',
+			405 => 'Method Not Allowed',
+			406 => 'Not Acceptable',
+			407 => 'Proxy Authentication Required',
+			408 => 'Request Timeout',
+			409 => 'Conflict',
+			410 => 'Gone',
+			411 => 'Length Required',
+			412 => 'Precondition Failed',
+			413 => 'Request Entity Too Large',
+			414 => 'Request-URI Too Long',
+			415 => 'Unsupported Media Type',
+			416 => 'Requested Range Not Satisfiable',
+			417 => 'Expectation Failed',
+			418 => 'I\'m a teapot',
+			421 => 'Misdirected Request',
+			422 => 'Unprocessable Entity',
+			423 => 'Locked',
+			424 => 'Failed Dependency',
+			426 => 'Upgrade Required',
+			428 => 'Precondition Required',
+			429 => 'Too Many Requests',
+			431 => 'Request Header Fields Too Large',
+			451 => 'Unavailable For Legal Reasons',
+			
+			500 => 'Internal Server Error',
+			501 => 'Not Implemented',
+			502 => 'Bad Gateway',
+			503 => 'Service Unavailable',
+			504 => 'Gateway Timeout',
+			505 => 'HTTP Version Not Supported',
+			506 => 'Variant Also Negotiates',
+			507 => 'Insufficient Storage',
+			510 => 'Not Extended',
+			511 => 'Network Authentication Required',
+		);
+			
+		$description = (isset($statusCodes[$code]) ? $statusCodes[$code] : '');
+		
+		$protocol = $_SERVER['SERVER_PROTOCOL'];
+		if (!in_array($protocol, array( 'HTTP/1.1', 'HTTP/2', 'HTTP/2.0'))) {
+			$protocol = 'HTTP/1.0';
+		}
+		
+		$header = "{$protocol} {$code} {$description}";
+		@header($header, true, $code);
+	}
+	
+	/**
+	 * Check if an IP address is in a network block
+	 *
+	 * @param string	$subnet	Single IP or subnet in CIDR notation (e.g. '192.168.100.0' or '192.168.100.0/22')
+	 * @param string	$ip		IPv4 or IPv6 address in dot or colon notation
+	 * @return boolean
+	 */
+	public static function subnetContainsIP($subnet, $ip) {
+		list($network, $prefix) = array_pad(explode('/', $subnet, 2), 2, null);
+		
+		if (filter_var($network, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+			// If no prefix was supplied, 32 is implied for IPv4
+			if ($prefix === null) {
+				$prefix = 32;
+			}
+			
+			// Validate the IPv4 network prefix
+			if ($prefix < 0 || $prefix > 32) {
+				return false;
+			}
+			
+			// Increase the IPv4 network prefix to work in the IPv6 address space
+			$prefix += 96;
+		} else {
+			// If no prefix was supplied, 128 is implied for IPv6
+			if ($prefix === null) {
+				$prefix = 128;
+			}
+			
+			// Validate the IPv6 network prefix
+			if ($prefix < 1 || $prefix > 128) {
+				return false;
+			}
+		}
+		
+		$bin_network = substr(self::inet_pton($network), 0, ceil($prefix / 8));
+		$bin_ip = substr(self::inet_pton($ip), 0, ceil($prefix / 8));
+		if ($prefix % 8 != 0) { //Adjust the last relevant character to fit the mask length since the character's bits are split over it
+			$pos = intval($prefix / 8);
+			$adjustment = chr(((0xff << (8 - ($prefix % 8))) & 0xff));
+			$bin_network[$pos] = ($bin_network[$pos] & $adjustment);
+			$bin_ip[$pos] = ($bin_ip[$pos] & $adjustment);
+		}
+		
+		return ($bin_network === $bin_ip);
+	}
 }

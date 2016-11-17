@@ -190,16 +190,10 @@ class wfActivityReport {
 	 * @return mixed
 	 */
 	public function getTopIPsBlocked($limit = 10) {
-		$where = $this->getBlockedIPWhitelistWhereClause();
-		if ($where) {
-			$where = 'WHERE NOT (' . $where . ')';
-		}
-
 		$results = $this->db->get_results($this->db->prepare(<<<SQL
 SELECT *,
 SUM(blockCount) as blockCount
 FROM {$this->db->prefix}wfBlockedIPLog
-$where
 GROUP BY IP
 ORDER BY blockCount DESC
 LIMIT %d
@@ -218,15 +212,9 @@ SQL
 	 * @return array
 	 */
 	public function getTopCountriesBlocked($limit = 10) {
-		$where = $this->getBlockedIPWhitelistWhereClause();
-		if ($where) {
-			$where = 'WHERE NOT (' . $where . ')';
-		}
-
 		$results = $this->db->get_results($this->db->prepare(<<<SQL
 SELECT *, COUNT(IP) as totalIPs, SUM(blockCount) as totalBlockCount
 FROM {$this->db->base_prefix}wfBlockedIPLog
-$where
 GROUP BY countryCode
 ORDER BY totalBlockCount DESC
 LIMIT %d

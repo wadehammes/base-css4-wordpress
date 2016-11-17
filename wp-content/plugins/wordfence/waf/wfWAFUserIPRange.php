@@ -28,6 +28,15 @@ class wfWAFUserIPRange {
 
 		// IPv4 range
 		if (strpos($ip_string, '.') !== false && strpos($ip, '.') !== false) {
+			// IPv4-mapped-IPv6
+			if (preg_match('/:ffff:([^:]+)$/i', $ip_string, $matches)) {
+				$ip_string = $matches[1];
+			}
+			if (preg_match('/:ffff:([^:]+)$/i', $ip, $matches)) {
+				$ip = $matches[1];
+			}
+			
+			// Range check
 			if (preg_match('/\[\d+\-\d+\]/', $ip_string)) {
 				$IPparts = explode('.', $ip);
 				$whiteParts = explode('.', $ip_string);
@@ -108,25 +117,29 @@ class wfWAFUserIPRange {
 			}
 			$sql = substr($sql, 0, -5) . ')';
 			return $sql;
-
-		} else if (strpos($ip_string, ':') !== false && preg_match('/\[[a-f0-9]+\-[a-f0-9]+\]/', $ip_string)) {
-			$whiteParts = explode(':', strtolower(self::expandIPv6Range($ip_string)));
-			$sql = '(';
-
-			for ($i = 0; $i <= 7; $i++) {
-				// MySQL can only perform bitwise operations on integers
-				$conv = sprintf('CAST(CONV(HEX(SUBSTR(%s, %d, 8)), 16, 10) as UNSIGNED INTEGER)', $column, $i < 4 ? 1 : 9);
-				$j = 16 * (3 - ($i % 4));
-				if (preg_match('/^\[([a-f0-9]+)\-([a-f0-9]+)\]$/', $whiteParts[$i], $m)) {
-					$sql .= $wpdb->prepare("$conv >> $j & 0xFFFF BETWEEN 0x%x AND 0x%x", hexdec($m[1]), hexdec($m[2]));
-				} else {
-					$sql .= $wpdb->prepare("$conv >> $j & 0xFFFF = 0x%x", hexdec($whiteParts[$i]));
+			
+		} else if (strpos($ip_string, ':') !== false) {
+			$ip_string = strtolower(self::expandIPv6Range($ip_string));
+			if (preg_match('/\[[a-f0-9]+\-[a-f0-9]+\]/i', $ip_string)) {
+				$whiteParts = explode(':', $ip_string);
+				$sql = '(';
+				
+				for ($i = 0; $i <= 7; $i++) {
+					// MySQL can only perform bitwise operations on integers
+					$conv = sprintf('CAST(CONV(HEX(SUBSTR(%s, %d, 8)), 16, 10) as UNSIGNED INTEGER)', $column, $i < 4 ? 1 : 9);
+					$j = 16 * (3 - ($i % 4));
+					if (preg_match('/^\[([a-f0-9]+)\-([a-f0-9]+)\]$/i', $whiteParts[$i], $m)) {
+						$sql .= $wpdb->prepare("$conv >> $j & 0xFFFF BETWEEN 0x%x AND 0x%x", hexdec($m[1]), hexdec($m[2]));
+					} else {
+						$sql .= $wpdb->prepare("$conv >> $j & 0xFFFF = 0x%x", hexdec($whiteParts[$i]));
+					}
+					$sql .= ' AND ';
 				}
-				$sql .= ' AND ';
+				$sql = substr($sql, 0, -5) . ')';
+				return $sql;
 			}
-			$sql = substr($sql, 0, -5) . ')';
-			return $sql;
 		}
+		
 		return $wpdb->prepare("($column = %s)", wfWAFUtils::inet_pton($ip_string));
 	}
 
@@ -221,6 +234,6 @@ class wfWAFUserIPRange {
 	 * @param string|null $ip_string
 	 */
 	public function setIPString($ip_string) {
-		$this->ip_string = preg_replace('/[\x{2013}-\x{2015}]/u', '-', $ip_string); //Replace em-dash, en-dash, and horizontal bar with a regular dash
+		$this->ip_string = strtolower(preg_replace('/[\x{2013}-\x{2015}]/u', '-', $ip_string)); //Replace em-dash, en-dash, and horizontal bar with a regular dash
 	}
 }

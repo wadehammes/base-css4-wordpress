@@ -5,7 +5,7 @@ require('wfBulkCountries.php');
 WFAD.countryMap = <?php echo json_encode($wfBulkCountries); ?>;
 </script>
 <div class="wordfenceModeElem" id="wordfenceMode_countryBlocking"></div>
-<div class="wrap" id="paidWrap">
+<div class="wrap wordfence" id="paidWrap">
 	<?php require('menuHeader.php'); ?>
 	<?php $pageTitle = "Block Selected Countries from Accessing your Site"; $helpLink="http://docs.wordfence.com/en/Country_blocking"; $helpLabel="Learn more about Country Blocking"; include('pageTitle.php'); ?>
 	<?php

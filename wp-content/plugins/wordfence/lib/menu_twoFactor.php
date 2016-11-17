@@ -1,5 +1,5 @@
 <div class="wordfenceModeElem" id="wordfenceMode_twoFactor"></div>
-<div class="wrap" id="paidWrap">
+<div class="wrap wordfence" id="paidWrap">
 	<?php require('menuHeader.php'); ?>
 	<?php $pageTitle = "Cellphone Sign-in"; $helpLink="http://docs.wordfence.com/en/Cellphone_sign-in"; $helpLabel="Learn more about Cellphone Sign-in"; include('pageTitle.php'); ?>
 	<?php

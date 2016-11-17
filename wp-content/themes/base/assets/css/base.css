@@ -7,85 +7,65 @@
 * Adjust global media queries and custom properties below.
 *
 */
+@import url('https://fonts.googleapis.com/css?family=Open+Sans');
 
 /* Normalize */
 @import 'normalize.css';
 
+/* Main Body */
+@import 'globals/body';
 
 /* Basscss Modules */
-@import 'basscss-base-reset';
-@import 'basscss-base-forms';
-@import 'basscss-base-tables';
-@import 'basscss-align';
-@import 'basscss-white-space';
-@import 'basscss-positions';
-@import 'basscss-responsive-states';
-@import 'basscss-utility-layout';
-@import 'basscss-grid';
-@import 'flex-object';
-
-/* Default BASSCSS Not Included */
-/*
-@import 'basscss-borders';
-@import 'basscss-colors';
-@import 'basscss-background-colors';
-@import 'basscss-color-base';
-@import 'basscss-color-forms';
-@import 'basscss-color-tables';
-@import 'basscss-btn';
-@import 'basscss-btn-primary';
-@import 'basscss-btn-outline';
 @import 'basscss-type-scale';
-@import 'basscss-utility-typography';
-@import 'basscss-base-typography';
-*/
+@import 'basscss-typography';
+@import 'basscss-layout';
+@import 'basscss-align';
+@import 'basscss-margin';
+@import 'basscss-padding';
+@import 'basscss-grid';
+@import 'basscss-flexbox';
+@import 'basscss-position';
+@import 'basscss-border';
+@import 'basscss-hide';
 
 
 /* Optional Modules (not included in Basscss by default) */
 /*
-@import 'basscss-base-buttons';
-@import 'basscss-button-sizes';
-@import 'basscss-color-forms-dark';
-@import 'basscss-input-range';
-@import 'basscss-progress';
-@import 'basscss-button-outline';
-@import 'basscss-button-transparent';
-@import 'basscss-background-images';
-@import 'basscss-media-object';
-@import 'basscss-responsive-white-space';
-@import 'basscss-utility-headings';
-@import 'basscss-ui-utility-groups';
-@import 'basscss-table-object';
-@import 'basscss-color-buttons';
-@import 'basscss-button-link';
-@import 'basscss-button-blue';
-@import 'basscss-button-blue-outline';
-@import 'basscss-button-gray';
-@import 'basscss-button-light-gray';
-@import 'basscss-button-red';
-@import 'basscss-button-nav-light';
-@import 'basscss-button-nav-dark';
-@import 'basscss-button-nav-tab';
-@import 'basscss-highlight-dark';
-@import 'basscss-highlight';
+@import 'basscss-addons/modules/responsive-margin';
+@import 'basscss-addons/modules/responsive-padding';
+@import 'basscss-addons/modules/media-object';
+@import 'basscss-addons/modules/all';
+@import 'basscss-addons/modules/forms';
+@import 'basscss-addons/modules/input-range';
+@import 'basscss-addons/modules/progress';
+@import 'basscss-addons/modules/btn';
+@import 'basscss-addons/modules/btn-primary';
+@import 'basscss-addons/modules/btn-outline';
+@import 'basscss-addons/modules/btn-sizes';
+@import 'basscss-addons/modules/colors';
+@import 'basscss-addons/modules/background-colors';
+@import 'basscss-addons/modules/border-colors';
+@import 'basscss-addons/modules/darken';
+@import 'basscss-addons/modules/lighten';
+@import 'basscss-addons/modules/background-images';
 */
 
-@import 'globals/animations';
-@import 'globals/body';
-@import 'globals/colors';
-@import 'globals/anchors';
-@import 'globals/align';
-@import 'globals/list';
-@import 'globals/typography';
+/* TrackMaven */
+
 @import 'globals/whitespace';
-@import 'globals/scroll';
+@import 'globals/animations';
+@import 'globals/colors';
+@import 'globals/typography';
+@import 'globals/anchors';
+@import 'globals/list';
 @import 'globals/forms';
 @import 'globals/tooltips';
 @import 'globals/buttons';
 @import 'globals/carousel';
 
-/* Default custom properties */
-@import 'basscss-defaults';
+
+/* Wordpress */
+@import '/globals/editor';
 
 
 /* Custom media queries */
@@ -102,7 +82,7 @@
 
 /* Custom properties */
 :root {
-  --font-family: 'Helvetica Neue', Helvetica, sans-serif;
+  --font-family: 'Open Sans', sans-serif;
   --line-height: 1.5;
   --heading-font-family: var(--font-family);
   --heading-font-weight: bold;
@@ -140,6 +120,7 @@
   --gray:   #aaa;
   --silver: #ddd;
   --white:  #fff;
+  --blue:   blue;
 
   --darken-1: rgba(0,0,0,.0625);
   --darken-2: rgba(0,0,0,.125);

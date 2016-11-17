@@ -751,6 +751,7 @@ class wfWAFRuleComparison implements wfWAFRuleInterface {
 				}
 				
 				$totalRead = 0;
+				$insideOpenTag = false;
 				$hasExecutablePHP = false;
 				$possiblyHasExecutablePHP = false;
 				$hasOpenParen = false;
@@ -760,7 +761,7 @@ class wfWAFRuleComparison implements wfWAFRuleInterface {
 				$maxTokenSize = 15; //__halt_compiler
 				$possibleWrappedTokens = array('<?php', '<?=', '<?', '?>', 'exit', 'new', 'clone', 'echo', 'print', 'require', 'include', 'require_once', 'include_once', '__halt_compiler');
 				
-				$readsize = 512 * 1024; //512k at a time
+				$readsize = 100 * 1024; //100k at a time
 				while (!feof($fh)) {
 					$data = fread($fh, $readsize);
 					$actualReadsize = strlen($data);
@@ -782,26 +783,81 @@ class wfWAFRuleComparison implements wfWAFRuleInterface {
 						}
 					}
 					
+					//Make sure it tokenizes correctly if chunked
+					if ($insideOpenTag) {
+						if ($possiblyHasExecutablePHP) {
+							$data = '<?= ' . $data; 
+						}
+						else {
+							$data = '<?php ' . $data;
+						}
+					}
+					
 					//Tokenize the data and check for PHP
+					$this->_resetErrors();
 					$tokens = @token_get_all($data);
+					$error = error_get_last();
+					if ($error !== null && stripos($error['message'], 'Unexpected character in input') !== false) {
+						break;
+					}
+					
+					if ($error !== null && feof($fh) && stripos($error['message'], 'Unterminated comment') !== false) {
+						break;
+					}
+					
+					$offset = 0;
 					foreach ($tokens as $token) {
 						if (is_array($token)) {
+							$offset += strlen($token[1]);
 							switch ($token[0]) {
 								case T_OPEN_TAG:
+									$insideOpenTag = true;
 									$hasOpenParen = false;
 									$hasCloseParen = false;
 									$backtickCount = 0;
 									$possiblyHasExecutablePHP = false;
+									
+									if ($error !== null && stripos($error['message'], 'Unterminated comment') !== false) {
+										$testOffset = $offset - strlen($token[1]);
+										$commentStart = strpos($data, '/*', $testOffset);
+										if ($commentStart !== false) {
+											$testBytes = substr($data, $testOffset, $commentStart - $testOffset);
+											$this->_resetErrors();
+											@token_get_all($testBytes);
+											$error = error_get_last();
+											if ($error !== null && stripos($error['message'], 'Unexpected character in input') !== false) {
+												break 3;
+											}
+										}
+									}
+									
 									break;
 								
 								case T_OPEN_TAG_WITH_ECHO:
+									$insideOpenTag = true;
 									$hasOpenParen = false;
 									$hasCloseParen = false;
 									$backtickCount = 0;
 									$possiblyHasExecutablePHP = true;
+									
+									if ($error !== null && stripos($error['message'], 'Unterminated comment') !== false) {
+										$testOffset = $offset - strlen($token[1]);
+										$commentStart = strpos($data, '/*', $testOffset);
+										if ($commentStart !== false) {
+											$testBytes = substr($data, $testOffset, $commentStart - $testOffset);
+											$this->_resetErrors();
+											@token_get_all($testBytes);
+											$error = error_get_last();
+											if ($error !== null && stripos($error['message'], 'Unexpected character in input') !== false) {
+												break 3;
+											}
+										}
+									}
+									
 									break;
 								
 								case T_CLOSE_TAG:
+									$insideOpenTag = false;
 									if ($possiblyHasExecutablePHP) {
 										$hasExecutablePHP = true; //Assume the echo short tag outputted something useful
 									}
@@ -822,6 +878,7 @@ class wfWAFRuleComparison implements wfWAFRuleInterface {
 							}
 						}
 						else {
+							$offset += strlen($token);
 							switch ($token) {
 								case '(':
 									$hasOpenParen = true;
@@ -841,15 +898,34 @@ class wfWAFRuleComparison implements wfWAFRuleInterface {
 					}
 					
 					if ($hasExecutablePHP) {
+						fclose($fh);
 						return true;
 					}
 					
 					$wrappedTokenCheckBytes = substr($data, - min($maxTokenSize, $actualReadsize)); 
 				}
+				
+				fclose($fh);
 			}
 		}
 		
 		return false;
+	}
+	
+	private function _resetErrors() {
+		if (function_exists('error_clear_last')) {
+			error_clear_last();
+		}
+		else {
+			// set error_get_last() to defined state by forcing an undefined variable error
+			set_error_handler(array($this, '_resetErrorsHandler'), 0);
+			@$undefinedVariable;
+			restore_error_handler();
+		}
+	}
+	
+	public function _resetErrorsHandler($errno, $errstr, $errfile, $errline) {
+		//Do nothing
 	}
 
 	/**

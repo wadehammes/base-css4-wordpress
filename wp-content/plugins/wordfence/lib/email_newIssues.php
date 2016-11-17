@@ -11,6 +11,12 @@
 	</div>
 <?php endif ?>
 
+<?php if ($timeLimitReached): ?>
+	<div style="margin: 12px 0;padding: 8px; background-color: #ffffe0; border: 1px solid #ffd975; border-width: 1px 1px 1px 10px;">
+		<em>The scan was terminated early because it reached the time limit for scans. If you would like to allow your scans to run longer, you can customize the limit on the options page: <a href="<?php echo $adminURL; ?>admin.php?page=WordfenceSecOpt"><?php echo $adminURL; ?>admin.php?page=WordfenceSecOpt</a> or read more about scan options to improve scan speed here: <a href="https://docs.wordfence.com/en/Scan_time_limit">https://docs.wordfence.com/en/Scan_time_limit</a></em>
+	</div>
+<?php endif ?>
+
 <?php if($totalCriticalIssues > 0){ ?>
 <p>Critical Problems:</p>
 
@@ -41,6 +47,10 @@
 		<?php endif ?>
 
 <?php } } } ?>
+
+<?php if ($issuesNotShown > 0) { ?>
+<p><?php echo wfUtils::pluralize($issuesNotShown, 'issue'); ?> were omitted from this email. View every issue: <a href="<?php echo $adminURL; ?>admin.php?page=Wordfence"><?php echo $adminURL; ?>admin.php?page=Wordfence</a></p>
+<?php } ?>
 
 
 <?php if(! $isPaid){ ?>

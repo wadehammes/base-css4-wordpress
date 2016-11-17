@@ -134,13 +134,17 @@ class wfUtils {
 				return false;
 			}
 		}
-
-		// Convert human readable addresses to 128 bit (IPv6) binary strings
-		// Note: self::inet_pton converts IPv4 addresses to IPv6 compatible versions
-		$binary_network = str_pad(wfHelperBin::bin2str(self::inet_pton($network)), 128, '0', STR_PAD_LEFT);
-		$binary_ip = str_pad(wfHelperBin::bin2str(self::inet_pton($ip)), 128, '0', STR_PAD_LEFT);
-
-		return 0 === substr_compare($binary_ip, $binary_network, 0, $prefix);
+		
+		$bin_network = substr(self::inet_pton($network), 0, ceil($prefix / 8));
+		$bin_ip = substr(self::inet_pton($ip), 0, ceil($prefix / 8));
+		if ($prefix % 8 != 0) { //Adjust the last relevant character to fit the mask length since the character's bits are split over it
+			$pos = intval($prefix / 8);
+			$adjustment = chr(((0xff << (8 - ($prefix % 8))) & 0xff));
+			$bin_network[$pos] = ($bin_network[$pos] & $adjustment);
+			$bin_ip[$pos] = ($bin_ip[$pos] & $adjustment);
+		}
+		
+		return ($bin_network === $bin_ip);
 	}
 
 	/**
@@ -566,6 +570,7 @@ class wfUtils {
 				if(strpos($item, $char) !== false){
 					$sp = explode($char, $item);
 					foreach($sp as $j){
+						$j = trim($j);
 						if (!self::isValidIP($j)) {
 							$j = preg_replace('/:\d+$/', '', $j); //Strip off port
 						}
@@ -647,7 +652,7 @@ class wfUtils {
 				return self::getCleanIPAndServerVar(array($connectionIP));
 			} else {
 				$ipsToCheck = array(
-					array($_SERVER[$howGet], $howGet),
+					array((isset($_SERVER[$howGet]) ? $_SERVER[$howGet] : ''), $howGet),
 					$connectionIP,
 				);
 				return self::getCleanIPAndServerVar($ipsToCheck);
@@ -841,7 +846,7 @@ class wfUtils {
 	public static function getScanLock(){
 		//Windows does not support non-blocking flock, so we use time.
 		$scanRunning = wfConfig::get('wf_scanRunning');
-		if($scanRunning && time() - $scanRunning < WORDFENCE_MAX_SCAN_TIME){
+		if($scanRunning && time() - $scanRunning < WORDFENCE_MAX_SCAN_LOCK_TIME){
 			return false;
 		}
 		wfConfig::set('wf_scanRunning', time());
@@ -856,7 +861,7 @@ class wfUtils {
 	}
 	public static function isScanRunning(){
 		$scanRunning = wfConfig::get('wf_scanRunning');
-		if($scanRunning && time() - $scanRunning < WORDFENCE_MAX_SCAN_TIME){
+		if($scanRunning && time() - $scanRunning < WORDFENCE_MAX_SCAN_LOCK_TIME){
 			return true;
 		} else {
 			return false;

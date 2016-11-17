@@ -84,7 +84,7 @@ class wfDB {
 	}
 	public function getMaxAllowedPacketBytes(){
 		$rec = $this->querySingleRec("show variables like 'max_allowed_packet'");
-		return $rec['Value'];
+		return intval($rec['Value']);
 	}
 	public function getMaxLongDataSizeBytes() {
 		$rec = $this->querySingleRec("show variables like 'max_long_data_size'");

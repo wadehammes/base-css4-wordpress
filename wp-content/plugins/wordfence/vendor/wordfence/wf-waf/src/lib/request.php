@@ -21,6 +21,9 @@ interface wfWAFRequestInterface {
 	public function getHost();
 
 	public function getURI();
+	
+	public function setMetadata($metadata);
+	public function getMetadata();
 
 	public function getPath();
 
@@ -73,6 +76,7 @@ class wfWAFRequest implements wfWAFRequestInterface {
 		$request->setMd5QueryString(array());
 		$request->setTimestamp('');
 		$request->setURI('');
+		$request->setMetadata(array());
 
 		list($headersString, $bodyString) = explode("\n\n", $requestString, 2);
 		$headersString = trim($headersString);
@@ -241,6 +245,7 @@ class wfWAFRequest implements wfWAFRequestInterface {
 		$request->setProtocol('');
 		$request->setTimestamp('');
 		$request->setURI('');
+		$request->setMetadata(array());
 
 		$request->setBody(wfWAFUtils::stripMagicQuotes($_POST));
 		$request->setQueryString(wfWAFUtils::stripMagicQuotes($_GET));
@@ -332,6 +337,7 @@ class wfWAFRequest implements wfWAFRequestInterface {
 	private $md5QueryString;
 	private $timestamp;
 	private $uri;
+	private $metadata;
 
 	private $highlightParamFormat;
 	private $highlightMatchFormat;
@@ -466,6 +472,14 @@ class wfWAFRequest implements wfWAFRequestInterface {
 
 	public function getURI() {
 		return $this->uri;
+	}
+	
+	public function getMetadata() {
+		if (func_num_args() > 0) {
+			$args = func_get_args();
+			return $this->_arrayValueByKeys($this->metadata, $args);
+		}
+		return $this->metadata;
 	}
 
 	public function getPath() {
@@ -908,6 +922,13 @@ FORM;
 	 */
 	public function setUri($uri) {
 		$this->uri = $uri;
+	}
+	
+	/**
+	 * @param array $metadata
+	 */
+	public function setMetadata($metadata) {
+		$this->metadata = $metadata;
 	}
 }
 

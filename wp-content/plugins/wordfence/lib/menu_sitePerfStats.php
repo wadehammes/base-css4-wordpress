@@ -44,7 +44,7 @@
 }
 </style>
 
-<div class="wrap">
+<div class="wrap wordfence">
 	<?php require('menuHeader.php'); ?>
 	<div class="wordfence-lock-icon wordfence-icon32"><br /></div>
 	<h2 id="wfHeading">

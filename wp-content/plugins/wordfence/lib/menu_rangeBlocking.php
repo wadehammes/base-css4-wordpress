@@ -1,5 +1,5 @@
 <div class="wordfenceModeElem" id="wordfenceMode_rangeBlocking"></div>
-<div class="wrap" id="paidWrap">
+<div class="wrap wordfence" id="paidWrap">
 	<?php require('menuHeader.php'); ?>
 	<?php $helpLink="http://docs.wordfence.com/en/Advanced_Blocking"; $helpLabel="Learn more about Advanced Blocking"; $pageTitle = "Advanced Blocking"; include('pageTitle.php'); ?>
 	<?php

@@ -304,17 +304,33 @@ class wfLog {
 	public function unblockAllIPs(){
 		$this->getDB()->queryWrite("delete from " . $this->blocksTable);
 		wfCache::updateBlockedIPs('add');
+		
+		if (!WFWAF_SUBDIRECTORY_INSTALL && class_exists('wfWAFIPBlocksController')) {
+			wfWAFIPBlocksController::synchronizeConfigSettings();
+		}
 	}
 	public function unlockAllIPs(){
 		$this->getDB()->queryWrite("delete from " . $this->lockOutTable);
+		
+		if (!WFWAF_SUBDIRECTORY_INSTALL && class_exists('wfWAFIPBlocksController')) {
+			wfWAFIPBlocksController::synchronizeConfigSettings();
+		}
 	}
 	public function unblockIP($IP){
 		$this->getDB()->queryWrite("delete from " . $this->blocksTable . " where IP=%s", wfUtils::inet_pton($IP));
 		wfCache::updateBlockedIPs('add');
+		
+		if (!WFWAF_SUBDIRECTORY_INSTALL && class_exists('wfWAFIPBlocksController')) {
+			wfWAFIPBlocksController::synchronizeConfigSettings();
+		}
 	}
 	public function unblockRange($id){
 		$this->getDB()->queryWrite("delete from " . $this->ipRangesTable . " where id=%d", $id);
 		wfCache::updateBlockedIPs('add');
+		
+		if (!WFWAF_SUBDIRECTORY_INSTALL && class_exists('wfWAFIPBlocksController')) {
+			wfWAFIPBlocksController::synchronizeConfigSettings();
+		}
 	}
 
 	/**
@@ -328,6 +344,11 @@ class wfLog {
 		$reason = stripslashes($reason);
 		$this->getDB()->queryWrite("insert IGNORE into " . $this->ipRangesTable . " (blockType, blockString, ctime, reason, totalBlocked, lastBlocked) values ('%s', '%s', unix_timestamp(), '%s', 0, 0)", $blockType, $range, $reason);
 		wfCache::updateBlockedIPs('add');
+		
+		if (!WFWAF_SUBDIRECTORY_INSTALL && class_exists('wfWAFIPBlocksController')) {
+			wfWAFIPBlocksController::synchronizeConfigSettings();
+		}
+		
 		return true;
 	}
 	public function getRangesBasic(){
@@ -430,6 +451,11 @@ class wfLog {
 
 		wfCache::updateBlockedIPs('add');
 		wfConfig::inc('totalIPsBlocked');
+		
+		if (!WFWAF_SUBDIRECTORY_INSTALL && class_exists('wfWAFIPBlocksController')) {
+			wfWAFIPBlocksController::synchronizeConfigSettings();
+		}
+		
 		return true;
 	}
 	public function lockOutIP($IP, $reason){
@@ -450,10 +476,19 @@ class wfLog {
 		}
 
 		wfConfig::inc('totalIPsLocked');
+		
+		if (!WFWAF_SUBDIRECTORY_INSTALL && class_exists('wfWAFIPBlocksController')) {
+			wfWAFIPBlocksController::synchronizeConfigSettings();
+		}
+		
 		return true;
 	}
 	public function unlockOutIP($IP){
 		$this->getDB()->queryWrite("delete from " . $this->lockOutTable . " where IP=%s", wfUtils::inet_pton($IP));
+		
+		if (!WFWAF_SUBDIRECTORY_INSTALL && class_exists('wfWAFIPBlocksController')) {
+			wfWAFIPBlocksController::synchronizeConfigSettings();
+		}
 	}
 	public function isIPLockedOut($IP){
 		if($this->getDB()->querySingle("select IP from " . $this->lockOutTable . " where IP=%s and blockedTime + %s > unix_timestamp()", wfUtils::inet_pton($IP), wfConfig::get('loginSec_lockoutMins') * 60)){
@@ -1030,7 +1065,7 @@ class wfLog {
 		$hasRun = true;
 
 		$blockedCountries = wfConfig::get('cbl_countries', false);
-		$bareRequestURI = wfUtils::extractBareURI($_SERVER['REQUEST_URI']);
+		$bareRequestURI = untrailingslashit(wfUtils::extractBareURI($_SERVER['REQUEST_URI']));
 		$IP = wfUtils::getIP();
 		if($country = wfUtils::IP2Country($IP) ){
 			foreach(explode(',', $blockedCountries) as $blocked){
@@ -1042,7 +1077,7 @@ class wfLog {
 						if($eRedirHost && $eRedirHost != wfUtils::extractHostname(home_url())){ //It's an external redirect...
 							$isExternalRedir = true;
 						}
-						if( (! $isExternalRedir) && wfUtils::extractBareURI($redirURL) == $bareRequestURI){ //Is this the URI we want to redirect to, then don't block it
+						if( (! $isExternalRedir) && untrailingslashit(wfUtils::extractBareURI($redirURL)) == $bareRequestURI){ //Is this the URI we want to redirect to, then don't block it
 							//Do nothing
 							/* Uncomment the following if page components aren't loading for the page we redirect to.
 							   Uncommenting is not recommended because it means that anyone from a blocked country
@@ -1052,11 +1087,24 @@ class wfLog {
 								//Do nothing
 							*/
 						} else {
+							wfConfig::inc('totalCountryBlocked');
+							
+							$this->initLogRequest();
+							$this->currentRequest->actionDescription = 'blocked access via country blocking and redirected to URL (' . wfConfig::get('cbl_redirURL') . ')';
+							$this->currentRequest->statusCode = 503;
+							if (!$this->currentRequest->action) {
+								$this->currentRequest->action = 'blocked:wordfence';
+							}
+							$this->logHit();
+							
+							wfActivityReport::logBlockedIP($IP);
+							
 							$this->redirect(wfConfig::get('cbl_redirURL'));
 						}
 					} else {
 						$this->currentRequest->actionDescription = 'blocked access via country blocking';
 						wfConfig::inc('totalCountryBlocked');
+						wfActivityReport::logBlockedIP($IP);
 						$this->do503(3600, "Access from your area has been temporarily limited for security reasons");
 					}
 				}
@@ -1233,6 +1281,15 @@ class wfUserIPRange {
 
 		// IPv4 range
 		if (strpos($ip_string, '.') !== false && strpos($ip, '.') !== false) {
+			// IPv4-mapped-IPv6
+			if (preg_match('/:ffff:([^:]+)$/i', $ip_string, $matches)) {
+				$ip_string = $matches[1];
+			}
+			if (preg_match('/:ffff:([^:]+)$/i', $ip, $matches)) {
+				$ip = $matches[1];
+			}
+			
+			// Range check
 			if (preg_match('/\[\d+\-\d+\]/', $ip_string)) {
 				$IPparts = explode('.', $ip);
 				$whiteParts = explode('.', $ip_string);
@@ -1314,23 +1371,26 @@ class wfUserIPRange {
 			$sql = substr($sql, 0, -5) . ')';
 			return $sql;
 
-		} else if (strpos($ip_string, ':') !== false && preg_match('/\[[a-f0-9]+\-[a-f0-9]+\]/', $ip_string)) {
-			$whiteParts = explode(':', strtolower(self::expandIPv6Range($ip_string)));
-			$sql = '(';
-
-			for ($i = 0; $i <= 7; $i++) {
-				// MySQL can only perform bitwise operations on integers
-				$conv = sprintf('CAST(CONV(HEX(SUBSTR(%s, %d, 8)), 16, 10) as UNSIGNED INTEGER)', $column, $i < 4 ? 1 : 9);
-				$j = 16 * (3 - ($i % 4));
-				if (preg_match('/^\[([a-f0-9]+)\-([a-f0-9]+)\]$/', $whiteParts[$i], $m)) {
-					$sql .= $wpdb->prepare("$conv >> $j & 0xFFFF BETWEEN 0x%x AND 0x%x", hexdec($m[1]), hexdec($m[2]));
-				} else {
-					$sql .= $wpdb->prepare("$conv >> $j & 0xFFFF = 0x%x", hexdec($whiteParts[$i]));
+		} else if (strpos($ip_string, ':') !== false) {
+			$ip_string = strtolower(self::expandIPv6Range($ip_string));
+			if (preg_match('/\[[a-f0-9]+\-[a-f0-9]+\]/i', $ip_string)) {
+				$whiteParts = explode(':', $ip_string);
+				$sql = '(';
+	
+				for ($i = 0; $i <= 7; $i++) {
+					// MySQL can only perform bitwise operations on integers
+					$conv = sprintf('CAST(CONV(HEX(SUBSTR(%s, %d, 8)), 16, 10) as UNSIGNED INTEGER)', $column, $i < 4 ? 1 : 9);
+					$j = 16 * (3 - ($i % 4));
+					if (preg_match('/^\[([a-f0-9]+)\-([a-f0-9]+)\]$/i', $whiteParts[$i], $m)) {
+						$sql .= $wpdb->prepare("$conv >> $j & 0xFFFF BETWEEN 0x%x AND 0x%x", hexdec($m[1]), hexdec($m[2]));
+					} else {
+						$sql .= $wpdb->prepare("$conv >> $j & 0xFFFF = 0x%x", hexdec($whiteParts[$i]));
+					}
+					$sql .= ' AND ';
 				}
-				$sql .= ' AND ';
+				$sql = substr($sql, 0, -5) . ')';
+				return $sql;
 			}
-			$sql = substr($sql, 0, -5) . ')';
-			return $sql;
 		}
 		return $wpdb->prepare("($column = %s)", wfUtils::inet_pton($ip_string));
 	}
@@ -1427,7 +1487,7 @@ class wfUserIPRange {
 	 * @param string|null $ip_string
 	 */
 	public function setIPString($ip_string) {
-		$this->ip_string = preg_replace('/[\x{2013}-\x{2015}]/u', '-', $ip_string); //Replace em-dash, en-dash, and horizontal bar with a regular dash
+		$this->ip_string = strtolower(preg_replace('/[\x{2013}-\x{2015}]/u', '-', $ip_string)); //Replace em-dash, en-dash, and horizontal bar with a regular dash
 	}
 }
 
@@ -2263,4 +2323,101 @@ class wfLiveTrafficQueryGroupBy {
 
 class wfLiveTrafficQueryException extends Exception {
 
+}
+
+class wfErrorLogHandler {
+	public static function getErrorLogs($deepSearch = false) {
+		static $errorLogs = null;
+		
+		if ($errorLogs === null) {
+			$searchPaths = array(ABSPATH, ABSPATH . 'wp-admin', ABSPATH . 'wp-content');
+			
+			$homePath = get_home_path();
+			if (!in_array($homePath, $searchPaths)) {
+				$searchPaths[] = $homePath;
+			}
+			
+			$errorLogPath = ini_get('error_log');
+			if (!empty($errorLogPath) && !in_array($errorLogPath, $searchPaths)) {
+				$searchPaths[] = $errorLogPath;
+			}
+			
+			$errorLogs = array();
+			foreach ($searchPaths as $s) {
+				$errorLogs = array_merge($errorLogs, self::_scanForLogs($s, $deepSearch));
+			}
+		}
+		return $errorLogs;
+	}
+	
+	private static function _scanForLogs($path, $deepSearch = false) {
+		static $processedFolders = array(); //Protection for endless loops caused by symlinks
+		if (is_file($path)) {
+			$file = basename($path);
+			if (preg_match('#(?:error_log(\-\d+)?$|\.log$)#i', $file)) {
+				return array($path => is_readable($path));
+			}
+			return array();
+		}
+		
+		$path = untrailingslashit($path);
+		$contents = @scandir($path);
+		if (!is_array($contents)) {
+			return array();
+		}
+		
+		$processedFolders[$path] = true;
+		$errorLogs = array();
+		foreach ($contents as $name) {
+			if ($name == '.' || $name == '..') { continue; }
+			$testPath = $path . DIRECTORY_SEPARATOR . $name;
+			if (!array_key_exists($testPath, $processedFolders)) {
+				if ((is_dir($testPath) && $deepSearch) || !is_dir($testPath)) {
+					$errorLogs = array_merge($errorLogs, self::_scanForLogs($testPath, $deepSearch));
+				}
+			}
+		}
+		return $errorLogs;
+	}
+	
+	public static function outputErrorLog($path) {
+		$errorLogs = self::getErrorLogs();
+		if (!isset($errorLogs[$path])) { //Only allow error logs we've identified
+			status_header(404);
+			nocache_headers();
+			
+			$template = get_404_template();
+			if ($template && file_exists($template)) {
+				include($template);
+			}
+			exit;
+		}
+		
+		$fh = @fopen($path, 'r');
+		if (!$fh) {
+			status_header(503);
+			nocache_headers();
+			echo "503 Service Unavailable";
+			exit;
+		}
+		
+		$headersOutputted = false;
+		while (!feof($fh)) {
+			$data = fread($fh, 1 * 1024 * 1024); //read 1 megs max per chunk
+			if ($data === false) { //Handle the error where the file was reported readable but we can't actually read it
+				status_header(503);
+				nocache_headers();
+				echo "503 Service Unavailable";
+				exit;
+			}
+		
+			if (!$headersOutputted) {
+				header('Content-Type: text/plain');
+				header('Content-Disposition: attachment; filename="' . basename($path));
+				$headersOutputted = true;
+			}
+			echo $data;
+		}
+		exit;
+	}
 }

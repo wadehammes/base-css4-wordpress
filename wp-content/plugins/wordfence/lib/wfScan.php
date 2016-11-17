@@ -89,7 +89,15 @@ class wfScan {
 		}
 		try {
 			$scan->go();
-		} catch (Exception $e){
+		}
+		catch (wfScanEngineDurationLimitException $e) {
+			wfUtils::clearScanLock();
+			self::logPeakMemory();
+			self::status(2, 'info', "Wordfence used " . sprintf('%.2f', (wfConfig::get('wfPeakMemory') - self::$peakMemAtStart) / 1024 / 1024) . "MB of memory for scan. Server peak memory usage was: " . sprintf('%.2f', wfConfig::get('wfPeakMemory') / 1024 / 1024) . "MB");
+			self::status(2, 'error', "Scan terminated with error: " . $e->getMessage());
+			exit();
+		}
+		catch (Exception $e){
 			wfUtils::clearScanLock();
 			self::status(2, 'error', "Scan terminated with error: " . $e->getMessage());
 			self::status(10, 'info', "SUM_KILLED:Previous scan terminated with an error. See below.");

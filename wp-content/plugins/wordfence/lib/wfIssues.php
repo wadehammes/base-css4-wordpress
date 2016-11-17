@@ -6,16 +6,18 @@ class wfIssues {
 	//Properties that are serialized on sleep:
 	private $updateCalled = false;
 	private $issuesTable = '';
+	private $maxIssues = 0;
 	private $newIssues = array();
 	public $totalIssues = 0;
 	public $totalCriticalIssues = 0;
 	public $totalWarningIssues = 0;
 	public function __sleep(){ //Same order here as vars above
-		return array('updateCalled', 'issuesTable', 'newIssues', 'totalIssues', 'totalCriticalIssues', 'totalWarningIssues');
+		return array('updateCalled', 'issuesTable', 'maxIssues', 'newIssues', 'totalIssues', 'totalCriticalIssues', 'totalWarningIssues');
 	}
 	public function __construct(){
 		global $wpdb;
 		$this->issuesTable = $wpdb->base_prefix . 'wfIssues';
+		$this->maxIssues = wfConfig::get('scan_maxIssues', 0);
 	}
 	public function __wakeup(){
 		$this->db = new wfDB();
@@ -48,15 +50,18 @@ class wfIssues {
 			$this->totalWarningIssues++;
 		}
 		$this->totalIssues++;
-		$this->newIssues[] = array(
-			'type' => $type,
-			'severity' => $severity,
-			'ignoreP' => $ignoreP,
-			'ignoreC' => $ignoreC,
-			'shortMsg' => $shortMsg,
-			'longMsg' => $longMsg,
-			'tmplData' => $templateData
-			);
+		if (empty($this->maxIssues) || $this->totalIssues <= $this->maxIssues)
+		{
+			$this->newIssues[] = array(
+				'type' => $type,
+				'severity' => $severity,
+				'ignoreP' => $ignoreP,
+				'ignoreC' => $ignoreC,
+				'shortMsg' => $shortMsg,
+				'longMsg' => $longMsg,
+				'tmplData' => $templateData
+				);
+		}
 			
 		$this->getDB()->queryWrite("insert into " . $this->issuesTable . " (time, status, type, severity, ignoreP, ignoreC, shortMsg, longMsg, data) values (unix_timestamp(), '%s', '%s', %d, '%s', '%s', '%s', '%s', '%s')",
 			'new',
@@ -79,7 +84,7 @@ class wfIssues {
 	public function ignoreAllNew(){
 		$this->getDB()->queryWrite("update " . $this->issuesTable . " set status='ignoreC' where status='new'");
 	}
-	public function emailNewIssues(){
+	public function emailNewIssues($timeLimitReached = false){
 		$level = wfConfig::getAlertLevel();
 		$emails = wfConfig::getAlertEmails();
 		$shortSiteURL = preg_replace('/^https?:\/\//i', '', site_url());
@@ -93,6 +98,7 @@ class wfIssues {
 		if(! is_array($emailedIssues)){
 			$emailedIssues = array();
 		}
+		$overflowCount = $this->totalIssues - count($this->newIssues);
 		$finalIssues = array();
 		foreach($this->newIssues as $newIssue){
 			$alreadyEmailed = false;
@@ -105,8 +111,14 @@ class wfIssues {
 			if(! $alreadyEmailed){
 				$finalIssues[] = $newIssue;
 			}
+			else {
+				$overflowCount--;
+			}
 		}
 		if(sizeof($finalIssues) < 1){ return; }
+		
+		$this->newIssues = array();
+		$this->totalIssues = 0;
 
 		$totalWarningIssues = 0;
 		$totalCriticalIssues = 0;
@@ -126,7 +138,10 @@ class wfIssues {
 			'issues' => $finalIssues,
 			'totalCriticalIssues' => $totalCriticalIssues,
 			'totalWarningIssues' => $totalWarningIssues,
-			'level' => $level
+			'level' => $level,
+			'issuesNotShown' => $overflowCount,
+			'adminURL' => get_admin_url(),
+			'timeLimitReached' => $timeLimitReached,
 			));
 		
 		wp_mail(implode(',', $emails), $subject, $content, 'Content-type: text/html');
@@ -146,7 +161,7 @@ class wfIssues {
 		$rec['data'] = unserialize($rec['data']);
 		return $rec;
 	}
-	public function getIssues(){
+	public function getIssues($offset = 0, $limit = 100){
 		/** @var wpdb $wpdb */
 		global $wpdb;
 		$ret = array(
@@ -154,7 +169,7 @@ class wfIssues {
 			'ignored' => array()
 			);
 		$userIni = ini_get('user_ini.filename');
-		$q1 = $this->getDB()->querySelect("select * from " . $this->issuesTable . " order by time desc");
+		$q1 = $this->getDB()->querySelect("select * from " . $this->issuesTable . " order by time desc LIMIT %d,%d", $offset, $limit);
 		foreach($q1 as $i){
 			$i['data'] = unserialize($i['data']);
 			$i['timeAgo'] = wfUtils::makeTimeAgo(time() - $i['time']);

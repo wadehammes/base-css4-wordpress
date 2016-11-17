@@ -1,5 +1,5 @@
 <div class="wordfenceModeElem" id="wordfenceMode_whois"></div>
-<div class="wrap" id="paidWrap">
+<div class="wrap wordfence" id="paidWrap">
 	<?php require('menuHeader.php'); ?>
 	<?php $pageTitle = "WHOIS Lookup"; $helpLink="http://docs.wordfence.com/en/Whois_Lookup"; $helpLabel="Learn more about Whois Lookups"; include('pageTitle.php'); ?>
 	<?php

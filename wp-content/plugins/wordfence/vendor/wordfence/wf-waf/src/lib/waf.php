@@ -190,6 +190,7 @@ auEa+7b+FGTKs7dUo2BNGR7OVifK4GZ8w/ajS0TelhrSRi3BBQCGXLzUO/UURUAh
 			$this->blockAction($e);
 			
 		} catch (wfWAFLogException $e) {
+			$this->eventBus->log($ip, $e);
 			$this->logAction($e);
 		}
 
@@ -788,9 +789,22 @@ HTML
 	 * @param wfWAFBlockException $e
 	 * @param int $httpCode
 	 */
-	public function blockAction($e, $httpCode = 403) {
-		$this->getStorageEngine()->logAttack($e->getFailedRules(), $e->getParamKey(), $e->getParamValue(), $e->getRequest());
+	public function blockAction($e, $httpCode = 403, $redirect = false) {
+		$this->getStorageEngine()->logAttack($e->getFailedRules(), $e->getParamKey(), $e->getParamValue(), $e->getRequest(), $e->getRequest()->getMetadata());
 		$this->getStorageEngine()->blockIP($this->getRequest()->getTimestamp(), $this->getRequest()->getIP());
+		
+		if ($redirect) {
+			wfWAFUtils::redirect($redirect); // exits
+		}
+		
+		if ($httpCode == 503) {
+			wfWAFUtils::statusHeader(503);
+			if ($secsToGo = $e->getRequest()->getMetadata('503Time')) {
+				header('Retry-After: ' . $secsToGo);
+			}
+			exit($this->getUnavailableMessage($e->getRequest()->getMetadata('503Reason')));
+		}
+		
 		header('HTTP/1.0 403 Forbidden');
 		exit($this->getBlockedMessage());
 	}
@@ -800,8 +814,21 @@ HTML
 	 * @param wfWAFBlockXSSException $e
 	 * @param int $httpCode
 	 */
-	public function blockXSSAction($e, $httpCode = 403) {
-		$this->getStorageEngine()->logAttack($e->getFailedRules(), $e->getParamKey(), $e->getParamValue(), $e->getRequest());
+	public function blockXSSAction($e, $httpCode = 403, $redirect = false) {
+		$this->getStorageEngine()->logAttack($e->getFailedRules(), $e->getParamKey(), $e->getParamValue(), $e->getRequest(), $e->getRequest()->getMetadata());
+		
+		if ($redirect) {
+			wfWAFUtils::redirect($redirect); // exits
+		}
+		
+		if ($httpCode == 503) {
+			wfWAFUtils::statusHeader(503);
+			if ($secsToGo = $e->getRequest()->getMetadata('503Time')) {
+				header('Retry-After: ' . $secsToGo);
+			}
+			exit($this->getUnavailableMessage($e->getRequest()->getMetadata('503Reason')));
+		}
+		
 		header('HTTP/1.0 403 Forbidden');
 		exit($this->getBlockedMessage());
 	}
@@ -821,6 +848,24 @@ HTML
 		}
 		return wfWAFView::create('403', array(
 			'waf' => $this,
+		))->render();
+	}
+	
+	/**
+	 * @return string
+	 */
+	public function getUnavailableMessage($reason = '') {
+		try {
+			$homeURL = wfWAF::getInstance()->getStorageEngine()->getConfig('homeURL');
+		}
+		catch (Exception $e) {
+			//Do nothing
+		}
+		
+		return wfWAFView::create('503', array(
+			'waf' => $this,
+			'reason' => $reason,
+			'homeURL' => $homeURL,
 		))->render();
 	}
 
@@ -960,6 +1005,7 @@ HTML
 							'k'      => $this->getStorageEngine()->getConfig('apiKey'),
 							's'      => $this->getStorageEngine()->getConfig('siteURL') ? $this->getStorageEngine()->getConfig('siteURL') :
 								sprintf('%s://%s/', $this->getRequest()->getProtocol(), rawurlencode($this->getRequest()->getHost())),
+							't'		 => microtime(true),
 						), null, '&'), $this->getStorageEngine()->getAttackData(), $request);
 
 					if ($response instanceof wfWAFHTTPResponse && $response->getBody()) {
@@ -1083,6 +1129,33 @@ HTML
 		$algo = function_exists('hash') ? 'sha256' : 'sha1';
 		return wfWAFUtils::hash_hmac($algo, $userID . $role . floor(time() / 43200), $this->getStorageEngine()->getConfig('authKey'));
 	}
+	
+	/**
+	 * @param string $action
+	 * @return bool|string
+	 */
+	public function createNonce($action) {
+		$userInfo = $this->parseAuthCookie();
+		if ($userInfo === false) {
+			$userInfo = array('userID' => 0, 'role' => ''); // Use an empty user like WordPress would
+		}
+		$userID = $userInfo['userID'];
+		$role = $userInfo['role'];
+		$algo = function_exists('hash') ? 'sha256' : 'sha1';
+		return wfWAFUtils::hash_hmac($algo, $action . $userID . $role . floor(time() / 43200), $this->getStorageEngine()->getConfig('authKey'));
+	}
+	
+	/**
+	 * @param string $nonce
+	 * @param string $action
+	 * @return bool
+	 */
+	public function verifyNonce($nonce, $action) {
+		if (empty($nonce)) {
+			return false;
+		}
+		return wfWAFUtils::hash_equals($nonce, $this->createNonce($action));
+	}
 
 	/**
 	 * @param string|null $host
@@ -1115,6 +1188,14 @@ HTML
 	 */
 	public function isIPBlocked($ip) {
 		return $this->getStorageEngine()->isIPBlocked($ip);
+	}
+	
+	/**
+	 * @param wfWAFRequest $request
+	 * @return bool|array false if it should not be blocked, otherwise an array defining the context for the final action
+	 */
+	public function willPerformFinalAction($request) {
+		return false;
 	}
 
 	/**
@@ -1455,7 +1536,8 @@ class wfWAFCronFetchIPListEvent extends wfWAFCronEvent {
 			$response = wfWAFHTTP::post(WFWAF_API_URL_SEC . "?" . http_build_query(array(
 					'action' => 'send_waf_attack_data',
 					'k'      => $waf->getStorageEngine()->getConfig('apiKey'),
-					's'        => $waf->getStorageEngine()->getConfig('siteURL') ? $waf->getStorageEngine()->getConfig('siteURL') : $guessSiteURL,
+					's'      => $waf->getStorageEngine()->getConfig('siteURL') ? $waf->getStorageEngine()->getConfig('siteURL') : $guessSiteURL,
+					't'		 => microtime(true),
 				), null, '&'), '[]', $request);
 			
 			if ($response instanceof wfWAFHTTPResponse && $response->getBody()) {
@@ -1541,6 +1623,13 @@ class wfWAFEventBus implements wfWAFObserver {
 			$observer->blockSQLi($ip, $exception);
 		}
 	}
+	
+	public function log($ip, $exception) {
+		/** @var wfWAFObserver $observer */
+		foreach ($this->observers as $observer) {
+			$observer->log($ip, $exception);
+		}
+	}
 
 
 	public function wafDisabled() {
@@ -1576,6 +1665,8 @@ interface wfWAFObserver {
 	public function blockXSS($ip, $exception);
 
 	public function blockSQLi($ip, $exception);
+	
+	public function log($ip, $exception);
 
 	public function wafDisabled();
 
@@ -1604,6 +1695,10 @@ class wfWAFBaseObserver implements wfWAFObserver {
 
 	public function blockSQLi($ip, $exception) {
 
+	}
+	
+	public function log($ip, $exception) {
+		
 	}
 
 	public function wafDisabled() {

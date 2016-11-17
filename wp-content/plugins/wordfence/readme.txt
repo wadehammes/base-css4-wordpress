@@ -3,7 +3,7 @@ Contributors: mmaunder
 Tags: security, secure, security plugin, wordpress security, login security, firewall, malware, antivirus, web application firewall, block hackers, country blocking
 Requires at least: 3.9
 Tested up to: 4.6.1
-Stable tag: 6.2.2
+Stable tag: 6.2.5
 
 Secure your website with the most comprehensive WordPress security plugin. Firewall, malware scan, blocking, live traffic, login security & more.
 
@@ -189,6 +189,38 @@ Secure your website with Wordfence.
 5. If you're technically minded, this is the under-the-hood view of Wordfence Security options where you can fine-tune your security settings.
 
 == Changelog ==
+
+= 6.2.5 =
+* Fix: Fixed an issue that could occur on older WordPress versions when processing login attempts
+
+= 6.2.4 =
+* Improvement: Scan times for very large sites with huge numbers of files are greatly improved.
+* Improvement: Added a configurable time limit for scans to help reduce overall server load and identify configuration problems.
+* Improvement: Email-based logins are now covered by "Don't let WordPress reveal valid users in login errors".
+* Improvement: Extended rate limiting support to the login page.
+* Fix: Fixed a case where files in the site root with issues could have them added multiple times.
+* Fix: Improved IP detection in the WAF when using an IP detection method that can have multiple values.
+* Fix: Added a safety check for when the database fails to return its max_allowed_packet value.
+* Fix: Added safety checks for when the configuration table migration has failed.
+* Fix: Added a couple rare failed login error codes to brute force detection.
+* Fix: Fixed a sequencing problem when adding detection for bot/human that led to it being called on every request.
+* Fix: Suppressed errors if a file is removed between the start of a scan and later scan stages.
+* Fix: Addressed a problem where the scan exclusions list was not checked correctly in some situations.
+
+= 6.2.3 =
+* Improvement: Reworked blocking for IP ranges, country blocking, and direct IP blocking to minimize server impact when under attack.
+* Improvement: Live traffic better indicates the action taken by country blocking when it redirects a visitor.
+* Improvement: Added support for finding server logs to the Diagnostics page to help with troubleshooting.
+* Improvement: Whitelisted StatusCake IP addresses.
+* Improvement: Updated GeoIP database.
+* Improvement: Disabling Wordfence now sends an alert.
+* Improvement: Improved detection for uploaded PHP content in the firewall.
+* Fix: Eliminated memory-related errors resulting from the scan on sites with very large numbers of issues and low memory.
+* Fix: Fixed admin page layout for sites using RTL languages.
+* Fix: Reduced overhead of the dashboard widget.
+* Fix: Improved performance of checking for whitelisted IPs.
+* Fix: Changes to the default plugin hello.php are now detected correctly in scans.
+* Fix: Fixed IPv6 warning in the dashboard widget.
 
 = 6.2.2 =
 * Fix: Replaced a slow query in the dashboard widget that could affect sites with very large numbers of users.

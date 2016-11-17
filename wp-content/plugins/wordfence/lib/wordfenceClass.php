@@ -48,6 +48,13 @@ class wordfence {
 		update_option('wordfenceActivated', 1);
 	}
 	public static function uninstallPlugin(){
+		//Send admin alert
+		if (wfConfig::get('alertOn_wordfenceDeactivated')) {
+			$currentUser = wp_get_current_user();
+			$username = $currentUser->user_login;
+			wordfence::alert("Wordfence Deactivated", "A user with username \"$username\" deactivated Wordfence on your WordPress site.", wfUtils::getIP());
+		}
+		
 		//Check if caching is enabled and if it is, disable it and fix the .htaccess file.
 		$cacheType = wfConfig::get('cacheType', false);
 		if($cacheType == 'falcon'){
@@ -552,6 +559,11 @@ SQL
 			
 			wp_schedule_single_event(time(), 'wordfence_sendFalconDeprecationNotice');
 		}
+		
+		//6.2.3
+		if (!WFWAF_SUBDIRECTORY_INSTALL && class_exists('wfWAFIPBlocksController')) {
+			wfWAFIPBlocksController::synchronizeConfigSettings();
+		}
 
 		//Must be the final line
 	}
@@ -1018,7 +1030,11 @@ SQL
 
 		$wfFunc = isset($_GET['_wfsf']) ? @$_GET['_wfsf'] : false;
 		if($wfFunc == 'unlockEmail'){
-			if(! wp_verify_nonce(@$_POST['nonce'], 'wf-form')){
+			$nonceValid = wp_verify_nonce(@$_POST['nonce'], 'wf-form');
+			if (!$nonceValid && method_exists(wfWAF::getInstance(), 'createNonce')) {
+				$nonceValid = wfWAF::getInstance()->verifyNonce(@$_POST['nonce'], 'wf-form');
+			}
+			if(!$nonceValid){
 				die("Sorry but your browser sent an invalid security token when trying to use this form.");
 			}
 			$numTries = get_transient('wordfenceUnlockTries');
@@ -1029,9 +1045,10 @@ SQL
 			if(! $numTries){ $numTries = 1; } else { $numTries = $numTries + 1; }
 			set_transient('wordfenceUnlockTries', $numTries, 180);
 
-			$email = trim($_POST['email']);
+			$email = trim(@$_POST['email']);
 			global $wpdb;
 			$ws = $wpdb->get_results($wpdb->prepare("SELECT ID, user_login FROM $wpdb->users WHERE user_email = %s", $email));
+			$found = false;
 			foreach($ws as $user){
 				$userDat = get_userdata($user->ID);
 				if(wfUtils::isAdmin($userDat)){
@@ -1116,9 +1133,14 @@ SQL
 					'whitelistedIPs' => (string) wfConfig::get('whitelisted'),
 					'howGetIPs'      => (string) wfConfig::get('howGetIPs'),
 					'other_WFNet'    => wfConfig::get('other_WFNet', true), 
+					'pluginABSPATH'	 => ABSPATH,
 				);
 				foreach ($configDefaults as $key => $value) {
 					$waf->getStorageEngine()->setConfig($key, $value);
+				}
+				
+				if (class_exists('wfWAFIPBlocksController')) {
+					wfWAFIPBlocksController::synchronizeConfigSettings();
 				}
 
 				if (empty($_GET['wordfence_syncAttackData'])) {
@@ -1382,7 +1404,7 @@ SQL
 				}
 				else { //Code path for old method, invalid password the second time
 					self::$authError = $authUser;
-					if (is_wp_error(self::$authError) && (self::$authError->get_error_code() == 'invalid_username' || self::$authError->get_error_code() == 'incorrect_password') && wfConfig::get('loginSec_maskLoginErrors')) {
+					if (is_wp_error(self::$authError) && (self::$authError->get_error_code() == 'invalid_username' || $authUser->get_error_code() == 'invalid_email' || self::$authError->get_error_code() == 'incorrect_password' || $authUser->get_error_code() == 'authentication_failed') && wfConfig::get('loginSec_maskLoginErrors')) {
 						self::$authError = new WP_Error('incorrect_password', sprintf(__('<strong>ERROR</strong>: The username or password you entered is incorrect. <a href="%2$s" title="Password Lost and Found">Lost your password</a>?'), $username, wp_lostpassword_url()));
 					}
 					
@@ -1672,7 +1694,7 @@ SQL
 		if(self::getLog()->isWhitelisted($IP)){
 			return $authUser;
 		}
-		if(wfConfig::get('other_WFNet') && is_wp_error($authUser) && ($authUser->get_error_code() == 'invalid_username' || $authUser->get_error_code() == 'incorrect_password' || $authUser->get_error_code() == 'twofactor_invalid') ){
+		if(wfConfig::get('other_WFNet') && is_wp_error($authUser) && ($authUser->get_error_code() == 'invalid_username' || $authUser->get_error_code() == 'invalid_email' || $authUser->get_error_code() == 'incorrect_password' || $authUser->get_error_code() == 'twofactor_invalid' || $authUser->get_error_code() == 'authentication_failed') ){
 			if($maxBlockTime = self::wfsnIsBlocked($IP, 'brute')){
 				self::getLog()->blockIP($IP, "Blocked by Wordfence Security Network", true, false, $maxBlockTime);
 				$secsToGo = wfConfig::get('blockedTime');
@@ -1682,7 +1704,7 @@ SQL
 
 		}
 		if($secEnabled){
-			if(is_wp_error($authUser) && $authUser->get_error_code() == 'invalid_username'){
+			if(is_wp_error($authUser) && ($authUser->get_error_code() == 'invalid_username' || $authUser->get_error_code() == 'invalid_email')){
 				if($blacklist = wfConfig::get('loginSec_userBlacklist')){
 					$users = explode("\n", wfUtils::cleanupOneEntryPerLine($blacklist));
 					foreach($users as $user){
@@ -1703,7 +1725,7 @@ SQL
 				}
 			}
 			$tKey = 'wflginfl_' . bin2hex(wfUtils::inet_pton($IP));
-			if(is_wp_error($authUser) && ($authUser->get_error_code() == 'invalid_username' || $authUser->get_error_code() == 'incorrect_password' || $authUser->get_error_code() == 'twofactor_invalid') ){
+			if(is_wp_error($authUser) && ($authUser->get_error_code() == 'invalid_username' || $authUser->get_error_code() == 'invalid_email' || $authUser->get_error_code() == 'incorrect_password' || $authUser->get_error_code() == 'twofactor_invalid' || $authUser->get_error_code() == 'authentication_failed') ){
 				$tries = get_transient($tKey);
 				if($tries){
 					$tries++;
@@ -1720,14 +1742,14 @@ SQL
 			}
 		}
 		if(is_wp_error($authUser)){
-			if($authUser->get_error_code() == 'invalid_username'){
+			if($authUser->get_error_code() == 'invalid_username' || $authUser->get_error_code() == 'invalid_email'){
 				self::getLog()->logLogin('loginFailInvalidUsername', 1, $username);
 			} else {
 				self::getLog()->logLogin('loginFailValidUsername', 1, $username);
 			}
 		}
 
-		if(is_wp_error($authUser) && ($authUser->get_error_code() == 'invalid_username' || $authUser->get_error_code() == 'incorrect_password') && wfConfig::get('loginSec_maskLoginErrors')){
+		if(is_wp_error($authUser) && ($authUser->get_error_code() == 'invalid_username' || $authUser->get_error_code() == 'invalid_email' || $authUser->get_error_code() == 'incorrect_password') && wfConfig::get('loginSec_maskLoginErrors')){
 			return new WP_Error( 'incorrect_password', sprintf( __( '<strong>ERROR</strong>: The username or password you entered is incorrect. <a href="%2$s" title="Password Lost and Found">Lost your password</a>?' ), $username, wp_lostpassword_url() ) );
 		}
 		return $authUser;
@@ -1898,6 +1920,8 @@ SQL
 		if(self::isLockedOut(wfUtils::getIP())){
 			require('wfLockedOut.php');
 		}
+		
+		self::doEarlyAccessLogging(); //Rate limiting
 	}
 	public static function authActionNew(&$username, &$passwd){ //As of php 5.4 we must denote passing by ref in the function definition, not the function call (as WordPress core does, which is a bug in WordPress).
 		if(self::isLockedOut(wfUtils::getIP())){
@@ -2001,6 +2025,7 @@ SQL
 	public static function ajax_sendDiagnostic_callback(){
 		$inEmail = true;
 		$body = "This email is the diagnostic from " . site_url() . ".\nThe IP address that requested this was: " . wfUtils::getIP() . "\nTicket Number/Forum Username: " . $_POST['ticket'];
+		$sendingDiagnosticEmail = true;
 		ob_start();
 		require 'menu_diagnostic.php';
 		$body = nl2br($body) . ob_get_clean();
@@ -2685,6 +2710,15 @@ SQL
 		readfile($file);
 		die();
 	}
+	public static function ajax_downloadLogFile_callback() {
+		if (!isset($_GET['logfile'])) {
+			status_header(400);
+			nocache_headers();
+			exit;
+		}
+		
+		wfErrorLogHandler::outputErrorLog($_GET['logfile']); //exits
+	}
 	public static function ajax_addCacheExclusion_callback(){
 		$ex = wfConfig::get('cacheExclusions', false);
 		if($ex){
@@ -3205,8 +3239,11 @@ HTACCESS;
 			);
 	}
 	public static function ajax_loadIssues_callback(){
+		$offset = isset($_POST['offset']) ? intval($_POST['offset']) : 0;
+		$limit = isset($_POST['limit']) ? intval($_POST['limit']) : WORDFENCE_SCAN_ISSUES_PER_PAGE;
+		
 		$i = new wfIssues();
-		$iss = $i->getIssues();
+		$iss = $i->getIssues($offset, $limit);
 		return array(
 			'issuesLists' => $iss,
 			'summary' => $i->getSummaryItems(),
@@ -3972,6 +4009,11 @@ wfscr.src = url;
 EOL;
 	}
 	public static function wfLogHumanHeader(){
+		//Final check in case this was added as an action before the request was fully initialized
+		if (self::getLog()->getCurrentRequest()->jsRun || !wfConfig::liveTrafficEnabled()) {
+			return;
+		}
+		
 		self::$hitID = self::getLog()->logHit();
 		if (self::$hitID) {
 			$URL = home_url('/?wordfence_logHuman=1&hid=' . wfUtils::encrypt(self::$hitID));
@@ -4253,7 +4295,7 @@ HTML;
 			'exportSettings', 'importSettings', 'bulkOperation', 'deleteFile', 'deleteDatabaseOption', 'removeExclusion',
 			'activityLogUpdate', 'ticker', 'loadIssues', 'updateIssueStatus', 'deleteIssue', 'updateAllIssues',
 			'reverseLookup', 'unlockOutIP', 'loadBlockRanges', 'unblockRange', 'blockIPUARange', 'whois', 'unblockIP',
-			'blockIP', 'permBlockIP', 'loadStaticPanel', 'saveConfig', 'downloadHtaccess', 'checkFalconHtaccess',
+			'blockIP', 'permBlockIP', 'loadStaticPanel', 'saveConfig', 'downloadHtaccess', 'downloadLogFile', 'checkFalconHtaccess',
 			'updateConfig', 'saveCacheConfig', 'removeFromCache', 'autoUpdateChoice', 'adminEmailChoice', 'suPHPWAFUpdateChoice', 'falconDeprecationChoice', 'saveCacheOptions', 'clearPageCache',
 			'getCacheStats', 'clearAllBlocked', 'killScan', 'saveCountryBlocking', 'saveScanSchedule', 'tourClosed',
 			'welcomeClosed', 'startTourAgain', 'downgradeLicense', 'addTwoFactor', 'twoFacActivate', 'twoFacDel',
@@ -4390,7 +4432,8 @@ HTML;
 			'tourClosed' => wfConfig::get('tourClosed', 0),
 			'welcomeClosed' => wfConfig::get('welcomeClosed', 0),
 			'cacheType' => wfConfig::get('cacheType'),
-			'liveTrafficEnabled' => wfConfig::liveTrafficEnabled()
+			'liveTrafficEnabled' => wfConfig::liveTrafficEnabled(),
+			'scanIssuesPerPage' => WORDFENCE_SCAN_ISSUES_PER_PAGE,
 			));
 	}
 	public static function activation_warning(){
@@ -6287,7 +6330,7 @@ ALERTMSG;
 		$limit = 500;
 		$lastSendTime = wfConfig::get('lastAttackDataSendTime');
 		$attackData = $wpdb->get_results($wpdb->prepare("SELECT SQL_CALC_FOUND_ROWS * FROM {$wpdb->base_prefix}wfHits
-WHERE action in ('blocked:waf', 'learned:waf', 'logged:waf')
+WHERE action in ('blocked:waf', 'learned:waf', 'logged:waf', 'blocked:waf-always')
 AND attackLogTime > %.6f
 LIMIT %d", $lastSendTime, $limit));
 		$totalRows = $wpdb->get_var('SELECT FOUND_ROWS()');
@@ -6330,6 +6373,7 @@ LIMIT %d", $lastSendTime, $limit));
 							'k'      => $waf->getStorageEngine()->getConfig('apiKey'),
 							's'      => $waf->getStorageEngine()->getConfig('siteURL') ? $waf->getStorageEngine()->getConfig('siteURL') :
 								sprintf('%s://%s/', $waf->getRequest()->getProtocol(), rawurlencode($waf->getRequest()->getHost())),
+							't'		 => microtime(true),
 						), null, '&'),
 						array(
 							'body'    => json_encode($dataToSend),
@@ -6382,11 +6426,11 @@ LIMIT %d", $lastSendTime, $limit));
 			$attackData = $waf->getStorageEngine()->getNewestAttackDataArray($lastAttackMicroseconds);
 			if ($attackData) {
 				foreach ($attackData as $request) {
-					if (count($request) !== 9) {
+					if (count($request) !== 9 && count($request) !== 10 /* with metadata */) {
 						continue;
 					}
 
-					list($logTimeMicroseconds, $requestTime, $ip, $learningMode, $paramKey, $paramValue, $failedRules, $ssl, $requestString) = $request;
+					list($logTimeMicroseconds, $requestTime, $ip, $learningMode, $paramKey, $paramValue, $failedRules, $ssl, $requestString, $metadata) = $request;
 
 					// Skip old entries and hits in learning mode, since they'll get picked up anyways.
 					if ($logTimeMicroseconds <= $lastAttackMicroseconds || $learningMode) {
@@ -6437,12 +6481,59 @@ LIMIT %d", $lastSendTime, $limit));
 							$path = $matches[1];
 						}
 					}
-
-					if ($failedRules == 'logged') {
-						$hit->action = 'logged:waf';
+					
+					$metadata = ($metadata != null ? (array) $metadata : array());
+					if (isset($metadata['finalAction']) && $metadata['finalAction']) { // The request was blocked/redirected because of its IP based on the plugin's blocking settings. WAF blocks should be reported but not shown in live traffic with that as a reason.
+						$action = $metadata['finalAction']['action'];
+						$actionDescription = $action;
+						if (class_exists('wfWAFIPBlocksController')) {
+							if ($action == wfWAFIPBlocksController::WFWAF_BLOCK_UAREFIPRANGE) {
+								$id = $metadata['finalAction']['id'];
+								$wpdb->query($wpdb->prepare("UPDATE {$wpdb->base_prefix}wfBlocksAdv SET totalBlocked = totalBlocked + 1, lastBlocked = %d WHERE id = %d", $requestTime, $id));
+								wfActivityReport::logBlockedIP($ip);
+							}
+							else if ($action == wfWAFIPBlocksController::WFWAF_BLOCK_COUNTRY_REDIR) {
+								$actionDescription .= ' (' . wfConfig::get('cbl_redirURL') . ')';
+								wfConfig::inc('totalCountryBlocked');
+								wfActivityReport::logBlockedIP($ip);
+							}
+							else if ($action == wfWAFIPBlocksController::WFWAF_BLOCK_COUNTRY) {
+								wfConfig::inc('totalCountryBlocked');
+								wfActivityReport::logBlockedIP($ip);
+							}
+							else if ($action == wfWAFIPBlocksController::WFWAF_BLOCK_WFSN) {
+								wordfence::wfsnReportBlockedAttempt($ip, 'login');
+							}
+						}
+						
+						if (strlen($actionDescription) == 0) {
+							$actionDescription = 'Blocked by Wordfence';
+						}
+						
+						if (empty($failedRules)) { // Just a plugin block
+							$hit->action = 'blocked:wordfence';
+							if (class_exists('wfWAFIPBlocksController')) {
+								if ($action == wfWAFIPBlocksController::WFWAF_BLOCK_WFSN) {
+									$hit->action = 'blocked:wfsnrepeat';
+								}
+							}
+							$hit->actionDescription = $actionDescription;
+						}
+						else if ($failedRules == 'logged') {
+							$hit->action = 'logged:waf';
+						}
+						else { // Blocked by the WAF but would've been blocked anyway by the plugin settings so that message takes priority
+							$hit->action = 'blocked:waf-always';
+							$hit->actionDescription = $actionDescription;
+						}
 					}
 					else {
-						$hit->action = 'blocked:waf';
+						if ($failedRules == 'logged') {
+							$hit->action = 'logged:waf';
+						}
+						else {
+							$hit->action = 'blocked:waf';
+						}
 					}
 
 					/** @var wfWAFRule $rule */
@@ -6457,13 +6548,13 @@ LIMIT %d", $lastSendTime, $limit));
 					if ($ruleIDs && $ruleIDs[0]) {
 						$rule = $waf->getRule($ruleIDs[0]);
 						if ($rule) {
-							$hit->actionDescription = $rule->getDescription();
+							if ($hit->action == 'logged:waf' || $hit->action == 'blocked:waf') { $hit->actionDescription = $rule->getDescription(); }
 							$actionData['category'] = $rule->getCategory();
 							$actionData['ssl'] = $ssl;
 							$actionData['fullRequest'] = base64_encode($requestString);
 						}
 						else if ($ruleIDs[0] == 'logged') {
-							$hit->actionDescription = 'Watched IP Traffic: ' . $ip;
+							if ($hit->action == 'logged:waf' || $hit->action == 'blocked:waf') { $hit->actionDescription = 'Watched IP Traffic: ' . $ip; } 
 							$actionData['category'] = 'logged';
 							$actionData['ssl'] = $ssl;
 							$actionData['fullRequest'] = base64_encode($requestString);

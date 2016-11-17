@@ -177,7 +177,7 @@ class wordfenceScanner {
 		}
 		$db = new wfDB();
 		$lastCount = 'whatever';
-		$excludePattern = self::getExcludeFilePattern(self::EXCLUSION_PATTERNS_USER & self::EXCLUSION_PATTERNS_MALWARE);
+		$excludePattern = self::getExcludeFilePattern(self::EXCLUSION_PATTERNS_USER | self::EXCLUSION_PATTERNS_MALWARE); 
 		while(true){
 			$thisCount = $db->querySingle("select count(*) from " . $db->prefix() . "wfFileMods where oldMD5 != newMD5 and knownFile=0");
 			if($thisCount == $lastCount){
@@ -193,6 +193,9 @@ class wordfenceScanner {
 				$db->queryWrite("update " . $db->prefix() . "wfFileMods set oldMD5 = newMD5 where filenameMD5='%s'", $rec1['filenameMD5']); //A way to mark as scanned so that if we come back from a sleep we don't rescan this one.
 				$file = $rec1['filename'];
 				if($excludePattern && preg_match($excludePattern, $file)){
+					continue;
+				}
+				if (!file_exists($this->path . $file)) {
 					continue;
 				}
 				$fileSum = $rec1['newMD5'];
@@ -244,7 +247,7 @@ class wordfenceScanner {
 				}
 				wfUtils::beginProcessingFile($file);
 
-				$fsize = filesize($this->path . $file); //Checked if too big above
+				$fsize = @filesize($this->path . $file); //Checked if too big above
 				if($fsize > 1000000){
 					$fsize = sprintf('%.2f', ($fsize / 1000000)) . "M";
 				} else {

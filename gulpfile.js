@@ -17,6 +17,9 @@ plumber     = require('gulp-plumber'),
 shell       = require('gulp-shell'),
 sourcemaps  = require('gulp-sourcemaps'),
 postcss     = require('gulp-postcss'),
+svgstore    = require('gulp-svgstore'),
+crtical     = require('critical'),
+babel       = require('gulp-babel'),
 browserSync = require('browser-sync').create();
 
 // Read our Settings Configuration
@@ -34,7 +37,7 @@ var stylePathWatch   = themeBase + themeName + '/assets/css/**/*.css';
 var stylePathDest    = themeBase + themeName + '/library/css/';
 
 // Script Path
-var scriptsPathSrc   = [themeBase + themeName + '/assets/js/_lib/**/*.js', themeBase + themeName + '/assets/js/_src/**/*.js', themeBase + themeName + '/assets/js/app.js'];
+var scriptsPathSrc   = [themeBase + themeName + '/assets/js/_lib/**/*.js', themeBase + themeName + '/assets/js/_src/**/*.js', themeBase + themeName + '/assets/js/application.js'];
 var scriptsPathWatch = themeBase + themeName + '/assets/js/**/*.js';
 var scriptsPathDest  = themeBase + themeName + '/library/js/';
 
@@ -94,14 +97,55 @@ gulp.task('scripts', function() {
   return streamqueue({ objectMode: true },
     gulp.src(themeBase + themeName + '/assets/js/_lib/**/*.js'),
     gulp.src(themeBase + themeName + '/assets/js/_src/**/*.js'),
-    gulp.src(themeBase + themeName + '/assets/js/app.js')
+    gulp.src(themeBase + themeName + '/assets/js/application.js')
   )
   .pipe(plumber())
-  .pipe(concat('app.js', {newLine: ';'}))
+  .pipe(babel())
+  .pipe(concat('application.js', {newLine: ';'}))
   .pipe(uglify())
   .pipe(gulp.dest(scriptsPathDest))
   .pipe(browserSync.stream())
   .pipe(notify({ message: 'Scripts task complete' }));
+});
+
+gulp.task('scripts-serviceworker', function() {
+  // grab all serviceworker js files
+  return gulp.src(themeBase + themeName + '/assets/js/serviceworker*.js')
+  .pipe(plumber())
+  .pipe(babel())
+  // concatenate files into a single files
+  .pipe(concat('serviceworker.js', {newLine: ';'}))
+  // minify concatenated file
+  .pipe(uglify())
+  // save files into root /dist directory for proper scope
+  .pipe( gulp.dest('./'))
+  .pipe(browserSync.stream())
+  .pipe(notify({ message: 'Service Worker task complete' }));
+});
+
+gulp.task('svgs', function() {
+  return gulp.src(svgPathWatch)
+    .pipe(plumber())
+    .pipe(svgmin({
+      plugins: [
+        {removeEmptyAttrs: false},
+        {removeEmptyNS: false},
+        {cleanupIDs: false},
+        {unknownAttrs: false},
+        {unknownContent: false},
+        {defaultAttrs: false},
+        {removeTitle: true},
+        {removeDesc: true},
+        {removeDoctype: true}
+      ],
+    }))
+    .pipe(svgstore({inlineSvg: true}))
+    .pipe(gulp.dest(svgDest))
+    .pipe(browserSync.stream())
+    .pipe(notify({ message: 'SVG task complete' }))
+    .on('end', function() {
+      fs.renameSync(svgDest + '/svg.svg', svgDest + '/sprite.svg')
+    });
 });
 
 /*========================================
@@ -117,28 +161,8 @@ gulp.task('img-opt', function () {
   .pipe(notify({ message: 'Images task complete' }));
 });
 
-// Optimize our SVGS
-gulp.task('svg-opt', function () {
-  return gulp.src(svgPathWatch)
-  .pipe(svgmin({
-    plugins: [
-    {removeEmptyAttrs: false},
-    {removeEmptyNS: false},
-    {cleanupIDs: false},
-    {unknownAttrs: false},
-    {unknownContent: false},
-    {defaultAttrs: false},
-    {removeTitle: true},
-    {removeDesc: true},
-    {removeDoctype: true}
-    ],
-    }))
-  .pipe(gulp.dest(svgDest))
-  .pipe(notify({ message: 'SVG task complete' }));
-});
-
 // Browser Sync
-gulp.task('serve', ['stylesheets', 'scripts'], function() {
+gulp.task('serve', ['stylesheets', 'scripts', 'svgs'], function() {
     browserSync.init({
         proxy: settings.devUrl,
         files: [phpPath],
@@ -147,6 +171,7 @@ gulp.task('serve', ['stylesheets', 'scripts'], function() {
 
     gulp.watch(stylePathWatch, ['stylesheets']);
     gulp.watch(scriptsPathWatch, ['scripts']);
+    gulp.watch(scriptsPathWatch, ['svgs']);
     gulp.watch(phpPath).on('change', browserSync.reload);
 });
 
@@ -161,7 +186,6 @@ gulp.task('watch-images', function() {
 /*==========================================
 =            Run the Gulp Tasks            =
 ==========================================*/
-gulp.task('default', ['stylesheets', 'scripts', 'watch-images', 'serve']);
-gulp.task('build', ['stylesheets', 'scripts']);
+gulp.task('default', ['stylesheets', 'scripts', 'scripts-serviceworker', 'svgs', 'watch-images', 'serve']);
+gulp.task('build', ['stylesheets', 'scripts', 'scripts-serviceworker', 'svgs']);
 gulp.task('images', ['img-opt']);
-gulp.task('svg', ['svg-opt']);

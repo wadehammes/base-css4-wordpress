@@ -2,7 +2,7 @@
 $w = new wfConfig();
 ?>
 <div class="wordfenceModeElem" id="wordfenceMode_options"></div>
-<div class="wrap">
+<div class="wrap wordfence">
 	<?php require( 'menuHeader.php' ); ?>
 	<?php $helpLink = "http://docs.wordfence.com/en/Wordfence_options";
 	$helpLabel      = "Learn more about Wordfence Options";
@@ -269,6 +269,12 @@ $w = new wfConfig();
 					<td><input type="checkbox" id="alertOn_update" class="wfConfigElem" name="alertOn_update"
 					           value="1" <?php $w->cb( 'alertOn_update' ); ?>/>&nbsp;If you have automatic updates
 						enabled (see above), you'll get an email when an update occurs.
+					</td>
+				</tr>
+				<tr>
+					<th>Email me if Wordfence is deactivated</th>
+					<td><input type="checkbox" id="alertOn_wordfenceDeactivated" class="wfConfigElem" name="alertOn_wordfenceDeactivated"
+							   value="1" <?php $w->cb( 'alertOn_wordfenceDeactivated' ); ?>/>
 					</td>
 				</tr>
 				<tr>
@@ -616,6 +622,23 @@ $w = new wfConfig();
 					<td>
 						<textarea id="scan_exclude" class="wfConfigElem" cols="40" rows="4"
 							name="scan_exclude"><?php echo wfUtils::cleanupOneEntryPerLine($w->getHTML( 'scan_exclude' )); ?></textarea>
+					</td>
+				</tr>
+				<tr>
+					<th>Limit the number of issues sent in the scan results email.</th>
+					<td>
+						<input type="text" name="scan_maxIssues" id="scan_maxIssues"
+					           value="<?php $w->f( 'scan_maxIssues' ); ?>"/> 0 or empty means unlimited
+						issues will be sent.
+					</td>
+				</tr>
+				<tr>
+					<th>Time limit that a scan can run in seconds.<a
+							href="http://docs.wordfence.com/en/Wordfence_options#Time_limit_that_a_scan_can_run_in_seconds"
+							target="_blank" class="wfhelp"></a></th></th>
+					<td>
+						<input type="text" name="scan_maxDuration" id="scan_maxDuration"
+							   value="<?php $w->f( 'scan_maxDuration' ); ?>"/> 0 or empty means the default of <?php echo wfUtils::makeDuration(WORDFENCE_DEFAULT_MAX_SCAN_TIME); ?> will be used.
 					</td>
 				</tr>
 				<tr>
@@ -1030,6 +1053,18 @@ $w = new wfConfig();
 					<td><input type="checkbox" id="disableCodeExecutionUploads" class="wfConfigElem"
 					           name="disableCodeExecutionUploads"
 					           value="1" <?php $w->cb( 'disableCodeExecutionUploads' ); ?> /></td>
+				</tr>
+				<tr class="hidden">
+					<th style="vertical-align: top;">Monitor Front-end Background Requests for False Positives</th>
+					<td><input type="checkbox" name="ajaxWatcherDisabled_front" id="ajaxWatcherDisabled_front" value="1" <?php $w->cb( 'ajaxWatcherDisabled_front' ); ?>></td>
+				</tr>
+				<tr class="hidden">
+					<th style="vertical-align: top;">Monitor Admin Panel Background Requests for False Positives</th>
+					<td><input type="checkbox" name="ajaxWatcherDisabled_admin" id="ajaxWatcherDisabled_admin" value="1" <?php $w->cb( 'ajaxWatcherDisabled_admin' ); ?>></td>
+				</tr>
+				<tr class="hidden">
+					<th style="vertical-align: top;">Delay IP and Country blocking until after WordPress and plugins have loaded (only process firewall rules early)</th>
+					<td><input type="checkbox" name="disableWAFIPBlocking" id="disableWAFIPBlocking" value="1" <?php $w->cb( 'disableWAFIPBlocking' ); ?>></td>
 				</tr>
 
 				<tr>

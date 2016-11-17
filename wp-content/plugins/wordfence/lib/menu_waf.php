@@ -5,7 +5,7 @@ $wafConfigURL = network_admin_url('admin.php?page=WordfenceWAF&wafAction=configu
 $wafRemoveURL = network_admin_url('admin.php?page=WordfenceWAF&wafAction=removeAutoPrepend');
 /** @var array $wafData */
 ?>
-<div class="wrap" id="paidWrap">
+<div class="wrap wordfence" id="paidWrap">
 	<?php require('menuHeader.php'); ?>
 	<?php
 	$pageTitle = "Wordfence Web Application Firewall";
@@ -269,12 +269,17 @@ $wafRemoveURL = network_admin_url('admin.php?page=WordfenceWAF&wafAction=removeA
 				</p> 
 				<br>
 				
-				<?php if (WFWAF_AUTO_PREPEND) : ?>
 				<h2>Advanced Configuration</h2>
+					
+					<p id="waf-advanced-options">
+						<strong>Other Options</strong><br>
+						<label><input type="checkbox" id="waf-disable-ip-blocking" name="waf-disable-ip-blocking" value="1"<?php echo $config->getConfig('disableWAFIPBlocking') ? ' checked' : ''; ?>>Delay IP and Country blocking until after WordPress and plugins have loaded (only process firewall rules early)</label>
+					</p>
 				
-				<p><strong>Remove Extended Protection<a href="https://docs.wordfence.com/en/Web_Application_Firewall_FAQ#How_can_I_remove_the_firewall_setup_manually.3F" target="_blank"
+				<?php if (WFWAF_AUTO_PREPEND) : ?>	
+					<p><strong>Remove Extended Protection<a href="https://docs.wordfence.com/en/Web_Application_Firewall_FAQ#How_can_I_remove_the_firewall_setup_manually.3F" target="_blank"
 										 class="wfhelp"></a></strong><br>
-				
+				 
 				<em>If you're moving to a new host or a new installation location, you may need to temporarily disable extended protection to avoid any file not found errors. Use this action to remove the configuration changes that enable extended protection mode or you can <a href="https://docs.wordfence.com/en/Web_Application_Firewall_FAQ#How_can_I_remove_the_firewall_setup_manually.3F" target="_blank">remove them manually</a>.</em></p>
 				
 				<p><a href="<?php echo $wafRemoveURL; ?>" class="button button-small" id="waf-remove-extended">Remove Extended Protection</a></p>
@@ -745,6 +750,11 @@ $wafRemoveURL = network_admin_url('admin.php?page=WordfenceWAF&wafAction=removeA
 		$('#monitor-admin').on('click', function() {
 			var disabled = this.checked ? 0 : 1;
 			WFAD.updateConfig('ajaxWatcherDisabled_admin', disabled); 
+		})
+		
+		$('#waf-disable-ip-blocking').on('click', function() {
+			var disabled = this.checked ? 1 : 0;
+			WFAD.updateConfig('disableWAFIPBlocking', disabled);
 		})
 	})(jQuery);
 </script>
