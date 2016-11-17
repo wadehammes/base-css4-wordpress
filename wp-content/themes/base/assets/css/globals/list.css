@@ -45,7 +45,7 @@ ul {
   &:before {
     content: "•";
     color: var(--black);
-    font-size: var(--text-large);
+    font-size: var(--font-large);
     line-height: var(--line-height-normal);
     margin-right: 10px;
     position: absolute;

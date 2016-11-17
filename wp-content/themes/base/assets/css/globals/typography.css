@@ -2,9 +2,9 @@
 @custom-selector :--headings h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6;
 
 :--headings {
-  font-family: var(--header-font-family);
+  font-family: var(--heading-font-family);
   font-weight: var(--font-weight-light);
-  line-height: var(--header-line-height);
+  line-height: var(--heading-line-height);
 }
 
 h1, .h1 { font-size: var(--h1); }
@@ -81,9 +81,6 @@ b, strong {
 :root {
   /* Global Font Family */
   --global-font-family: 'Open Sans', sans-serif;
-
-  /* Header Font */
-  --header-font-family: var(--global-font-family);
 
   /* Line-Heights */
   --line-height-large: 1.75;

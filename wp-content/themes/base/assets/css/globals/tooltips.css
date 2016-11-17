@@ -23,7 +23,7 @@
   margin-left: -50px;
   bottom: 150%;
   z-index: 9999;
-  font-size: var(--text-xx-small);
+  font-size: var(--font-xx-small);
 
   &:after {
     content: '';
