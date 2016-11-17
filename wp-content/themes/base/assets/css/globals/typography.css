@@ -1,4 +1,12 @@
 /* Headings */
+@custom-selector :--headings h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6;
+
+:--headings {
+  font-family: var(--header-font-family);
+  font-weight: var(--font-weight-light);
+  line-height: var(--header-line-height);
+}
+
 h1, .h1 { font-size: var(--h1); }
 h2, .h2 { font-size: var(--h2); }
 h3, .h3 { font-size: var(--h3); }
@@ -6,50 +14,31 @@ h4, .h4 { font-size: var(--h4); }
 h5, .h5 { font-size: var(--h5); }
 h6, .h6 { font-size: var(--h6); }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-.h1,
-.h2,
-.h3,
-.h4,
-.h5,
-.h6 {
-  font-family: var(--header-font-family);
-  font-weight: var(--font-weight-light);
-  display: block;
-}
-
 /* Font-Sizes */
-.text-xxx-large { font-size: var(--text-xxx-large); }
-.text-xx-large { font-size: var(--text-xx-large); }
-.text-x-large { font-size: var(--text-x-large); }
-.text-large { font-size: var(--text-large); }
-.text-x-medium { font-size: var(--text-x-medium); }
-.text-medium { font-size: var(--text-medium); }
-.text-default { font-size: var(--text-default); }
-.text-small { font-size: var(--text-small); }
-.text-x-small { font-size: var(--text-x-small); }
-.text-xx-small { font-size: var(--text-xx-small); }
-
-.huge { font-size: 10vw; }
+.font-xxx-large { font-size: var(--font-xxx-large); }
+.font-xx-large { font-size: var(--font-xx-large); }
+.font-x-large { font-size: var(--font-x-large); }
+.font-large { font-size: var(--font-large); }
+.font-x-medium { font-size: var(--font-x-medium); }
+.font-medium { font-size: var(--font-medium); }
+.font-default { font-size: var(--font-default); }
+.font-small { font-size: var(--font-small); }
+.font-x-small { font-size: var(--font-x-small); }
+.font-xx-small { font-size: var(--font-xx-small); }
 
 /* Font-Weights */
-.text-light { font-weight: var(--font-weight-light); }
-.text-regular { font-weight: var(--font-weight-regular); }
-.text-semibold { font-weight: var(--font-weight-semibold); }
-.text-bold { font-weight: var(--font-weight-bold); }
-.text-extrabold { font-weight: var(--font-weight-extrabold); }
-.text-black { font-weight: var(--font-weight-black); }
+.font-light { font-weight: var(--font-weight-light); }
+.font-regular { font-weight: var(--font-weight-regular); }
+.font-semibold { font-weight: var(--font-weight-semibold); }
+.font-bold { font-weight: var(--font-weight-bold); }
+.font-extrabold { font-weight: var(--font-weight-extrabold); }
+.font-black { font-weight: var(--font-weight-black); }
 
 /* Line-Heights */
-.text-height-large { line-height: var(--line-height-large); }
-.text-height-default { line-height: var(--line-height-default); }
-.text-height-small { line-height: var(--line-height-small); }
-.text-height-normal { line-height: var(--line-height-normal); }
+.line-height-large { line-height: var(--line-height-large); }
+.line-height-default { line-height: var(--line-height-default); }
+.line-height-small { line-height: var(--line-height-small); }
+.line-height-normal { line-height: var(--line-height-normal); }
 
 p {
   line-height: var(--line-height-default);
@@ -61,7 +50,7 @@ b, strong {
 }
 
 /* Text-Styles */
-.text-normal { font-style: normal; }
+.text-normal { font-style: var(--text-normal); }
 
 /* Text-Transforms */
 .text-no-style { text-transform: var(--text-transform-none); }
@@ -69,9 +58,9 @@ b, strong {
 .text-lowercase, .text-lower { text-transform: var(--text-transform-lowercase); }
 
 /* Text-Spacing */
-.text-spacing-loose { letter-spacing: 1.5px; }
-.text-spacing-default { letter-spacing: 1px; }
-.text-spacing-tight { letter-spacing: 0.5px; }
+.letter-spacing-loose { letter-spacing: 1.5px; }
+.letter-spacing-default { letter-spacing: 1px; }
+.letter-spacing-tight { letter-spacing: 0.5px; }
 
 /* Make text unselectable */
 .unselectable {
@@ -88,26 +77,13 @@ b, strong {
 .align-right { text-align: right; }
 .align-center { text-align: center; }
 
-@media (--phone) {
-  .text-large {
-    font-size: var(--text-x-medium);
-  }
-
-  .text-medium {
-    font-size: calc(var(--text-small));
-  }
-}
-
 /* Typography Variables */
 :root {
-  /* global-font-family is the primary typeface for the TrackMaven brand. This should be the loaded default typeface for all text on the marketing site */
+  /* Global Font Family */
   --global-font-family: 'Open Sans', sans-serif;
 
   /* Header Font */
   --header-font-family: var(--global-font-family);
-
-  /* font-awesome is to be used when adding icon fonts  */
-  --font-awesome-font-family: 'FontAwesome';
 
   /* Line-Heights */
   --line-height-large: 1.75;
@@ -116,6 +92,7 @@ b, strong {
   --line-height-normal: 1;
 
   /* Text-Transforms */
+  --text-normal: normal;
   --text-transform-none: none;
   --text-transform-uppercase: uppercase;
   --text-transform-lowercase: lowercase;
@@ -124,6 +101,7 @@ b, strong {
   --heading-font-family: var(--global-font-family);
   --heading-font-weight: var(--font-weight-extrabold);
   --heading-line-height: 1.25;
+
   /* 32px */
   --h1: 2rem;
   /* 24px */
@@ -139,37 +117,31 @@ b, strong {
 
   /* Font-Sizes */
   /* 48px */
-  --text-xxx-large: 3rem;
+  --font-xxx-large: 3rem;
   /* 44px */
-  --text-xx-large: 2.75rem;
+  --font-xx-large: 2.75rem;
   /* 40px */
-  --text-x-large: 2.5rem;
+  --font-x-large: 2.5rem;
   /* 32px */
-  --text-large: 2rem;
+  --font-large: 2rem;
   /* 24px */
-  --text-x-medium: 1.5rem;
+  --font-x-medium: 1.5rem;
   /* 20px */
-  --text-medium: 1.25rem;
+  --font-medium: 1.25rem;
   /* 16px */
-  --text-default: 1rem;
+  --font-default: 1rem;
   /* 14px */
-  --text-small: 0.875rem;
+  --font-small: 0.875rem;
   /* 12px */
-  --text-x-small: 0.75rem;
+  --font-x-small: 0.75rem;
   /* 10px */
-  --text-xx-small: 0.625rem;
+  --font-xx-small: 0.625rem;
 
   /* Font-Weights */
-  /* proxima nova | museo-sans-rounded | jaf-facitweb */
   --font-weight-light: 300;
-  /* proxima nova */
   --font-weight-regular: 400;
-  /* proxima nova */
   --font-weight-semibold: 600;
-  /* proxima nova | museo-sans-rounded */
   --font-weight-bold: 700;
-  /* proxima nova | jaf-facitweb */
   --font-weight-extrabold: 800;
-  /* proxima nova */
   --font-weight-black: 900;
 }

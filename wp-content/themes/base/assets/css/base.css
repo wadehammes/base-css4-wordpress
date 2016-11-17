@@ -20,6 +20,7 @@
 @import 'basscss-align';
 @import 'basscss-margin';
 @import 'basscss-padding';
+@import 'globals/whitespace';
 @import 'basscss-grid';
 @import 'basscss-flexbox';
 @import 'basscss-position';
@@ -49,8 +50,7 @@
 @import 'basscss-addons/modules/background-images';
 */
 
-/* TrackMaven */
-@import 'globals/whitespace';
+/* Theme */
 @import 'globals/animations';
 @import 'globals/colors';
 @import 'globals/typography';
@@ -59,9 +59,9 @@
 @import 'globals/forms';
 @import 'globals/tooltips';
 @import 'globals/buttons';
-@import 'globals/carousel';
+/*@import 'globals/carousel';*/
 
-/* Wordpress */
+/* Wordpress Admin */
 @import '/globals/editor';
 
 

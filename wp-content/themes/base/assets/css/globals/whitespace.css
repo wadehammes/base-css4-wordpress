@@ -37,7 +37,7 @@ $directions: top, right, bottom, left;
   margin-left: calc($degree * $base)
 }
 
-@for $index from 5 through 10 {
+@for $index from 5 through 8 {
   .p$index {
     @mixin padding $index;
   }
