@@ -83,13 +83,18 @@ b, strong {
   user-select: none;
 }
 
+/* Text Alignment */
+.align-left { text-align: left; }
+.align-right { text-align: right; }
+.align-center { text-align: center; }
+
 @media (--phone) {
   .text-large {
     font-size: var(--text-x-medium);
   }
 
   .text-medium {
-    font-size: calc(var(--text-medium) - 0.15);
+    font-size: calc(var(--text-small));
   }
 }
 

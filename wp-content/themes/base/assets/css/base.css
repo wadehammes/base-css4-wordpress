@@ -16,8 +16,6 @@
 @import 'globals/body';
 
 /* Basscss Modules */
-@import 'basscss-type-scale';
-@import 'basscss-typography';
 @import 'basscss-layout';
 @import 'basscss-align';
 @import 'basscss-margin';
@@ -25,12 +23,13 @@
 @import 'basscss-grid';
 @import 'basscss-flexbox';
 @import 'basscss-position';
-@import 'basscss-border';
 @import 'basscss-hide';
-
 
 /* Optional Modules (not included in Basscss by default) */
 /*
+@import 'basscss-type-scale';
+@import 'basscss-typography';
+@import 'basscss-border';
 @import 'basscss-addons/modules/responsive-margin';
 @import 'basscss-addons/modules/responsive-padding';
 @import 'basscss-addons/modules/media-object';
@@ -51,7 +50,6 @@
 */
 
 /* TrackMaven */
-
 @import 'globals/whitespace';
 @import 'globals/animations';
 @import 'globals/colors';
@@ -62,7 +60,6 @@
 @import 'globals/tooltips';
 @import 'globals/buttons';
 @import 'globals/carousel';
-
 
 /* Wordpress */
 @import '/globals/editor';
