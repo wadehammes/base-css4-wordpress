@@ -1,6 +1,5 @@
 <div class="wordfenceModeElem" id="wordfenceMode_rangeBlocking"></div>
 <div class="wrap wordfence" id="paidWrap">
-	<?php require('menuHeader.php'); ?>
 	<?php $helpLink="http://docs.wordfence.com/en/Advanced_Blocking"; $helpLabel="Learn more about Advanced Blocking"; $pageTitle = "Advanced Blocking"; include('pageTitle.php'); ?>
 	<?php
 	$rightRail = new wfView('marketing/rightrail');
@@ -47,7 +46,7 @@
 <tr><td>
 	{{if patternDisabled}}
 	<div style="width: 500px; margin-top: 20px;">
-		<span style="color: #F00;">Pattern Below has been DISABLED:</span> Falcon engine does not support advanced blocks that include combinations of IP range, browser pattern and referring website. You can only specify one of the three in patterns when using Falcon.
+		<span style="color: #F00;">Pattern Below has been DISABLED:</span>
 	</div>
 	<div style="color: #AAA;">
 	{{/if}}

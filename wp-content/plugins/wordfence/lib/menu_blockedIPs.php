@@ -1,6 +1,5 @@
 <div class="wordfenceModeElem" id="wordfenceMode_blockedIPs"></div>
 <div class="wrap wordfence">
-	<?php require('menuHeader.php'); ?>
 	<?php $helpLink="http://docs.wordfence.com/en/Blocked_IPs"; $helpLabel="Learn more about Blocked IPs"; $pageTitle = "Wordfence Blocked IPs"; include('pageTitle.php'); ?>
 	<div class="wordfenceLive">
 		<table border="0" cellpadding="0" cellspacing="0" class="wordfenceLiveActivity">
@@ -40,139 +39,156 @@
 	</div>
 
 </div>
+
+<script type="text/x-jquery-template" id="wfThrottledIPsWrapperTmpl">
+	<div>
+		<div style="border-bottom: 1px solid #CCC; padding-bottom: 10px; margin-bottom: 10px;">
+			<table border="0" style="width: 100%" id="wfThrottledIPsWrapper">
+			</table>
+		</div>
+		<!--<p><a class="button" href="#" onclick="WFAD.permanentlyBlockAllIPs('throttled'); return false;">Permanently block all throttled IP addresses</a></p>-->
+	</div>
+</script>
+
 <script type="text/x-jquery-template" id="wfThrottledIPsTmpl">
-<div>
-<div style="border-bottom: 1px solid #CCC; padding-bottom: 10px; margin-bottom: 10px;">
-<table border="0" style="width: 100%">
 {{each(idx, elem) results}}
-<tr><td style="vertical-align: top;">
-	<div>
-		{{if loc}}
-			<img src="<?php echo wfUtils::getBaseURL() . 'images/flags/'; ?>${loc.countryCode.toLowerCase()}.png" width="16" height="11" alt="${loc.countryName}" title="${loc.countryName}" class="wfFlag" />
-			<a href="http://maps.google.com/maps?q=${loc.lat},${loc.lon}&z=6" target="_blank">{{if loc.city}}${loc.city}, {{/if}}${loc.countryName}</a>
-		{{else}}
-			An unknown location at IP <a href="${WFAD.makeIPTrafLink(IP)}" target="_blank">${IP}</a>
-		{{/if}}
-	</div>
-	<div>
-		<strong>IP:</strong>&nbsp;<a href="${WFAD.makeIPTrafLink(IP)}" target="_blank">${IP}</a>
-	</div>
-	<div>
-		<strong>Reason:</strong>&nbsp;${lastReason}
-	</div>
-	<div>
-		<span class="wfReverseLookup"><span style="display:none;">${IP}</span></span>
-	</div>
-	<div>
-		<span>Throttled <strong>${timesThrottled}</strong> times starting <strong>${startTimeAgo} ago</strong> and ending <strong>${endTimeAgo} ago</strong>.</span>
-	</div>
-</td>
+<tr class="throttledIPsRecord">
+	<td style="vertical-align: top;">
+		<div>
+			{{if loc}}
+				<img src="<?php echo wfUtils::getBaseURL() . 'images/flags/'; ?>${loc.countryCode.toLowerCase()}.png" width="16" height="11" alt="${loc.countryName}" title="${loc.countryName}" class="wfFlag" />
+				<a href="http://maps.google.com/maps?q=${loc.lat},${loc.lon}&z=6" target="_blank">{{if loc.city}}${loc.city}, {{/if}}${loc.countryName}</a>
+			{{else}}
+				An unknown location at IP <a href="${WFAD.makeIPTrafLink(IP)}" target="_blank">${IP}</a>
+			{{/if}}
+		</div>
+		<div>
+			<strong>IP:</strong>&nbsp;<a href="${WFAD.makeIPTrafLink(IP)}" target="_blank">${IP}</a>
+		</div>
+		<div>
+			<strong>Reason:</strong>&nbsp;${lastReason}
+		</div>
+		<div>
+			<span class="wfReverseLookup"><span style="display:none;">${IP}</span></span>
+		</div>
+		<div>
+			<span>Throttled <strong>${timesThrottled}</strong> times starting <strong>${startTimeAgo} ago</strong> and ending <strong>${endTimeAgo} ago</strong>.</span>
+		</div>
+	</td>
 </tr>
 {{/each}}
-</table>
-</div>
-<!--<p><a class="button" href="#" onclick="WFAD.permanentlyBlockAllIPs('throttled'); return false;">Permanently block all throttled IP addresses</a></p>-->
-</div>
+</script>
+
+<script type="text/x-jquery-template" id="wfLockedOutIPsWrapperTmpl">
+	<div>
+		<p><a class="button" href="#" onclick="WFAD.permanentlyBlockAllIPs('lockedOut'); return false;">Permanently block all locked out IP addresses</a></p>
+		<div style="border-top: 1px solid #CCC; padding-top: 10px; margin-top: 10px;">
+			<table border="0" style="width: 100%" id="wfLockedOutIPsWrapper">
+			</table>
+		</div>
+		<p><a class="button wfLoadMoreButton" href="#">Load More</a></p>
+	</div>
 </script>
 
 <script type="text/x-jquery-template" id="wfLockedOutIPsTmpl">
-<div>
-<p><a class="button" href="#" onclick="WFAD.permanentlyBlockAllIPs('lockedOut'); return false;">Permanently block all locked out IP addresses</a></p>
-<div style="border-top: 1px solid #CCC; padding-top: 10px; margin-top: 10px;">
-<table border="0" style="width: 100%">
 {{each(idx, elem) results}}
-<tr><td>
-	<div>
-		{{if loc}}
-			<img src="<?php echo wfUtils::getBaseURL() . 'images/flags/'; ?>${loc.countryCode.toLowerCase()}.png" width="16" height="11" alt="${loc.countryName}" title="${loc.countryName}" class="wfFlag" />
-			<a href="http://maps.google.com/maps?q=${loc.lat},${loc.lon}&z=6" target="_blank">{{if loc.city}}${loc.city}, {{/if}}${loc.countryName}</a>
-		{{else}}
-			An unknown location at IP <a href="${WFAD.makeIPTrafLink(IP)}" target="_blank">${IP}</a>
-		{{/if}}
-	</div>
-	<div>
-		<strong>IP:</strong>&nbsp;<a href="${WFAD.makeIPTrafLink(IP)}" target="_blank">${IP}</a> [<a href="#" onclick="WFAD.unlockOutIP('${IP}'); return false;">unlock</a>]
-	</div>
-	<div>
-		<strong>Reason:</strong>&nbsp;${reason}
-	</div>
-	<div>
-		<span class="wfReverseLookup"><span style="display:none;">${IP}</span></span>
-	</div>
-	<div>
-		{{if lastAttemptAgo}}
-			<span class="wfTimeAgo">Last blocked attempt to sign-in or use the forgot password form was <span class="wfTimeAgo-timestamp" data-timestamp="${lastAttempt}">${lastAttemptAgo} ago</span>.</span>
-		{{else}}
-			<span class="wfTimeAgo">No attempts have been made to sign-in or use the forgot password form since this IP was locked out.</span>
-		{{/if}}
-	</div>
-</td>
-<td style="color: #999;">
-	<ul>
-	<li>${blockedHits} attempts have been blocked</li>
-	<li>Will be unlocked in ${blockedForAgo}</li>
-	</ul>
-</td></tr>
+<tr class="lockedOutIPsRecord">
+	<td>
+		<div>
+			{{if loc}}
+				<img src="<?php echo wfUtils::getBaseURL() . 'images/flags/'; ?>${loc.countryCode.toLowerCase()}.png" width="16" height="11" alt="${loc.countryName}" title="${loc.countryName}" class="wfFlag" />
+				<a href="http://maps.google.com/maps?q=${loc.lat},${loc.lon}&z=6" target="_blank">{{if loc.city}}${loc.city}, {{/if}}${loc.countryName}</a>
+			{{else}}
+				An unknown location at IP <a href="${WFAD.makeIPTrafLink(IP)}" target="_blank">${IP}</a>
+			{{/if}}
+		</div>
+		<div>
+			<strong>IP:</strong>&nbsp;<a href="${WFAD.makeIPTrafLink(IP)}" target="_blank">${IP}</a> [<a href="#" onclick="WFAD.unlockOutIP('${IP}'); return false;">unlock</a>]
+		</div>
+		<div>
+			<strong>Reason:</strong>&nbsp;${reason}
+		</div>
+		<div>
+			<span class="wfReverseLookup"><span style="display:none;">${IP}</span></span>
+		</div>
+		<div>
+			{{if lastAttemptAgo}}
+				<span class="wfTimeAgo">Last blocked attempt to sign-in or use the forgot password form was <span class="wfTimeAgo-timestamp" data-timestamp="${lastAttempt}">${lastAttemptAgo} ago</span>.</span>
+			{{else}}
+				<span class="wfTimeAgo">No attempts have been made to sign-in or use the forgot password form since this IP was locked out.</span>
+			{{/if}}
+		</div>
+	</td>
+	<td style="color: #999;">
+		<ul>
+		<li>${blockedHits} attempts have been blocked</li>
+		<li>Will be unlocked in ${blockedForAgo}</li>
+		</ul>
+	</td>
+</tr>
 {{/each}}
-</table>
-</div>
-</div>
+</script>
+
+<script type="text/x-jquery-template" id="wfBlockedIPsWrapperTmpl">
+	<div>
+		<p><a class="button" href="#" onclick="WFAD.permanentlyBlockAllIPs('blocked'); return false;">Permanently block all temporarily blocked IP addresses</a></p>
+		<div style="border-top: 1px solid #CCC; padding-top: 10px; margin-top: 10px;">
+			<table border="0" style="width: 100%" id="wfBlockedIPsWrapper">
+			</table>
+		</div>
+		<p><a class="button wfLoadMoreButton" href="#">Load More</a></p>
+	</div>
 </script>
 
 <script type="text/x-jquery-template" id="wfBlockedIPsTmpl">
-<div>
-<p><a class="button" href="#" onclick="WFAD.permanentlyBlockAllIPs('blocked'); return false;">Permanently block all temporarily blocked IP addresses</a></p>
-<div style="border-top: 1px solid #CCC; padding-top: 10px; margin-top: 10px;">
-<table border="0" style="width: 100%">
 {{each(idx, elem) results}}
-<tr><td>
-	<div>
-		{{if loc}}
-			<img src="<?php echo wfUtils::getBaseURL() . 'images/flags/'; ?>${loc.countryCode.toLowerCase()}.png" width="16" height="11" alt="${loc.countryName}" title="${loc.countryName}" class="wfFlag" />
-			<a href="http://maps.google.com/maps?q=${loc.lat},${loc.lon}&z=6" target="_blank">{{if loc.city}}${loc.city}, {{/if}}${loc.countryName}</a>
-		{{else}}
-			An unknown location at IP <a href="${WFAD.makeIPTrafLink(IP)}" target="_blank">${IP}</a>
-		{{/if}}
-	</div>
-	<div>
-		<strong>IP:</strong>&nbsp;<a href="${WFAD.makeIPTrafLink(IP)}" target="_blank">${IP}</a> [<a href="#" onclick="WFAD.unblockIPTwo('${IP}'); return false;">unblock</a>]
-		{{if permanent == '1'}}
-			[<span style="color: #F00;">permanently blocked</span>]
-		{{else}}&nbsp;&nbsp;[<a href="#" onclick="WFAD.permBlockIP('${IP}'); return false;">make permanent</a>]{{/if}}
-	</div>
-	<div>
-		<strong>Reason:</strong>&nbsp;${reason}
-	</div>
-	<div>
-		<span class="wfReverseLookup"><span style="display:none;">${IP}</span></span>
-	</div>
-	<div>
-		{{if lastAttemptAgo}}
-			<span class="wfTimeAgo">Last blocked attempt to access the site was <span class="wfTimeAgo-timestamp" data-timestamp="${lastAttempt}">${lastAttemptAgo} ago</span>.</span>
-		{{else}}
-			<span class="wfTimeAgo">No attempts have been made to access the site since this IP was blocked.</span>
-		{{/if}}
-	</div>
-	<div>
-		{{if lastHitAgo}}
-			<span class="wfTimeAgo">Last site access before this IP was blocked was <span class="wfTimeAgo-timestamp" data-timestamp="${lastHit}">${lastHitAgo} ago</span></span>
-		{{/if}}
-	</div>
-</td>
-<td style="color: #999;">
-	<ul>
-	<li>${totalHits} hits before blocked</li>
-	<li>${blockedHits} blocked hits</li>
-	<li>
-		{{if permanent == '1'}}Permanently blocked{{else}}
-		Will be unblocked in ${blockedForAgo}{{/if}}
-	</li>
-	</ul>
-</td></tr>
+	<tr class="blockedIPsRecord">
+		<td>
+			<div>
+				{{if loc}}
+					<img src="<?php echo wfUtils::getBaseURL() . 'images/flags/'; ?>${loc.countryCode.toLowerCase()}.png" width="16" height="11" alt="${loc.countryName}" title="${loc.countryName}" class="wfFlag" />
+					<a href="http://maps.google.com/maps?q=${loc.lat},${loc.lon}&z=6" target="_blank">{{if loc.city}}${loc.city}, {{/if}}${loc.countryName}</a>
+				{{else}}
+					An unknown location at IP <a href="${WFAD.makeIPTrafLink(IP)}" target="_blank">${IP}</a>
+				{{/if}}
+			</div>
+			<div>
+				<strong>IP:</strong>&nbsp;<a href="${WFAD.makeIPTrafLink(IP)}" target="_blank">${IP}</a> [<a href="#" onclick="WFAD.unblockIPTwo('${IP}'); return false;">unblock</a>]
+				{{if permanent == '1'}}
+					[<span style="color: #F00;">permanently blocked</span>]
+				{{else}}&nbsp;&nbsp;[<a href="#" onclick="WFAD.permBlockIP('${IP}'); return false;">make permanent</a>]{{/if}}
+			</div>
+			<div>
+				<strong>Reason:</strong>&nbsp;${reason}
+			</div>
+			<div>
+				<span class="wfReverseLookup"><span style="display:none;">${IP}</span></span>
+			</div>
+			<div>
+				{{if lastAttemptAgo}}
+					<span class="wfTimeAgo">Last blocked attempt to access the site was <span class="wfTimeAgo-timestamp" data-timestamp="${lastAttempt}">${lastAttemptAgo} ago</span>.</span>
+				{{else}}
+					<span class="wfTimeAgo">No attempts have been made to access the site since this IP was blocked.</span>
+				{{/if}}
+			</div>
+			<div>
+				{{if lastHitAgo}}
+					<span class="wfTimeAgo">Last site access before this IP was blocked was <span class="wfTimeAgo-timestamp" data-timestamp="${lastHit}">${lastHitAgo} ago</span></span>
+				{{/if}}
+			</div>
+		</td>
+		<td style="color: #999;">
+			<ul>
+			<li>${totalHits} hits before blocked</li>
+			<li>${blockedHits} blocked hits</li>
+			<li>
+				{{if permanent == '1'}}Permanently blocked{{else}}
+				Will be unblocked in ${blockedForAgo}{{/if}}
+			</li>
+			</ul>
+		</td>
+	</tr>
 {{/each}}
-</table>
-</div>
-</div>
 </script>
 
 <script type="text/x-jquery-template" id="wfWelcomeContent4">

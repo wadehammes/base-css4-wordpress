@@ -51,11 +51,15 @@ class wfDiagnostic
 		'Filesystem' => array(
 			'isTmpReadable' => 'Checking if web server can read from <code>~/plugins/wordfence/tmp</code>',
 			'isTmpWritable' => 'Checking if web server can write to <code>~/plugins/wordfence/tmp</code>',
-			'testWfCache'   => 'Checking if web server can write to <code>~/wp-content/wfcache</code>',
+		),
+		'Config' => array(
+			'configWritableSet' => 'Checking basic config reading/writing',
+			'configWritableSetSer' => 'Checking serialized config reading/writing',	
 		),
 		'MySQL' => array(
 			'userCanDelete' => 'Checking if MySQL user has <code>DELETE</code> privilege',
 			'userCanInsert' => 'Checking if MySQL user has <code>INSERT</code> privilege',
+			'userCanUpdate' => 'Checking if MySQL user has <code>UPDATE</code> privilege',
 			'userCanSelect' => 'Checking if MySQL user has <code>SELECT</code> privilege',
 			'userCanCreate' => 'Checking if MySQL user has <code>CREATE TABLE</code> privilege',
 			'userCanAlter'  => 'Checking if MySQL user has <code>ALTER TABLE</code> privilege',
@@ -116,13 +120,9 @@ class wfDiagnostic
 	public function userCanInsert() {
 		return wfGrant::get()->insert;
 	}
-
-	public function testWfCache() {
-		$result = wfCache::cacheDirectoryTest();
-		return array(
-			'test' => $result === false,
-			'message' => is_string($result) ? $result : 'OK'
-		);
+	
+	public function userCanUpdate() {
+		return wfGrant::get()->update;
 	}
 
 	public function userCanDelete() {
@@ -154,6 +154,31 @@ class wfDiagnostic
 		return array(
 			'test' => version_compare(phpversion(), $this->minVersion['PHP'], '>='),
 			'message'  => phpversion(),
+		);
+	}
+	
+	public function configWritableSet() {
+		global $wpdb;
+		$show = $wpdb->hide_errors();
+		$val = md5(time());
+		wfConfig::set('configWritingTest', $val, wfConfig::DONT_AUTOLOAD);
+		$testVal = wfConfig::get('configWritingTest');
+		$wpdb->show_errors($show);
+		return array(
+			'test' => ($val === $testVal),
+			'message' => 'Basic config writing'
+		);
+	}
+	public function configWritableSetSer() {
+		global $wpdb;
+		$show = $wpdb->hide_errors();
+		$val = md5(time());
+		wfConfig::set_ser('configWritingTest_ser', array($val), false, wfConfig::DONT_AUTOLOAD);
+		$testVal = @array_shift(wfConfig::get_ser('configWritingTest_ser', array(), false));
+		$wpdb->show_errors($show);
+		return array(
+			'test' => ($val === $testVal),
+			'message' => 'Serialized config writing'
 		);
 	}
 

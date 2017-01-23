@@ -606,6 +606,10 @@ class wfWAFUtils {
 		$is_apache = (strpos($_SERVER['SERVER_SOFTWARE'], 'Apache') !== false || strpos($_SERVER['SERVER_SOFTWARE'], 'LiteSpeed') !== false);
 		$is_IIS = !$is_apache && (strpos($_SERVER['SERVER_SOFTWARE'], 'Microsoft-IIS') !== false || strpos($_SERVER['SERVER_SOFTWARE'], 'ExpressionDevServer') !== false);
 		
+		header("Pragma: no-cache");
+		header("Cache-Control: no-cache, must-revalidate, private");
+		header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); //In the past
+		
 		if (!$is_IIS && PHP_SAPI != 'cgi-fcgi') {
 			self::statusHeader($status); // This causes problems on IIS and some FastCGI setups
 		}

@@ -3,7 +3,6 @@ $w = new wfConfig();
 ?>
 <div class="wordfenceModeElem" id="wordfenceMode_options"></div>
 <div class="wrap wordfence">
-	<?php require( 'menuHeader.php' ); ?>
 	<?php $helpLink = "http://docs.wordfence.com/en/Wordfence_options";
 	$helpLabel      = "Learn more about Wordfence Options";
 	$pageTitle      = "Wordfence Options";
@@ -39,7 +38,9 @@ $w = new wfConfig();
 			<tr>
 				<th>Key type currently active:</th>
 				<td>
-					<?php if (wfConfig::get( 'isPaid' )){ ?>
+					<?php if (wfConfig::get('hasKeyConflict')) { ?>
+						<span style="font-weight: bold; color: #A00;">The currently active Premium API Key is in use on another site.</span>
+					<?php } else if (wfConfig::get( 'isPaid' )){ ?>
 						The currently active API Key is a Premium Key. <span style="font-weight: bold; color: #0A0;">Premium scanning enabled!</span>
 					<?php } else { ?>
 					The currently active API Key is a <span style="color: #F00; font-weight: bold;">Free Key</span>. <a
@@ -50,7 +51,18 @@ $w = new wfConfig();
 			</tr>
 			<tr>
 				<td colspan="2">
-					<?php if (wfConfig::get('isPaid')): ?>
+					<?php if (wfConfig::get('hasKeyConflict')): ?>
+						<table border="0">
+							<tr>
+								<td><a href="https://www.wordfence.com/gnl1optMngKysReset/manage-wordfence-api-keys/"
+									   target="_blank"><input type="button" value="Reset your premium license"/></a>
+								</td>
+								<td>&nbsp;</td>
+								<td><input type="button" value="Downgrade to a free license"
+										   onclick="WFAD.downgradeLicense();"/></td>
+							</tr>
+						</table>
+					<?php elseif (wfConfig::get('isPaid')): ?>
 						<table border="0">
 							<tr>
 								<td><a href="https://www.wordfence.com/gnl1optMngKys/manage-wordfence-api-keys/"
@@ -422,7 +434,7 @@ $w = new wfConfig();
 				</tr>
 				<?php if ( wfConfig::get( 'isPaid' ) ) { ?>
 					<tr>
-						<th>Scan public facing site for vulnerabilities?<a
+						<th>Scan public facing site for vulnerabilities<a
 								href="http://docs.wordfence.com/en/Wordfence_options#Scan_public_facing_site"
 								target="_blank" class="wfhelp"></a></th>
 						<td><input type="checkbox" id="scansEnabled_public" class="wfConfigElem"
@@ -430,7 +442,7 @@ $w = new wfConfig();
 					</tr>
 				<?php } else { ?>
 					<tr>
-						<th style="color: #F00;">Scan public facing site for vulnerabilities?<a
+						<th style="color: #F00;">Scan public facing site for vulnerabilities<a
 								href="http://docs.wordfence.com/en/Wordfence_options#Scan_public_facing_site"
 								target="_blank" class="wfhelp"></a>(<a
 								href="https://www.wordfence.com/gnl1optPdOnly1/wordfence-signup/" target="_blank">Paid members only</a>)
@@ -440,7 +452,15 @@ $w = new wfConfig();
 					</tr>
 				<?php } ?>
 				<tr>
-					<th>Scan for the HeartBleed vulnerability?<a
+					<th>Scan for misconfigured How does Wordfence get IPs<a
+							href="http://docs.wordfence.com/en/Wordfence_options#Scan_for_misconfigured_How_does_Wordfence_get_IPs"
+							target="_blank" class="wfhelp"></a></th>
+					<td><input type="checkbox" id="scansEnabled_checkHowGetIPs" class="wfConfigElem"
+							   name="scansEnabled_checkHowGetIPs" value="1" <?php $w->cb( 'scansEnabled_checkHowGetIPs' ); ?> />
+					</td>
+				</tr>
+				<tr>
+					<th>Scan for the HeartBleed vulnerability<a
 							href="http://docs.wordfence.com/en/Wordfence_options#Scan_for_the_HeartBleed_vulnerability"
 							target="_blank" class="wfhelp"></a></th>
 					<td><input type="checkbox" id="scansEnabled_heartbleed" class="wfConfigElem"
@@ -448,7 +468,7 @@ $w = new wfConfig();
 					</td>
 				</tr>
 				<tr>
-					<th>Scan for publically accessible configuration, backup, or log files<a
+					<th>Scan for publicly accessible configuration, backup, or log files<a
 							href="http://docs.wordfence.com/en/Wordfence_options#Configuration_Readable"
 							target="_blank" class="wfhelp"></a></th>
 					<td><input type="checkbox" id="scansEnabled_checkReadableConfig" class="wfConfigElem"
@@ -625,7 +645,9 @@ $w = new wfConfig();
 					</td>
 				</tr>
 				<tr>
-					<th>Limit the number of issues sent in the scan results email.</th>
+					<th>Limit the number of issues sent in the scan results email.<a
+							href="https://docs.wordfence.com/en/Wordfence_options#Limit_the_number_of_issues_sent_in_the_scan_results_email"
+							target="_blank" class="wfhelp"></a></th>
 					<td>
 						<input type="text" name="scan_maxIssues" id="scan_maxIssues"
 					           value="<?php $w->f( 'scan_maxIssues' ); ?>"/> 0 or empty means unlimited
@@ -879,7 +901,7 @@ $w = new wfConfig();
 					           name="loginSec_blockAdminReg" <?php $w->cb( 'loginSec_blockAdminReg' ); ?> /></td>
 				</tr>
 				<tr>
-					<th>Prevent discovery of usernames through '/?author=N' scans and the oEmbed API<a
+					<th>Prevent discovery of usernames through '/?author=N' scans, the oEmbed API, and the WordPress REST API<a
 							href="http://docs.wordfence.com/en/Wordfence_options#Prevent_discovery_of_usernames_through_.27.3F.2Fauthor.3DN.27_scans"
 							target="_blank" class="wfhelp"></a></th>
 					<td><input type="checkbox" id="loginSec_disableAuthorScan" class="wfConfigElem"
@@ -944,11 +966,11 @@ $w = new wfConfig();
 				</tr>
 				
 				<tr>
-					<th style="vertical-align: top;">Whitelisted IP addresses for Wordfence Web Application Firewall alerting:</th>
+					<th style="vertical-align: top;">Ignored IP addresses for Wordfence Web Application Firewall alerting:</th>
 					<td><textarea name="wafAlertWhitelist" id="wafAlertWhitelist" cols="40" rows="4"><?php echo esc_html(preg_replace('/,/', "\n", $w->get('wafAlertWhitelist'))); ?></textarea></td>
 				</tr>
 				<tr>
-					<th colspan="2" style="color: #999;">Whitelisted IPs must be separated by commas or placed on separate lines. These addresses will be ignored from any alerts about increased attacks and can be used to ignore things like standalone website security scanners.<br/><br/></th>
+					<th colspan="2" style="color: #999;">Ignored IPs must be separated by commas or placed on separate lines. These addresses will be ignored from any alerts about increased attacks and can be used to ignore things like standalone website security scanners.<br/><br/></th>
 				</tr>
 				<tr class="hidden">
 					<th style="vertical-align: top;">Minimum number of blocked attacks before sending an alert</th>

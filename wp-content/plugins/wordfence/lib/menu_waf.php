@@ -6,7 +6,6 @@ $wafRemoveURL = network_admin_url('admin.php?page=WordfenceWAF&wafAction=removeA
 /** @var array $wafData */
 ?>
 <div class="wrap wordfence" id="paidWrap">
-	<?php require('menuHeader.php'); ?>
 	<?php
 	$pageTitle = "Wordfence Web Application Firewall";
 	$helpLink = "http://docs.wordfence.com/en/WAF";
@@ -265,7 +264,9 @@ $wafRemoveURL = network_admin_url('admin.php?page=WordfenceWAF&wafAction=removeA
 				
 				<p id="whitelist-monitor">
 					<strong>Monitor Background Requests for False Positives:</strong><br>
-					<label><input type="checkbox" id="monitor-front" name="monitor-front" value="1"<?php echo wfConfig::get('ajaxWatcherDisabled_front') ? '' : ' checked'; ?>>Front</label> &nbsp; <label><input type="checkbox" id="monitor-admin" name="monitor-admin" value="1"<?php echo wfConfig::get('ajaxWatcherDisabled_admin') ? '' : ' checked'; ?>>Admin Panel</label>
+					<label><input type="checkbox" id="monitor-front" name="monitor-front" value="1"<?php echo wfConfig::get('ajaxWatcherDisabled_front') ? '' : ' checked'; ?>>Front</label> &nbsp; <label><input type="checkbox" id="monitor-admin" name="monitor-admin" value="1"<?php echo wfConfig::get('ajaxWatcherDisabled_admin') ? '' : ' checked'; ?>>Admin Panel</label> <a
+						href="https://docs.wordfence.com/en/WAF#Whitelisted_URLs"
+						target="_blank" class="wfhelp"></a>
 				</p> 
 				<br>
 				
@@ -273,7 +274,9 @@ $wafRemoveURL = network_admin_url('admin.php?page=WordfenceWAF&wafAction=removeA
 					
 					<p id="waf-advanced-options">
 						<strong>Other Options</strong><br>
-						<label><input type="checkbox" id="waf-disable-ip-blocking" name="waf-disable-ip-blocking" value="1"<?php echo $config->getConfig('disableWAFIPBlocking') ? ' checked' : ''; ?>>Delay IP and Country blocking until after WordPress and plugins have loaded (only process firewall rules early)</label>
+						<label><input type="checkbox" id="waf-disable-ip-blocking" name="waf-disable-ip-blocking" value="1"<?php echo $config->getConfig('disableWAFIPBlocking') ? ' checked' : ''; ?>>Delay IP and Country blocking until after WordPress and plugins have loaded (only process firewall rules early)</label> <a
+							href="https://docs.wordfence.com/en/WAF#Advanced_Configuration"
+							target="_blank" class="wfhelp"></a>
 					</p>
 				
 				<?php if (WFWAF_AUTO_PREPEND) : ?>	

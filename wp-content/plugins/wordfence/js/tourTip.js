@@ -41,21 +41,13 @@ window['wordfenceExt'] = {
 			function(){ jQuery('#wordfenceSuPHPUpdateWarning').fadeOut(); }
 		);
 	},
-	falconDeprecationChoice: function(choice) {
-		this.ajax('wordfence_falconDeprecationChoice', {
+	misconfiguredHowGetIPsChoice : function(choice) {
+		this.ajax('wordfence_misconfiguredHowGetIPsChoice', {
 				choice: choice
 			},
-			function(res){ jQuery('#wordfenceFalconDeprecationWarning').fadeOut(); },
-			function(){ jQuery('#wordfenceFalconDeprecationWarning').fadeOut(); }
+			function(res){ jQuery('#wordfenceMisconfiguredHowGetIPsNotice').fadeOut(); },
+			function(){ jQuery('#wordfenceMisconfiguredHowGetIPsNotice').fadeOut(); }
 		);
-	},
-	removeFromCache: function(postID){
-		this.ajax('wordfence_removeFromCache', {
-			id: postID
-			}, 
-			function(res){ if(res.ok){ alert("Item removed from the Wordfence cache."); } },
-			function(){}
-			);
 	},
 	ajax: function(action, data, cb, cbErr, noLoading){
 		if(typeof(data) == 'string'){

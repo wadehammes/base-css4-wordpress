@@ -12,7 +12,6 @@ $w = new wfConfig();
 ?>
 
 <div class="wrap wordfence">
-	<?php require('menuHeader.php'); ?>
 	<h2 id="wfHeading">
 		Diagnostics
 	</h2>
@@ -491,15 +490,6 @@ $w = new wfConfig();
 	<h3>Debugging Options</h3>
 	<form action="#" id="wfDebuggingConfigForm">
 		<table class="wfConfigForm">
-			<tr>
-				<th>Add a debugging comment to HTML source of cached pages.<a
-						href="http://docs.wordfence.com/en/Wordfence_options#Add_a_debugging_comment_to_HTML_source_of_cached_pages"
-						target="_blank" class="wfhelp"></a></th>
-				<td><input type="checkbox" id="addCacheComment" class="wfConfigElem" name="addCacheComment"
-				           value="1" <?php $w->cb('addCacheComment'); ?> />
-				</td>
-			</tr>
-
 			<tr>
 				<th>Enable debugging mode (increases database load)<a
 						href="http://docs.wordfence.com/en/Wordfence_options#Enable_debugging_mode_.28increases_database_load.29"

@@ -185,7 +185,7 @@ class wfIssues {
 		}
 		foreach($ret as $status => &$issueList){
 			for($i = 0; $i < sizeof($issueList); $i++){
-				if($issueList[$i]['type'] == 'file'){
+				if ($issueList[$i]['type'] == 'file' || $issueList[$i]['type'] == 'knownfile') {
 					$localFile = $issueList[$i]['data']['file'];
 					if ($localFile != '.htaccess' && $localFile != $userIni) {
 						$localFile = ABSPATH . '/' . preg_replace('/^[\.\/]+/', '', $localFile);

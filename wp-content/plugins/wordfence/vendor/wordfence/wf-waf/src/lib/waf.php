@@ -1412,8 +1412,10 @@ class wfWAFCronFetchRulesEvent extends wfWAFCronEvent {
 	public function fire() {
 		$waf = $this->getWaf();
 		if (!$waf) {
-			return;
+			return false;
 		}
+		
+		$success = true;
 		$guessSiteURL = sprintf('%s://%s/', $waf->getRequest()->getProtocol(), $waf->getRequest()->getHost());
 		try {
 			$this->response = wfWAFHTTP::get(WFWAF_API_URL_SEC . "?" . http_build_query(array(
@@ -1450,8 +1452,16 @@ class wfWAFCronFetchRulesEvent extends wfWAFCronEvent {
 							$waf->getStorageEngine()->setConfig('premiumCount', $jsonData['data']['premiumCount']);
 						}
 					}
-
+					else {
+						$success = false;
+					}
 				}
+				else {
+					$success = false;
+				}
+			}
+			else {
+				$success = false;
 			}
 			
 			$this->response = wfWAFHTTP::get(WFWAF_API_URL_SEC . "?" . http_build_query(array(
@@ -1487,13 +1497,25 @@ class wfWAFCronFetchRulesEvent extends wfWAFCronEvent {
 							$waf->getStorageEngine()->setConfig('signaturePremiumCount', $jsonData['data']['premiumCount']);
 						}
 					}
+					else {
+						$success = false;
+					}
 				}
+				else {
+					$success = false;
+				}
+			}
+			else {
+				$success = false;
 			}
 		} catch (wfWAFHTTPTransportException $e) {
 			error_log($e->getMessage());
+			$success = false;
 		} catch (wfWAFBuildRulesException $e) {
 			error_log($e->getMessage());
+			$success = false;
 		}
+		return $success;
 	}
 
 	/**

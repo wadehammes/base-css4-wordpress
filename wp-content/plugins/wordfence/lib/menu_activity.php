@@ -5,7 +5,6 @@
 	</div>
 <?php endif ?>
 <div class="wrap wordfence">
-	<?php require('menuHeader.php'); ?>
 
 	<h2 id="wfHeading">
 		<div style="float: left;">
@@ -47,7 +46,7 @@
 		echo $rightRail;
 		?>
 		<?php if (!wfConfig::liveTrafficEnabled()): ?>
-			<div id="wordfenceLiveActivityDisabled"><p><strong>Live activity is disabled.</strong> <?php if (wfConfig::get('cacheType') == 'falcon') { ?>This is done to improve performance because you have Wordfence Falcon Engine enabled.<?php } ?> Login and firewall activity will still appear below.</p></div>
+			<div id="wordfenceLiveActivityDisabled"><p><strong>Live activity is disabled.</strong> Login and firewall activity will still appear below.</p></div>
 		<?php endif ?>
 		
 		<div id="wf-live-traffic" class="wfTabsContainer">

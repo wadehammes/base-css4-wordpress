@@ -29,6 +29,10 @@ class wfWAFWordPressRequest extends wfWAFRequest {
 	}
 
 	public function getIP() {
+		static $theIP = null;
+		if (isset($theIP)) {
+			return $theIP;
+		}
 		$howGet = wfWAF::getInstance()->getStorageEngine()->getConfig('howGetIPs');
 		if (is_string($howGet) && is_array($_SERVER) && array_key_exists($howGet, $_SERVER)) {
 			$ips[] = array($_SERVER[$howGet], $howGet);
@@ -37,8 +41,10 @@ class wfWAFWordPressRequest extends wfWAFRequest {
 		$cleanedIP = $this->_getCleanIPAndServerVar($ips);
 		if (is_array($cleanedIP)) {
 			list($ip, $variable) = $cleanedIP;
+			$theIP = $ip;
 			return $ip;
 		}
+		$theIP = $cleanedIP;
 		return $cleanedIP;
 	}
 	
@@ -78,6 +84,7 @@ class wfWAFWordPressRequest extends wfWAFRequest {
 			foreach (array(',', ' ', "\t") as $char) {
 				if (strpos($item, $char) !== false) {
 					$sp = explode($char, $item);
+					$sp = array_reverse($sp);
 					foreach ($sp as $j) {
 						$j = trim($j);
 						if (!$this->_isValidIP($j)) {

@@ -1,6 +1,6 @@
 This email was sent from your website "<?php echo $blogName; ?>" by the Wordfence plugin at <?php echo $date; ?>
 
-The Wordfence administrative URL for this site is: <?php echo $adminURL; ?>admin.php?page=Wordfence
+The Wordfence administrative URL for this site is: <?php echo network_admin_url('admin.php?page=Wordfence'); ?>
 
 <?php echo $alertMsg; ?>
 <?php if($IPMsg){ echo "\n$IPMsg\n"; } ?>

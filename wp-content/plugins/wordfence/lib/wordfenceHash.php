@@ -622,7 +622,7 @@ class wordfenceHash {
 		}
 		
 		//Will be malware scanned, return true
-		if (strpos($file, 'lib/wordfenceScanner.php') === false && ($fileExt == 'js')) {
+		if ($fileExt == 'js') {
 			return true;
 		}
 		

@@ -36,6 +36,7 @@ class wfConfig {
 			"lowResourceScansEnabled" => array('value' => false, 'autoload' => self::AUTOLOAD),
 			"scansEnabled_public" => array('value' => false, 'autoload' => self::AUTOLOAD),
 			"scansEnabled_heartbleed" => array('value' => true, 'autoload' => self::AUTOLOAD),
+			"scansEnabled_checkHowGetIPs" => array('value' => true, 'autoload' => self::AUTOLOAD),
 			"scansEnabled_core" => array('value' => true, 'autoload' => self::AUTOLOAD),
 			"scansEnabled_themes" => array('value' => false, 'autoload' => self::AUTOLOAD),
 			"scansEnabled_plugins" => array('value' => false, 'autoload' => self::AUTOLOAD),
@@ -114,14 +115,14 @@ class wfConfig {
 			'maxScanHits_action' => "throttle",
 			'blockedTime' => "300",
 			'email_summary_interval' => 'weekly',
-			'email_summary_excluded_directories' => 'wp-content/cache,wp-content/wfcache,wp-content/plugins/wordfence/tmp',
+			'email_summary_excluded_directories' => 'wp-content/cache,wp-content/plugins/wordfence/tmp',
 			'allowed404s' => "/favicon.ico\n/apple-touch-icon*.png\n/*@2x.png\n/browserconfig.xml",
 			'wafAlertWhitelist' => '',
 			'wafAlertInterval' => 600,
 			'wafAlertThreshold' => 100,
 		)
 	);
-	public static $serializedOptions = array('lastAdminLogin', 'scanSched', 'emailedIssuesList', 'wf_summaryItems', 'adminUserList', 'twoFactorUsers', 'alertFreqTrack', 'wfStatusStartMsgs');
+	public static $serializedOptions = array('lastAdminLogin', 'scanSched', 'emailedIssuesList', 'wf_summaryItems', 'adminUserList', 'twoFactorUsers', 'alertFreqTrack', 'wfStatusStartMsgs', 'vulnerabilities_plugin', 'vulnerabilities_theme');
 	public static function setDefaults() {
 		foreach (self::$defaultConfig['checkboxes'] as $key => $config) {
 			$val = $config['value'];
@@ -616,8 +617,7 @@ class wfConfig {
 		}
 	}
 	public static function liveTrafficEnabled(){
-		if( (! self::get('liveTrafficEnabled')) || self::get('cacheType') == 'falcon' || self::get('cacheType') == 'php'){ return false; }
-		return true;
+		return self::get('liveTrafficEnabled');
 	}
 	public static function enableAutoUpdate(){
 		wfConfig::set('autoUpdate', '1');

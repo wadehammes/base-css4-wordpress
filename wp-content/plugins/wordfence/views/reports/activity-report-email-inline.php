@@ -122,7 +122,7 @@ h6 a:visited { color: purple !important; }
 				<a href="http://www.wordfence.com/zz5/" style="font-size: 100%; vertical-align: baseline; outline: none; color: orange; text-decoration: none; margin: 0; padding: 0; border: 0;"><img src="<?php echo wfUtils::getBaseURL(); ?>images/logo.png" alt="" style="font-size: 100%; vertical-align: baseline; -ms-interpolation-mode: bicubic; outline: none; text-decoration: none; margin: 0; padding: 0; border: 0 none; width: 560px;" /></a>
 
 				<p style="font-size: 100%; vertical-align: baseline; margin: 1em 0; padding: 0; border: 0;">
-					This email was sent from your website <a href="<?php echo site_url() ?>"><?php echo site_url() ?></a> and is a summary of security related activity that Wordfence monitors for the period <?php printf('%s to %s', $report_start, $report_end) ?>. <?php if (!wfConfig::get('isPaid')): ?>NOTE: You are using the free version of Wordfence and are missing out on features like cellphone sign-in, country blocking and detecting if your site IP is sending spam. <a href="http://www.wordfence.com/zz6/">Click here to upgrade to Wordfence Premium now</a>.<?php endif ?>
+					This email was sent from your website <a href="<?php echo network_site_url() ?>"><?php echo network_site_url() ?></a> and is a summary of security related activity that Wordfence monitors for the period <?php printf('%s to %s', $report_start, $report_end) ?>. <?php if (!wfConfig::get('isPaid')): ?>NOTE: You are using the free version of Wordfence and are missing out on features like cellphone sign-in, country blocking and detecting if your site IP is sending spam. <a href="http://www.wordfence.com/zz6/">Click here to upgrade to Wordfence Premium now</a>.<?php endif ?>
 				</p>
 
 				<h2 style="font-size: 20px; vertical-align: baseline; clear: both; color: #222 !important; margin: 20px 0 4px; padding: 0; border: 0;">
@@ -279,7 +279,7 @@ h6 a:visited { color: purple !important; }
 							<td style="font-size: 100%; vertical-align: baseline; font-weight: normal; text-align: left; border-collapse: collapse; margin: 0; padding: 6px 4px; border: 1px solid #cccccc;white-space: nowrap;<?php echo $bg_colors[$stripe] ?>" align="left" valign="baseline"><?php echo $this->attackTime($attack_row->attackLogTime) ?></td>
 							<td style="font-size: 100%; vertical-align: baseline; font-weight: normal; text-align: left; border-collapse: collapse; margin: 0; padding: 6px 4px; border: 1px solid #cccccc;<?php echo $bg_colors[$stripe] ?>" align="left" valign="baseline">
 								<div style="font-weight: bold; font-size: 12px;"><?php echo $this->displayIP($attack_row->IP) ?></div> 
-								<pre class="display-file" style="font-size: 12px; vertical-align: baseline; width: 420px; margin: 0; padding: 0; border: 0; white-space: normal;"><?php echo esc_html($attack_row->longDescription) ?></pre>
+								<pre class="display-file" style="font-size: 12px; vertical-align: baseline; width: 420px; margin: 0; padding: 0; border: 0; white-space: normal;"><?php echo wfUtils::potentialBinaryStringToHTML($attack_row->longDescription, true) ?></pre>
 							</td>
 						</tr>
 					<?php endforeach ?>
@@ -379,7 +379,7 @@ h6 a:visited { color: purple !important; }
 				<?php endif ?>
 
 				<p style="font-size: 100%; vertical-align: baseline; margin: 1em 0; padding: 0; border: 0;">
-					If you would like to sign-in to <a href="<?php echo site_url() ?>"><?php echo site_url() ?></a> please <a href="<?php echo network_admin_url() ?>">click here</a> now. You can change the frequency of this email or turn it on and off by visiting your <a href="<?php echo network_admin_url('admin.php?page=WordfenceSecOpt#wfMarkerEmailSummary') ?>">Wordfence options page</a>.
+					If you would like to sign-in to <a href="<?php echo network_site_url() ?>"><?php echo network_site_url() ?></a> please <a href="<?php echo network_admin_url() ?>">click here</a> now. You can change the frequency of this email or turn it on and off by visiting your <a href="<?php echo network_admin_url('admin.php?page=WordfenceSecOpt#wfMarkerEmailSummary') ?>">Wordfence options page</a>.
 				</p>
 			</div>
 		</td>

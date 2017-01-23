@@ -300,8 +300,8 @@ class wordfenceScanner {
 								break;
 						}
 							}
-					else if(strpos($file, 'lib/wordfenceScanner.php') === false) {
-							$regexMatched = false;
+					else {
+						$regexMatched = false;
 						foreach ($this->patterns['rules'] as $rule) {
 							$type = (isset($rule[4]) && !empty($rule[4])) ? $rule[4] : 'server';
 							$logOnly = (isset($rule[5]) && !empty($rule[5])) ? $rule[5] : false;
@@ -322,7 +322,7 @@ class wordfenceScanner {
 											'ignoreP' => $this->path . $file,
 											'ignoreC' => $fileSum,
 											'shortMsg' => "File appears to be malicious: " . esc_html($file),
-											'longMsg' => "This file appears to be installed by a hacker to perform malicious activity. If you know about this file you can choose to ignore it to exclude it from future scans. The text we found in this file that matches a known malicious file is: <strong style=\"color: #F00;\">\"" . esc_html((strlen($matchString) > 200 ? substr($matchString, 0, 200) . '...' : $matchString)) . "\"</strong>. The infection type is: <strong>" . esc_html($rule[3]) . '</strong>.' . $extraMsg,
+											'longMsg' => "This file appears to be installed by a hacker to perform malicious activity. If you know about this file you can choose to ignore it to exclude it from future scans. The text we found in this file that matches a known malicious file is: <strong style=\"color: #F00;\">\"" . wfUtils::potentialBinaryStringToHTML((strlen($matchString) > 200 ? substr($matchString, 0, 200) . '...' : $matchString)) . "\"</strong>. The infection type is: <strong>" . esc_html($rule[3]) . '</strong>.' . $extraMsg,
 											'data' => array_merge(array(
 												'file' => $file,
 											), $dataForFile),
@@ -335,7 +335,7 @@ class wordfenceScanner {
 							}
 						}
 						if ($regexMatched) { break; }
-						}
+					}
 					if ($treatAsBinary && wfConfig::get('scansEnabled_highSense')) {
 							$badStringFound = false;
 						if (strpos($data, $this->patterns['badstrings'][0]) !== false) {

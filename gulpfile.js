@@ -25,7 +25,7 @@ browserSync = require('browser-sync').create();
 // Read our Settings Configuration
 var settings = JSON.parse(fs.readFileSync('./settings.json'));
 
-var config {
+var config = {
   production: !!utility.env.production
 }
 

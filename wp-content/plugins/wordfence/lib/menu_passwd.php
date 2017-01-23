@@ -1,6 +1,5 @@
 <div class="wordfenceModeElem" id="wordfenceMode_passwd"></div>
 <div class="wrap wordfence" id="paidWrap">
-	<?php require('menuHeader.php'); ?>
 	<?php $pageTitle = "Audit the Strength of your Passwords";
 	$helpLink = "http://docs.wordfence.com/en/Wordfence_Password_Auditing";
 	$helpLabel = "Learn more about Password Auditing";
