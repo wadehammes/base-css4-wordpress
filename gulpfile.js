@@ -189,6 +189,6 @@ gulp.task('watch-images', function() {
 /*==========================================
 =            Run the Gulp Tasks            =
 ==========================================*/
-gulp.task('default', ['stylesheets', 'scripts', 'scripts-serviceworker', 'svgs', 'watch-images', 'serve']);
-gulp.task('build', ['stylesheets', 'scripts', 'scripts-serviceworker', 'svgs']);
+gulp.task('default', ['stylesheets', 'scripts', 'svgs', 'watch-images', 'serve']);
+gulp.task('build', ['stylesheets', 'scripts', 'svgs']);
 gulp.task('images', ['img-opt']);
