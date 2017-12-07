@@ -46,7 +46,7 @@ hr {
 
 h1, h2, h3, h4, h5, h6 {
   margin-top: 0;
-  margin-bottom: .5rem;
+  margin-bottom: 0.5rem;
 }
 
 p {
@@ -56,9 +56,8 @@ p {
 
 abbr[title],
 abbr[data-original-title] {
-  text-decoration: underline;
+  text-decoration: underline dotted;
   -webkit-text-decoration: underline dotted;
-          text-decoration: underline dotted;
   cursor: help;
   border-bottom: 0;
 }
@@ -88,7 +87,7 @@ dt {
 }
 
 dd {
-  margin-bottom: .5rem;
+  margin-bottom: 0.5rem;
   margin-left: 0;
 }
 
@@ -118,37 +117,11 @@ sup {
 }
 
 sub {
-  bottom: -.25em;
+  bottom: -0.25em;
 }
 
 sup {
-  top: -.5em;
-}
-
-a {
-  color: var(--black);
-  text-decoration: none;
-  background-color: transparent;
-  -webkit-text-decoration-skip: objects;
-}
-
-a:hover {
-  color: var(--black);
-  text-decoration: none;
-}
-
-a:not([href]):not([tabindex]) {
-  color: inherit;
-  text-decoration: none;
-}
-
-a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
-  color: inherit;
-  text-decoration: none;
-}
-
-a:not([href]):not([tabindex]):focus {
-  outline: 0;
+  top: -0.5em;
 }
 
 pre,
@@ -179,6 +152,22 @@ svg:not(:root) {
   overflow: hidden;
 }
 
+input,
+button,
+select,
+optgroup,
+textarea {
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+button,
+input {
+  overflow: visible;
+}
+
 a,
 area,
 button,
@@ -190,6 +179,32 @@ summary,
 textarea {
   -ms-touch-action: manipulation;
       touch-action: manipulation;
+}
+
+a {
+  color: var(--black);
+  text-decoration: none;
+  background-color: transparent;
+  -webkit-text-decoration-skip: objects;
+}
+
+a:hover {
+  color: var(--black);
+  text-decoration: none;
+}
+
+a:not([href]):not([tabindex]) {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:not([href]):not([tabindex]):focus {
+  outline: 0;
 }
 
 table {
@@ -210,32 +225,7 @@ th {
 
 label {
   display: inline-block;
-  margin-bottom: .5rem;
-}
-
-button {
-  border-radius: 0;
-}
-
-button:focus {
-  outline: 1px dotted;
-  outline: 5px auto -webkit-focus-ring-color;
-}
-
-input,
-button,
-select,
-optgroup,
-textarea {
-  margin: 0;
-  font-family: inherit;
-  font-size: inherit;
-  line-height: inherit;
-}
-
-button,
-input {
-  overflow: visible;
+  margin-bottom: 0.5rem;
 }
 
 button,
@@ -250,12 +240,21 @@ html [type="button"],
   -webkit-appearance: button;
 }
 
+button {
+  border-radius: 0;
+}
+
 button::-moz-focus-inner,
 [type="button"]::-moz-focus-inner,
 [type="reset"]::-moz-focus-inner,
 [type="submit"]::-moz-focus-inner {
   padding: 0;
   border-style: none;
+}
+
+button:focus {
+  outline: 1px dotted;
+  outline: 5px auto -webkit-focus-ring-color;
 }
 
 input[type="radio"],
@@ -288,7 +287,7 @@ legend {
   width: 100%;
   max-width: 100%;
   padding: 0;
-  margin-bottom: .5rem;
+  margin-bottom: 0.5rem;
   font-size: 1.5rem;
   line-height: inherit;
   color: inherit;

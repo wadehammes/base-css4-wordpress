@@ -7,7 +7,9 @@
 		"color-no-invalid-hex": true,
 		"comment-whitespace-inside": "always",
 		"declaration-bang-space-before": "always",
-		"declaration-block-no-duplicate-properties": true,
+		"declaration-block-no-duplicate-properties": [true, {
+            "ignore": ["consecutive-duplicates-with-different-values"]
+        }],
 		"declaration-colon-space-before": "never",
 		"max-empty-lines": 1,
 		"no-descending-specificity": true,

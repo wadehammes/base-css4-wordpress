@@ -1,27 +1,27 @@
 /*=====================================
 =            Gulp Packages            =
 =====================================*/
-require('es6-promise').polyfill();
+require("es6-promise").polyfill();
 
-var gulp = require('gulp'),
-fs = require('fs'),
-concat = require('gulp-concat'),
-uglify = require('gulp-uglify'),
-svgmin = require('gulp-svgmin'),
-imagemin = require('gulp-imagemin'),
-utility = require('gulp-util'),
-watch = require('gulp-watch'),
-streamqueue = require('streamqueue'),
-plumber = require('gulp-plumber'),
-shell = require('gulp-shell'),
-sourcemaps = require('gulp-sourcemaps'),
-postcss = require('gulp-postcss'),
-svgstore = require('gulp-svgstore'),
-babel = require('gulp-babel'),
-browserSync = require('browser-sync').create();
+var gulp = require("gulp"),
+fs = require("fs"),
+concat = require("gulp-concat"),
+uglify = require("gulp-uglify"),
+svgmin = require("gulp-svgmin"),
+imagemin = require("gulp-imagemin"),
+utility = require("gulp-util"),
+watch = require("gulp-watch"),
+streamqueue = require("streamqueue"),
+plumber = require("gulp-plumber"),
+shell = require("gulp-shell"),
+sourcemaps = require("gulp-sourcemaps"),
+postcss = require("gulp-postcss"),
+svgstore = require("gulp-svgstore"),
+babel = require("gulp-babel"),
+browserSync = require("browser-sync").create();
 
 // Read our Settings Configuration
-var settings = JSON.parse(fs.readFileSync('./settings.json'));
+var settings = JSON.parse(fs.readFileSync("./settings.json"));
 
 var config = {
   production: !!utility.env.production
@@ -30,39 +30,39 @@ var config = {
 /*==================================
 =            Base Paths            =
 ==================================*/
-var themeBase        = './wp-content/themes/';
-var themeName        = 'base';
+var themeBase = "./wp-content/themes/";
+var themeName = "base";
 
 // Style Path
-var stylePathSrc     = themeBase + themeName + '/assets/css/base.css';
-var stylePathWatch   = themeBase + themeName + '/assets/css/**/*.css';
-var stylePathDest    = themeBase + themeName + '/library/css/';
+var stylePathSrc = themeBase + themeName + "/assets/css/base.css";
+var stylePathWatch = themeBase + themeName + "/assets/css/**/*.css";
+var stylePathDest = themeBase + themeName + "/library/css/";
 
 // Script Path
-var scriptsPathSrc   = [themeBase + themeName + '/assets/js/_lib/**/*.js', themeBase + themeName + '/assets/js/_src/**/*.js', themeBase + themeName + '/assets/js/application.js'];
-var scriptsPathWatch = themeBase + themeName + '/assets/js/**/*.js';
-var scriptsPathDest  = themeBase + themeName + '/library/js/';
+var scriptsPathSrc = [themeBase + themeName + "/assets/js/_lib/**/*.js", themeBase + themeName + "/assets/js/_src/**/*.js", themeBase + themeName + "/assets/js/application.js"];
+var scriptsPathWatch = themeBase + themeName + "/assets/js/**/*.js";
+var scriptsPathDest  = themeBase + themeName + "/library/js/";
 
 // Sprites Path
-var svgPathWatch     = themeBase + themeName + '/assets/svg/*.svg';
-var svgDest          = themeBase + themeName + '/library/svg';
+var svgPathWatch = themeBase + themeName + "/assets/svg/*.svg";
+var svgDest = themeBase + themeName + "/library/svg";
 
 // Image Path
-var imgPathWatch     = themeBase + themeName + '/assets/img/*';
-var imgDest          = themeBase + themeName + '/library/img';
+var imgPathWatch = themeBase + themeName + "/assets/img/*";
+var imgDest = themeBase + themeName + "/library/img";
 
 // PHP Paths
-var phpPath          = themeBase + themeName + '/**/*.php';
+var phpPath = themeBase + themeName + "/**/*.php";
 
 /*=============================
 =            Tasks            =
 =============================*/
 // Compile, prefix, minify and move our SCSS files
-gulp.task('stylesheets', function () {
+gulp.task("stylesheets", function () {
   var processors = [
     require("postcss-import")(),
     require("postcss-url")(),
-    require('postcss-utilities')(),
+    require("postcss-utilities")(),
     require("precss")(),
     require("postcss-cssnext")({
       features: {
@@ -81,33 +81,33 @@ gulp.task('stylesheets', function () {
       discardEmpty: false,
       autoprefixer: false,
     }),
-    require("postcss-reporter")()
+    require("postcss-reporter")({ clearReportedMessages: true })
   ];
   return gulp.src(stylePathSrc)
     .pipe(plumber())
     .pipe( sourcemaps.init() )
     .pipe(postcss(processors))
-    .pipe( sourcemaps.write('.') )
+    .pipe( sourcemaps.write(".") )
     .pipe(gulp.dest(stylePathDest))
-    .pipe(config.production ? utility.noop() : browserSync.stream({match: '**/*.css'}));
+    .pipe(config.production ? utility.noop() : browserSync.stream({match: "**/*.css"}));
 });
 
 // Compile (in order), concatenate, minify, rename and move our JS files
-gulp.task('scripts', function() {
+gulp.task("scripts", function() {
   return streamqueue({ objectMode: true },
-    gulp.src(themeBase + themeName + '/assets/js/_lib/**/*.js'),
-    gulp.src(themeBase + themeName + '/assets/js/_src/**/*.js'),
-    gulp.src(themeBase + themeName + '/assets/js/application.js')
+    gulp.src(themeBase + themeName + "/assets/js/_lib/**/*.js"),
+    gulp.src(themeBase + themeName + "/assets/js/_src/**/*.js"),
+    gulp.src(themeBase + themeName + "/assets/js/application.js")
   )
   .pipe(plumber())
   .pipe(babel({"presets": ["env"]}))
-  .pipe(concat('application.js', {newLine: ';'}))
+  .pipe(concat("application.js", {newLine: ";"}))
   .pipe(uglify())
   .pipe(gulp.dest(scriptsPathDest))
-  .pipe(config.production ? utility.noop() : browserSync.stream({match: '**/*.js'}));
+  .pipe(config.production ? utility.noop() : browserSync.stream({match: "**/*.js"}));
 });
 
-gulp.task('svgs', function() {
+gulp.task("svgs", function() {
   return gulp.src(svgPathWatch)
     .pipe(plumber())
     .pipe(svgmin({
@@ -126,8 +126,8 @@ gulp.task('svgs', function() {
     .pipe(svgstore({inlineSvg: true}))
     .pipe(gulp.dest(svgDest))
     .pipe(config.production ? utility.noop() : browserSync.stream())
-    .on('end', function() {
-      fs.renameSync(svgDest + '/svg.svg', svgDest + '/sprite.svg')
+    .on("end", function() {
+      fs.renameSync(svgDest + "/svg.svg", svgDest + "/sprite.svg")
     });
 });
 
@@ -135,7 +135,7 @@ gulp.task('svgs', function() {
 =            Standalone Tasks            =
 ========================================*/
 // Optimize images
-gulp.task('img-opt', function () {
+gulp.task("img-opt", function () {
   return gulp.src(imgPathWatch)
   .pipe(imagemin({
     progressive: true
@@ -144,7 +144,7 @@ gulp.task('img-opt', function () {
 });
 
 // Browser Sync
-gulp.task('serve', ['stylesheets', 'scripts', 'svgs'], function() {
+gulp.task("serve", ["stylesheets", "scripts", "svgs"], function() {
     browserSync.init({
         proxy: settings.devUrl,
         files: [phpPath],
@@ -152,22 +152,22 @@ gulp.task('serve', ['stylesheets', 'scripts', 'svgs'], function() {
         injectChanges: true
     });
 
-    gulp.watch(stylePathWatch, ['stylesheets']);
-    gulp.watch(scriptsPathWatch, ['scripts']);
-    gulp.watch(scriptsPathWatch, ['svgs']);
-    gulp.watch(phpPath).on('change', browserSync.reload);
+    gulp.watch(stylePathWatch, ["stylesheets"]);
+    gulp.watch(scriptsPathWatch, ["scripts"]);
+    gulp.watch(scriptsPathWatch, ["svgs"]);
+    gulp.watch(phpPath).on("change", browserSync.reload);
 });
 
 /*===================================
 =            Watch Tasks            =
 ===================================*/
-gulp.task('watch-images', function() {
-  gulp.watch(imgPathWatch, ['img-opt']);
+gulp.task("watch-images", function() {
+  gulp.watch(imgPathWatch, ["img-opt"]);
 });
 
 /*==========================================
 =            Run the Gulp Tasks            =
 ==========================================*/
-gulp.task('default', ['stylesheets', 'scripts', 'svgs', 'watch-images', 'serve']);
-gulp.task('build', ['stylesheets', 'scripts', 'svgs']);
-gulp.task('images', ['img-opt']);
+gulp.task("default", ["stylesheets", "scripts", "svgs", "watch-images", "serve"]);
+gulp.task("build", ["stylesheets", "scripts", "svgs"]);
+gulp.task("images", ["img-opt"]);
