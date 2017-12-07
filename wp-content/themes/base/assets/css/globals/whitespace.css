@@ -1,38 +1,41 @@
-/* Add Whitespace Padding/Margin classes
-*
-* Extends the BASSCSS Margin and Padding Modules (which end at 4)
-*/
-
-
 $base: 1em;
-$directions: top, right, bottom, left;
+
 @define-mixin padding $degree {
   padding: calc($degree * $base);
 }
+
 @define-mixin padding-top $degree {
   padding-top: calc($degree * $base)
 }
+
 @define-mixin padding-right $degree {
   padding-right: calc($degree * $base)
 }
+
 @define-mixin padding-bottom $degree {
   padding-bottom: calc($degree * $base)
 }
+
 @define-mixin padding-left $degree {
   padding-left: calc($degree * $base)
 }
+
 @define-mixin margin $degree {
   margin: calc($degree * $base)
 }
+
 @define-mixin margin-top $degree {
   margin-top: calc($degree * $base)
 }
+
 @define-mixin margin-right $degree {
   margin-right: calc($degree * $base)
 }
+
 @define-mixin margin-bottom $degree {
   margin-bottom: calc($degree * $base)
 }
+
 @define-mixin margin-left $degree {
   margin-left: calc($degree * $base)
 }
@@ -41,48 +44,62 @@ $directions: top, right, bottom, left;
   .p$index {
     @mixin padding $index;
   }
+
   .px$index {
     @mixin padding-left $index;
     @mixin padding-right $index;
   }
+
   .py$index {
     @mixin padding-top $index;
     @mixin padding-bottom $index;
   }
+
   .pt$index {
     @mixin padding-top $index;
   }
+
   .pr$index {
     @mixin padding-right $index;
   }
+
   .pb$index {
     @mixin padding-bottom $index;
   }
+
   .pl$index {
     @mixin padding-left $index;
   }
+
   .m$index {
     @mixin margin $index;
   }
+
   .mx$index {
     @mixin margin-left $index;
     @mixin margin-right $index;
   }
+
   .my$index {
     @mixin margin-top $index;
     @mixin margin-bottom $index;
   }
+
   .mt$index {
     @mixin margin-top $index;
   }
+
   .mr$index {
     @mixin margin-right $index;
   }
+
   .mb$index {
     @mixin margin-bottom $index;
   }
+
   .ml$index {
     @mixin margin-left $index;
   }
 }
+
 .mauto { margin: auto; }

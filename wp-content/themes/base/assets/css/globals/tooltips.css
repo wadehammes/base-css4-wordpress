@@ -1,37 +1,84 @@
-.tooltip-container {
-  position: relative;
+[rel="tooltip"],
+[tooltip] {
+  cursor: pointer;
+}
 
-  & .tooltip {
-    opacity: 0;
-    transtion: opacity 0.3s ease-in;
+@prefix bs;
+
+.tooltip {
+  position: absolute;
+  z-index: 9999;
+  border-radius: var(--border-radius);
+  background: var(--tooltip-background);
+  color: var(--white);
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.8em;
+  line-height: 1.1;
+  word-wrap: break-word;
+  padding: 0.75em 0.95em;
+
+  &::before {
+    content: "";
+    border: var(--tooltip-arrow-width) solid transparent;
+    position: absolute;
   }
 
-  &:hover .tooltip {
-    opacity: 1;
+  &.top {
+    margin-top: -calc(var(--tooltip-arrow-width) + var(--tooltip-offset));
+
+    &::before {
+      border-top-color: var(--tooltip-background);
+      top: 100%;
+      left: 50%;
+      margin-left: -var(--tooltip-arrow-width);
+    }
+  }
+
+  &.right {
+    margin-right: -calc(var(--tooltip-arrow-width) + var(--tooltip-offset));
+
+    &::before {
+      border-left-color: var(--tooltip-background);
+      right: calc(var(--tooltip-arrow-width) * -2);
+      top: 50%;
+      margin-top: -var(--tooltip-arrow-width);
+    }
+  }
+
+  &.bottom {
+    margin-top: -calc(var(--tooltip-arrow-width) + var(--tooltip-offset));
+
+    &::before {
+      border-bottom-color: var(--tooltip-background);
+      top: -var(--tooltip-arrow-width);
+      left: 50%;
+      margin-left: -var(--tooltip-arrow-width);
+    }
+  }
+
+  &.left {
+    margin-left: -calc(var(--tooltip-arrow-width) + var(--tooltip-offset));
+
+    &::before {
+      border-right-color: var(--tooltip-background);
+      left: calc(var(--tooltip-arrow-width) * -2);
+      top: 50%;
+      margin-top: -var(--tooltip-arrow-width);
+    }
   }
 }
 
-.tooltip {
-  display: block;
-  position: absolute;
-  background: var(--black);
-  padding: 4px 6px;
-  border-radius: var(--border-radius);
-  text-align: center;
-  min-width: 100px;
-  left: 50%;
-  margin-left: -50px;
-  bottom: 150%;
-  z-index: 9999;
-  font-size: var(--font-xx-small);
+/*
+* Gives a max-width to the tooltip, which can't be
+* achieved on .tooltip due to it being absolutely positioned
+*/
+.tooltip-inner {
+  max-width: 15em;
+}
 
-  &:after {
-    content: '';
-    border: 8px solid;
-    border-color: var(--black) transparent transparent transparent;
-    position: absolute;
-    bottom: -16px;
-    left: 50%;
-    margin-left: -8px;
-  }
+:root {
+  --tooltip-background: var(--black);
+  --tooltip-arrow-width: 10px;
+  --tooltip-offset: 3;
 }

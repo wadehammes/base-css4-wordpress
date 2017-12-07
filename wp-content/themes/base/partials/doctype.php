@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html class="no-js" lang="">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
 
@@ -23,13 +23,11 @@
 
     <!-- DETECT SMART BROWSERS -->
     <script type="text/javascript" defer="defer">
-      /*=============================================
-      =            Detect Smart Browsers            =
-      =============================================*/
-      if ('visibilityState' in document) {
-        var doc = document.getElementsByTagName("html");
-        doc[0].className = 'modern-browser';
-      }
+        // Detects if visibilityState exists, which 99% means this browsers is modern with modern features
+        if ("visibilityState" in document) {
+            var doc = document.getElementsByTagName("html");
+            doc[0].className = "modern-browser";
+        }
     </script>
 
     <!-- LOAD WP ENQUEUES -->
@@ -37,23 +35,23 @@
 
     <!-- ADMIN SPECIFIC STYLING -->
     <?php if (is_user_logged_in()) { ?>
-      <style>
-        .fixed-header {
-          top: 32px;
-        }
+        <style>
+            .fixed-header {
+                top: 32px;
+            }
 
-        @media screen and (max-width: 600px) {
-          #wpadminbar {
-            position: fixed !important;
-          }
-          .fixed-header {
-            top: 46px;
-          }
-        }
-      </style>
+            @media screen and (max-width: 600px) {
+                #wpadminbar {
+                    position: fixed !important;
+                }
+                .fixed-header {
+                    top: 46px;
+                }
+            }
+        </style>
     <?php } ?>
-  </head>
-  <body <?php body_class(); ?>>
+</head>
+<body <?php body_class(); ?>>
 
     <!-- SITE -->
-    <div class="site p4">
+    <div class="bs-site p4">

@@ -1,6 +1,5 @@
-/*===================================
-=            List Styles            =
-===================================*/
+@prefix bs;
+
 ul,
 ol {
   margin-left: var(--list-side-margin);
@@ -10,26 +9,15 @@ ul {
   list-style-type: disc;
 }
 
-.list-style-none {
+.list-reset {
   list-style: none;
   margin: 0;
   padding: 0;
-
-  &.is-inline > li {
-    display: inline-block;
-  }
-}
-
-.list-reset {
-  list-style: none;
-  padding-left: 0;
 }
 
 /* Unordered & Ordered Lists */
 .ul-pretty,
-.ol-pretty,
-.article-content ul,
-.article-content ol {
+.ol-pretty {
   padding-left: 2.5em;
   margin-bottom: 1.5em;
 }
@@ -62,12 +50,6 @@ ul {
     font-weight: var(--font-weight-regular);
   }
 }
-
-/* Bullets */
-.square { list-style-type: square; }
-.circle { list-style-type: circle; }
-.disc { list-style-type: disc; }
-.no-bullet { list-style: none; }
 
 /* Definition Lists */
 dl dt {

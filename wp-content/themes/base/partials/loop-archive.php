@@ -10,7 +10,7 @@ $publisher = get_bloginfo('name');
 $modifiedDate = get_the_modified_date( 'Y-m-d H:i:s' );
 ?>
 
-<article id="post-<?php the_ID(); ?>" <?php post_class('article article--archive'); ?>>
+<article id="post-<?php the_ID(); ?>" <?php post_class('article article-archive'); ?>>
 	<img itemprop="image" src="<?php echo $thumb_url; ?>" class="hidden" alt="<?php the_title(); ?>" />
 	<span itemprop="mainEntityOfPage" class="hidden" content="<?php the_permalink(); ?>"></span>
 	<span itemprop="publisher" class="hidden" content="<?php echo $publisher; ?>"></span>
@@ -29,7 +29,7 @@ $modifiedDate = get_the_modified_date( 'Y-m-d H:i:s' );
 	</section>
 
 	<footer class="article-footer">
-    	<p class="tags"><?php the_tags('<span class="tags-title">' . __('Tags:', 'jointstheme') . '</span> ', ', ', ''); ?></p>
+		<p class="tags"><?php the_tags('<span class="tags-title">' . __('Tags:', 'jointstheme') . '</span> ', ', ', ''); ?></p>
 	</footer>
 
 </article>

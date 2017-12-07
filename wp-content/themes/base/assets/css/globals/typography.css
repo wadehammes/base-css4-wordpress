@@ -13,37 +13,16 @@
 }
 
 h1, .h1 { font-size: var(--h1); }
+
 h2, .h2 { font-size: var(--h2); }
+
 h3, .h3 { font-size: var(--h3); }
+
 h4, .h4 { font-size: var(--h4); }
+
 h5, .h5 { font-size: var(--h5); }
+
 h6, .h6 { font-size: var(--h6); }
-
-/* Font-Sizes */
-.font-xxx-large { font-size: var(--font-xxx-large); }
-.font-xx-large { font-size: var(--font-xx-large); }
-.font-x-large { font-size: var(--font-x-large); }
-.font-large { font-size: var(--font-large); }
-.font-x-medium { font-size: var(--font-x-medium); }
-.font-medium { font-size: var(--font-medium); }
-.font-default { font-size: var(--font-default); }
-.font-small { font-size: var(--font-small); }
-.font-x-small { font-size: var(--font-x-small); }
-.font-xx-small { font-size: var(--font-xx-small); }
-
-/* Font-Weights */
-.font-light { font-weight: var(--font-weight-light); }
-.font-regular { font-weight: var(--font-weight-regular); }
-.font-semibold { font-weight: var(--font-weight-semibold); }
-.font-bold { font-weight: var(--font-weight-bold); }
-.font-extrabold { font-weight: var(--font-weight-extrabold); }
-.font-black { font-weight: var(--font-weight-black); }
-
-/* Line-Heights */
-.line-height-large { line-height: var(--line-height-large); }
-.line-height-default { line-height: var(--line-height-default); }
-.line-height-small { line-height: var(--line-height-small); }
-.line-height-normal { line-height: var(--line-height-normal); }
 
 p {
   line-height: var(--line-height-default);
@@ -54,33 +33,13 @@ b, strong {
   font-weight: 700;
 }
 
-/* Text-Styles */
-.text-normal { font-style: var(--text-normal); }
+a, h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
+  color: var(--black);
 
-/* Text-Transforms */
-.text-no-style { text-transform: var(--text-transform-none); }
-.text-uppercase, .text-upper { text-transform: var(--text-transform-uppercase); }
-.text-lowercase, .text-lower { text-transform: var(--text-transform-lowercase); }
-
-/* Text-Spacing */
-.letter-spacing-loose { letter-spacing: 1.5px; }
-.letter-spacing-default { letter-spacing: 1px; }
-.letter-spacing-tight { letter-spacing: 0.5px; }
-
-/* Make text unselectable */
-.unselectable {
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
+  &:hover {
+    color: color(var(--black) shade(20%));
+  }
 }
-
-/* Text Alignment */
-.align-left { text-align: left; }
-.align-right { text-align: right; }
-.align-center { text-align: center; }
 
 /* Typography Variables */
 :root {
@@ -113,9 +72,9 @@ b, strong {
   /* 16px */
   --h4: 1rem;
   /* 14px */
-  --h5: .875rem;
+  --h5: 0.875rem;
   /* 12px */
-  --h6: .75rem;
+  --h6: 0.75rem;
 
   /* Font-Sizes */
   /* 48px */

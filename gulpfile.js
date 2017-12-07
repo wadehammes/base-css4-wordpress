@@ -72,6 +72,7 @@ gulp.task('stylesheets', function () {
       }
     }),
     require("css-mqpacker")(),
+    require("postcss-namespace")(),
     require("cssnano")({
       discardComments: {
         removeAll: true

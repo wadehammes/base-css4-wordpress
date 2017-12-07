@@ -1,3 +1,5 @@
+@prefix bs;
+
 .white { color: var(--white); }
 .black { color: var(--black); }
 

@@ -1,3 +1,5 @@
+@prefix bs;
+
 fieldset,
 input,
 textarea {
@@ -6,9 +8,4 @@ textarea {
   padding: 0;
   display: block;
   width: 100%;
-}
-
-/* Custom Variables */
-:root {
-
 }

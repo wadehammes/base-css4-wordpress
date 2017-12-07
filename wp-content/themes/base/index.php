@@ -10,9 +10,9 @@ $maxposts = get_option( 'posts_per_page', 15 );
 		<?php if (have_posts()) : while (have_posts()) : the_post(); ?>
 			<?php get_template_part( 'partials/loop', 'archive' ); ?>
 		<?php endwhile; if($published_posts > $maxposts) {  ?>
-		<nav class="page-navigation">
-			<?php if ( function_exists( 'wp_pagenavi' ) ) wp_pagenavi(); ?>
-		</nav>
+			<nav class="page-navigation">
+				<?php if ( function_exists( 'wp_pagenavi' ) ) wp_pagenavi(); ?>
+			</nav>
 		<?php } ?>
 		<?php else : ?>
 			<?php get_template_part( 'partials/missing', 'content' ); ?>

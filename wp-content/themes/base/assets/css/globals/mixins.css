@@ -1,0 +1,71 @@
+@define-mixin badge $paddingY: 0.5em, $paddingX: 0.75em {
+  display: inline-block;
+  color: var(--white);
+  padding: $paddingY $paddingX;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  box-shadow: 0 0 0 4px var(--white);
+  background: var(--maven-casper);
+}
+
+@define-mixin circle $height: 1em, $width: 1em {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1000px;
+  min-height: $height;
+  min-width: $width;
+
+  > * {
+    display: block;
+    margin: auto;
+  }
+}
+
+@define-mixin unselectable {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+@define-mixin input-structure {
+  background: var(--white);
+  border: 1px solid var(--black);
+  border-radius: var(--border-radius);
+  box-shadow: inset 0 1px 2px rgba(100,100,100,0.1);
+  padding: 0.45em 0.35em;
+}
+
+@define-mixin scrollable $color: var(--maven-iron), $max-height: 0 {
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  max-height: $max-height;
+
+  &::-webkit-scrollbar {
+    width: 10px;
+    border-radius: 1000px;
+  }
+
+  &::-webkit-scrollbar-track-piece {
+    background: color($color tint(80%));
+    border-radius: 1000px;
+  }
+
+  &::-webkit-scrollbar-thumb:vertical,
+  &::-webkit-scrollbar-thumb:horizontal {
+    border-radius: 1000px;
+    background: $color;
+    cursor: drag;
+  }
+}
+
+@define-mixin modal {
+  background: var(--white);
+  border: var(--default-border);
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 3px rgba(75,75,75,0.1);
+}

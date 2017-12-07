@@ -10,19 +10,19 @@ $publisher = get_bloginfo('name');
 $modifiedDate = get_the_modified_date( 'Y-m-d H:i:s' );
 ?>
 
-<article id="post-<?php the_ID(); ?>" <?php post_class('article article--single'); ?> itemscope itemtype="http://schema.org/BlogPosting">
+<article id="post-<?php the_ID(); ?>" <?php post_class('bs-article'); ?> itemscope itemtype="http://schema.org/BlogPosting">
 	<img itemprop="image" src="<?php echo $thumb_url; ?>" class="hidden" alt="<?php the_title(); ?>" />
 	<span itemprop="mainEntityOfPage" class="hidden" content="<?php the_permalink(); ?>"></span>
-  <span itemprop="publisher" class="hidden" content="<?php echo $publisher; ?>"></span>
-  <time itemprop="dateModified" class="hidden" content="<?php echo $modifiedDate; ?>"></time>
+	<span itemprop="publisher" class="hidden" content="<?php echo $publisher; ?>"></span>
+	<time itemprop="dateModified" class="hidden" content="<?php echo $modifiedDate; ?>"></time>
 
 	<header class="article-header">
 		<h1 class="entry-title single-title" itemprop="headline"><?php the_title(); ?></h1>
 		<p class="byline"><?php printf(__('Posted by <span class="author">%3$s</span> on <time class="updated" datetime="%1$s" pubdate>%2$s</time>. -- %4$s', 'jointstheme'), get_the_time('Y-m-j'), get_the_time(get_option('date_format')), joints_get_the_author_posts_link(), get_the_category_list(', '));?>
 		</p>
-  </header>
+	</header>
 
-  <section class="article-content" itemprop="articleBody">
+	<section class="article-content" itemprop="articleBody">
 		<?php the_post_thumbnail('full'); ?>
 		<?php the_content(); ?>
 	</section>

@@ -1,0 +1,82 @@
+{
+    "env": {
+        "browser": true,
+        "commonjs": true,
+        "es6": true
+    },
+    "extends": "eslint:recommended",
+    "parserOptions": {
+        "sourceType": "module",
+        "ecmaFeatures": {
+            "experimentalObjectRestSpread": true
+        }
+    },
+    "rules": {
+        "indent": [
+            "error",
+            4,
+            {"SwitchCase": 1}
+        ],
+        "linebreak-style": [
+            "error",
+            "unix"
+        ],
+        "quotes": [
+            "error",
+            "double"
+        ],
+        "semi": [
+            "error",
+            "never"
+        ],
+        "camelcase": [
+            "error"
+        ],
+        "no-debugger": [
+            "error"
+        ],
+        "no-irregular-whitespace": [
+            "error",
+            {"skipComments": true,  "skipTemplates": true, "skipRegExps": true}
+        ],
+        "no-unreachable": [
+            "error"
+        ],
+        "curly": ["error", "all"],
+        "dot-location": ["error", "property"],
+        "eqeqeq": ["error", "always"],
+        "no-implicit-coercion": ["warn", { "boolean": false }],
+        "no-implied-eval": ["error"],
+        "no-label-var": ["error"],
+        "no-use-before-define": ["error"],
+        "array-bracket-spacing": ["error", "never"],
+        "space-in-parens": ["error", "never"],
+        "brace-style": ["error"],
+        "comma-dangle": ["error", "never"],
+        "comma-style": ["error", "last"],
+        "computed-property-spacing": ["error", "never"],
+        "key-spacing": ["error", {"beforeColon": false, "afterColon": true, "mode": "strict"}],
+        "keyword-spacing": ["error", {"before": true, "after": true }],
+        "no-trailing-spaces": ["error"],
+        "arrow-spacing": ["error"],
+        "no-const-assign": ["error"],
+        "no-var": ["error"],
+        "sort-imports": ["error"]
+    },
+    "globals": {
+        "moment": false,
+        "angular": false,
+        "$": false,
+        "_": false,
+        "d3": false,
+        "dimple": false,
+        "describe": false,
+        "it": false,
+        "beforeEach": false,
+        "afterEach": false,
+        "inject": false,
+        "expect": false,
+        "jasmine": false,
+        "spyOn": false
+    }
+}

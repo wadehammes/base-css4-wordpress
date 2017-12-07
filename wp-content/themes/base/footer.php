@@ -1,12 +1,12 @@
-			<footer class="footer bg-white align-left pt4 pb3" role="contentinfo">
-				<p>&copy;2015 - <?php echo date('Y'); ?> Base Wordress, by Wade Hammes</p>
-			</footer>
+		<footer class="footer bg-white align-left pt4 pb3" role="contentinfo">
+			<p>&copy;2015 - <?php echo date('Y'); ?> Base Wordress, by Wade Hammes</p>
+		</footer>
 
-		</div>
-		<!-- END SITE -->
+	</div>
+	<!-- END SITE -->
 
-		<!-- WP FOOTER ENQUEUES -->
-		<?php wp_footer(); ?>
+	<!-- WP FOOTER ENQUEUES -->
+	<?php wp_footer(); ?>
 
-	</body>
+</body>
 </html>
