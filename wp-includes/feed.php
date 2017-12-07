@@ -476,7 +476,7 @@ function rss_enclosure() {
 				 *
 				 * @param string $html_link_tag The HTML link tag with a URI and other attributes.
 				 */
-				echo apply_filters( 'rss_enclosure', '<enclosure url="' . trim( htmlspecialchars( $enclosure[0] ) ) . '" length="' . trim( $enclosure[1] ) . '" type="' . $type . '" />' . "\n" );
+				echo apply_filters( 'rss_enclosure', '<enclosure url="' . esc_url( trim( $enclosure[0] ) ) . '" length="' . absint( trim( $enclosure[1] ) ) . '" type="' . esc_attr( $type ) . '" />' . "\n" );
 			}
 		}
 	}
@@ -510,7 +510,7 @@ function atom_enclosure() {
 				 *
 				 * @param string $html_link_tag The HTML link tag with a URI and other attributes.
 				 */
-				echo apply_filters( 'atom_enclosure', '<link href="' . trim( htmlspecialchars( $enclosure[0] ) ) . '" rel="enclosure" length="' . trim( $enclosure[1] ) . '" type="' . trim( $enclosure[2] ) . '" />' . "\n" );
+				echo apply_filters( 'atom_enclosure', '<link href="' . esc_url( trim( $enclosure[0] ) ) . '" rel="enclosure" length="' . absint( trim( $enclosure[1] ) ) . '" type="' . esc_attr( trim( $enclosure[2] ) ) . '" />' . "\n" );
 			}
 		}
 	}
@@ -536,6 +536,12 @@ function atom_enclosure() {
 function prep_atom_text_construct($data) {
 	if (strpos($data, '<') === false && strpos($data, '&') === false) {
 		return array('text', $data);
+	}
+
+	if ( ! function_exists( 'xml_parser_create' ) ) {
+		trigger_error( __( "PHP's XML extension is not available. Please contact your hosting provider to enable PHP's XML extension." ) );
+
+		return array( 'html', "<![CDATA[$data]]>" );
 	}
 
 	$parser = xml_parser_create();
@@ -663,7 +669,14 @@ function feed_content_type( $type = '' ) {
  * @return WP_Error|SimplePie WP_Error object on failure or SimplePie object on success
  */
 function fetch_feed( $url ) {
-	require_once( ABSPATH . WPINC . '/class-feed.php' );
+	if ( ! class_exists( 'SimplePie', false ) ) {
+		require_once( ABSPATH . WPINC . '/class-simplepie.php' );
+	}
+
+	require_once( ABSPATH . WPINC . '/class-wp-feed-cache.php' );
+	require_once( ABSPATH . WPINC . '/class-wp-feed-cache-transient.php' );
+	require_once( ABSPATH . WPINC . '/class-wp-simplepie-file.php' );
+	require_once( ABSPATH . WPINC . '/class-wp-simplepie-sanitize-kses.php' );
 
 	$feed = new SimplePie();
 
@@ -676,20 +689,19 @@ function fetch_feed( $url ) {
 	$feed->set_file_class( 'WP_SimplePie_File' );
 
 	$feed->set_feed_url( $url );
-	/** This filter is documented in wp-includes/class-feed.php */
+	/** This filter is documented in wp-includes/class-wp-feed-cache-transient.php */
 	$feed->set_cache_duration( apply_filters( 'wp_feed_cache_transient_lifetime', 12 * HOUR_IN_SECONDS, $url ) );
 	/**
 	 * Fires just before processing the SimplePie feed object.
 	 *
 	 * @since 3.0.0
 	 *
-	 * @param object &$feed SimplePie feed object, passed by reference.
-	 * @param mixed  $url   URL of feed to retrieve. If an array of URLs, the feeds are merged.
+	 * @param object $feed SimplePie feed object (passed by reference).
+	 * @param mixed  $url  URL of feed to retrieve. If an array of URLs, the feeds are merged.
 	 */
 	do_action_ref_array( 'wp_feed_options', array( &$feed, $url ) );
 	$feed->init();
 	$feed->set_output_encoding( get_option( 'blog_charset' ) );
-	$feed->handle_content_type();
 
 	if ( $feed->error() )
 		return new WP_Error( 'simplepie-error', $feed->error() );

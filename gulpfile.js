@@ -3,23 +3,21 @@
 =====================================*/
 require('es6-promise').polyfill();
 
-var gulp    = require('gulp'),
-fs          = require('fs'),
-concat      = require('gulp-concat'),
-uglify      = require('gulp-uglify'),
-svgmin      = require('gulp-svgmin'),
-imagemin    = require('gulp-imagemin'),
-notify      = require("gulp-notify"),
-utility     = require('gulp-util'),
-watch       = require('gulp-watch'),
+var gulp = require('gulp'),
+fs = require('fs'),
+concat = require('gulp-concat'),
+uglify = require('gulp-uglify'),
+svgmin = require('gulp-svgmin'),
+imagemin = require('gulp-imagemin'),
+utility = require('gulp-util'),
+watch = require('gulp-watch'),
 streamqueue = require('streamqueue'),
-plumber     = require('gulp-plumber'),
-shell       = require('gulp-shell'),
-sourcemaps  = require('gulp-sourcemaps'),
-postcss     = require('gulp-postcss'),
-svgstore    = require('gulp-svgstore'),
-crtical     = require('critical'),
-babel       = require('gulp-babel'),
+plumber = require('gulp-plumber'),
+shell = require('gulp-shell'),
+sourcemaps = require('gulp-sourcemaps'),
+postcss = require('gulp-postcss'),
+svgstore = require('gulp-svgstore'),
+babel = require('gulp-babel'),
 browserSync = require('browser-sync').create();
 
 // Read our Settings Configuration
@@ -59,14 +57,6 @@ var phpPath          = themeBase + themeName + '/**/*.php';
 /*=============================
 =            Tasks            =
 =============================*/
-// Copy bower files into our assets
-gulp.task('copy', function() {
-  gulp.src([
-    /* add bower src files here if you include a bower.json */
-  ])
-  .pipe(gulp.dest(devBase + '/js/_lib/'));
-});
-
 // Compile, prefix, minify and move our SCSS files
 gulp.task('stylesheets', function () {
   var processors = [
@@ -74,7 +64,13 @@ gulp.task('stylesheets', function () {
     require("postcss-url")(),
     require('postcss-utilities')(),
     require("precss")(),
-    require("postcss-cssnext")(),
+    require("postcss-cssnext")({
+      features: {
+        customProperties: {
+          preserve: true
+        }
+      }
+    }),
     require("css-mqpacker")(),
     require("cssnano")({
       discardComments: {
@@ -82,7 +78,7 @@ gulp.task('stylesheets', function () {
       },
       filterPlugins: false,
       discardEmpty: false,
-      autoprefixer: false
+      autoprefixer: false,
     }),
     require("postcss-reporter")()
   ];
@@ -92,8 +88,7 @@ gulp.task('stylesheets', function () {
     .pipe(postcss(processors))
     .pipe( sourcemaps.write('.') )
     .pipe(gulp.dest(stylePathDest))
-    .pipe(config.production ? utility.noop() : browserSync.stream())
-    .pipe(config.production ? utility.noop() : notify({ message: 'Styles task complete' }));
+    .pipe(config.production ? utility.noop() : browserSync.stream({match: '**/*.css'}));
 });
 
 // Compile (in order), concatenate, minify, rename and move our JS files
@@ -104,27 +99,11 @@ gulp.task('scripts', function() {
     gulp.src(themeBase + themeName + '/assets/js/application.js')
   )
   .pipe(plumber())
-  .pipe(babel())
+  .pipe(babel({"presets": ["env"]}))
   .pipe(concat('application.js', {newLine: ';'}))
   .pipe(uglify())
   .pipe(gulp.dest(scriptsPathDest))
-  .pipe(config.production ? utility.noop() : browserSync.stream())
-  .pipe(config.production ? utility.noop() : notify({ message: 'Scripts task complete' }));
-});
-
-gulp.task('scripts-serviceworker', function() {
-  // grab all serviceworker js files
-  return gulp.src(themeBase + themeName + '/assets/js/serviceworker*.js')
-  .pipe(plumber())
-  .pipe(babel())
-  // concatenate files into a single files
-  .pipe(concat('serviceworker.js', {newLine: ';'}))
-  // minify concatenated file
-  .pipe(uglify())
-  // save files into root /dist directory for proper scope
-  .pipe( gulp.dest('./'))
-  .pipe(config.production ? utility.noop() : browserSync.stream())
-  .pipe(config.production ? utility.noop() : notify({ message: 'Service Worker task complete' }));
+  .pipe(config.production ? utility.noop() : browserSync.stream({match: '**/*.js'}));
 });
 
 gulp.task('svgs', function() {
@@ -146,7 +125,6 @@ gulp.task('svgs', function() {
     .pipe(svgstore({inlineSvg: true}))
     .pipe(gulp.dest(svgDest))
     .pipe(config.production ? utility.noop() : browserSync.stream())
-    .pipe(config.production ? utility.noop() : notify({ message: 'SVG task complete' }))
     .on('end', function() {
       fs.renameSync(svgDest + '/svg.svg', svgDest + '/sprite.svg')
     });
@@ -162,7 +140,6 @@ gulp.task('img-opt', function () {
     progressive: true
     }))
   .pipe(gulp.dest(imgDest))
-  .pipe(config.production ? utility.noop() : notify({ message: 'Images task complete' }));
 });
 
 // Browser Sync
@@ -170,7 +147,8 @@ gulp.task('serve', ['stylesheets', 'scripts', 'svgs'], function() {
     browserSync.init({
         proxy: settings.devUrl,
         files: [phpPath],
-        watchTask: true
+        watchTask: true,
+        injectChanges: true
     });
 
     gulp.watch(stylePathWatch, ['stylesheets']);

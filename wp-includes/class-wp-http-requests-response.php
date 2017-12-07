@@ -19,7 +19,6 @@ class WP_HTTP_Requests_Response extends WP_HTTP_Response {
 	 * Requests Response object.
 	 *
 	 * @since 4.6.0
-	 * @access protected
 	 * @var Requests_Response
 	 */
 	protected $response;
@@ -28,7 +27,6 @@ class WP_HTTP_Requests_Response extends WP_HTTP_Response {
 	 * Filename the response was saved to.
 	 *
 	 * @since 4.6.0
-	 * @access protected
 	 * @var string|null
 	 */
 	protected $filename;
@@ -37,7 +35,6 @@ class WP_HTTP_Requests_Response extends WP_HTTP_Response {
 	 * Constructor.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 *
 	 * @param Requests_Response $response HTTP response.
 	 * @param string            $filename Optional. File name. Default empty.
@@ -51,7 +48,6 @@ class WP_HTTP_Requests_Response extends WP_HTTP_Response {
 	 * Retrieves the response object for the request.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 *
 	 * @return Requests_Response HTTP response.
 	 */
@@ -63,19 +59,19 @@ class WP_HTTP_Requests_Response extends WP_HTTP_Response {
 	 * Retrieves headers associated with the response.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 *
-	 * @return array Map of header name to header value.
+	 * @see \Requests_Utility_CaseInsensitiveDictionary
+	 *
+	 * @return \Requests_Utility_CaseInsensitiveDictionary Map of header name to header value.
 	 */
 	public function get_headers() {
-		// Ensure headers remain case-insensitive
+		// Ensure headers remain case-insensitive.
 		$converted = new Requests_Utility_CaseInsensitiveDictionary();
 
 		foreach ( $this->response->headers->getAll() as $key => $value ) {
 			if ( count( $value ) === 1 ) {
 				$converted[ $key ] = $value[0];
-			}
-			else {
+			} else {
 				$converted[ $key ] = $value;
 			}
 		}
@@ -87,7 +83,6 @@ class WP_HTTP_Requests_Response extends WP_HTTP_Response {
 	 * Sets all header values.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 *
 	 * @param array $headers Map of header name to header value.
 	 */
@@ -99,7 +94,6 @@ class WP_HTTP_Requests_Response extends WP_HTTP_Response {
 	 * Sets a single HTTP header.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 *
 	 * @param string $key     Header name.
 	 * @param string $value   Header value.
@@ -118,7 +112,6 @@ class WP_HTTP_Requests_Response extends WP_HTTP_Response {
 	 * Retrieves the HTTP return code for the response.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 *
 	 * @return int The 3-digit HTTP status code.
 	 */
@@ -130,7 +123,6 @@ class WP_HTTP_Requests_Response extends WP_HTTP_Response {
 	 * Sets the 3-digit HTTP status code.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 *
 	 * @param int $code HTTP status.
 	 */
@@ -142,7 +134,6 @@ class WP_HTTP_Requests_Response extends WP_HTTP_Response {
 	 * Retrieves the response data.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 *
 	 * @return mixed Response data.
 	 */
@@ -154,7 +145,6 @@ class WP_HTTP_Requests_Response extends WP_HTTP_Response {
 	 * Sets the response data.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 *
 	 * @param mixed $data Response data.
 	 */
@@ -166,7 +156,6 @@ class WP_HTTP_Requests_Response extends WP_HTTP_Response {
 	 * Retrieves cookies from the response.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 *
 	 * @return WP_HTTP_Cookie[] List of cookie objects.
 	 */
@@ -189,7 +178,6 @@ class WP_HTTP_Requests_Response extends WP_HTTP_Response {
 	 * Converts the object to a WP_Http response array.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 *
 	 * @return array WP_Http response array, per WP_Http::request().
 	 */

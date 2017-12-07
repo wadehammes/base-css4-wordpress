@@ -20,7 +20,6 @@ class WP_Site_Query {
 	 * SQL for database query.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 * @var string
 	 */
 	public $request;
@@ -29,7 +28,6 @@ class WP_Site_Query {
 	 * SQL query clauses.
 	 *
 	 * @since 4.6.0
-	 * @access protected
 	 * @var array
 	 */
 	protected $sql_clauses = array(
@@ -45,7 +43,6 @@ class WP_Site_Query {
 	 * Date query container.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 * @var object WP_Date_Query
 	 */
 	public $date_query = false;
@@ -54,7 +51,6 @@ class WP_Site_Query {
 	 * Query vars set by the user.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 * @var array
 	 */
 	public $query_vars;
@@ -63,7 +59,6 @@ class WP_Site_Query {
 	 * Default values for query vars.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 * @var array
 	 */
 	public $query_var_defaults;
@@ -72,7 +67,6 @@ class WP_Site_Query {
 	 * List of sites located by the query.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 * @var array
 	 */
 	public $sites;
@@ -81,7 +75,6 @@ class WP_Site_Query {
 	 * The amount of found sites for the current query.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 * @var int
 	 */
 	public $found_sites = 0;
@@ -90,7 +83,6 @@ class WP_Site_Query {
 	 * The number of pages.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 * @var int
 	 */
 	public $max_num_pages = 0;
@@ -99,7 +91,7 @@ class WP_Site_Query {
 	 * Sets up the site query, based on the query vars passed.
 	 *
 	 * @since 4.6.0
-	 * @access public
+	 * @since 4.8.0 Introduced the 'lang_id', 'lang__in', and 'lang__not_in' parameters.
 	 *
 	 * @param string|array $query {
 	 *     Optional. Array or query string of site query parameters. Default empty.
@@ -113,7 +105,7 @@ class WP_Site_Query {
 	 *     @type string       $fields            Site fields to return. Accepts 'ids' (returns an array of site IDs)
 	 *                                           or empty (returns an array of complete site objects). Default empty.
 	 *     @type int          $ID                A site ID to only return that site. Default empty.
-	 *     @type int          $number            Maximum number of sites to retrieve. Default null (no limit).
+	 *     @type int          $number            Maximum number of sites to retrieve. Default 100.
 	 *     @type int          $offset            Number of sites to offset the query. Used to build LIMIT clause.
 	 *                                           Default 0.
 	 *     @type bool         $no_found_rows     Whether to disable the `SQL_CALC_FOUND_ROWS` query. Default true.
@@ -127,12 +119,10 @@ class WP_Site_Query {
 	 *                                           include all networks. Default 0.
 	 *     @type array        $network__in       Array of network IDs to include affiliated sites for. Default empty.
 	 *     @type array        $network__not_in   Array of network IDs to exclude affiliated sites for. Default empty.
-	 *     @type string       $domain            Limit results to those affiliated with a given domain.
-	 *                                           Default empty.
+	 *     @type string       $domain            Limit results to those affiliated with a given domain. Default empty.
 	 *     @type array        $domain__in        Array of domains to include affiliated sites for. Default empty.
 	 *     @type array        $domain__not_in    Array of domains to exclude affiliated sites for. Default empty.
-	 *     @type string       $path              Limit results to those affiliated with a given path.
-	 *                                           Default empty.
+	 *     @type string       $path              Limit results to those affiliated with a given path. Default empty.
 	 *     @type array        $path__in          Array of paths to include affiliated sites for. Default empty.
 	 *     @type array        $path__not_in      Array of paths to exclude affiliated sites for. Default empty.
 	 *     @type int          $public            Limit results to public sites. Accepts '1' or '0'. Default empty.
@@ -140,10 +130,13 @@ class WP_Site_Query {
 	 *     @type int          $mature            Limit results to mature sites. Accepts '1' or '0'. Default empty.
 	 *     @type int          $spam              Limit results to spam sites. Accepts '1' or '0'. Default empty.
 	 *     @type int          $deleted           Limit results to deleted sites. Accepts '1' or '0'. Default empty.
+	 *     @type int          $lang_id           Limit results to a language ID. Default empty.
+	 *     @type array        $lang__in          Array of language IDs to include affiliated sites for. Default empty.
+	 *     @type array        $lang__not_in      Array of language IDs to exclude affiliated sites for. Default empty.
 	 *     @type string       $search            Search term(s) to retrieve matching sites for. Default empty.
 	 *     @type array        $search_columns    Array of column names to be searched. Accepts 'domain' and 'path'.
 	 *                                           Default empty array.
-	 *     @type bool         $update_site_cache Whether to prime the cache for found sites. Default false.
+	 *     @type bool         $update_site_cache Whether to prime the cache for found sites. Default true.
 	 * }
 	 */
 	public function __construct( $query = '' ) {
@@ -171,6 +164,9 @@ class WP_Site_Query {
 			'mature'            => null,
 			'spam'              => null,
 			'deleted'           => null,
+			'lang_id'           => null,
+			'lang__in'          => '',
+			'lang__not_in'      => '',
 			'search'            => '',
 			'search_columns'    => array(),
 			'count'             => false,
@@ -187,7 +183,6 @@ class WP_Site_Query {
 	 * Parses arguments passed to the site query with default query parameters.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 *
 	 * @see WP_Site_Query::__construct()
 	 *
@@ -205,7 +200,7 @@ class WP_Site_Query {
 		 *
 		 * @since 4.6.0
 		 *
-		 * @param WP_Site_Query &$this The WP_Site_Query instance (passed by reference).
+		 * @param WP_Site_Query $this The WP_Site_Query instance (passed by reference).
 		 */
 		do_action_ref_array( 'parse_site_query', array( &$this ) );
 	}
@@ -214,10 +209,10 @@ class WP_Site_Query {
 	 * Sets up the WordPress query for retrieving sites.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 *
 	 * @param string|array $query Array or URL query string of parameters.
-	 * @return array|int List of sites, or number of sites when 'count' is passed as a query var.
+	 * @return array|int List of WP_Site objects, a list of site ids when 'fields' is set to 'ids',
+	 *                   or the number of sites when 'count' is passed as a query var.
 	 */
 	public function query( $query ) {
 		$this->query_vars = wp_parse_args( $query );
@@ -229,9 +224,9 @@ class WP_Site_Query {
 	 * Retrieves a list of sites matching the query vars.
 	 *
 	 * @since 4.6.0
-	 * @access public
 	 *
-	 * @return array|int List of sites, or number of sites when 'count' is passed as a query var.
+	 * @return array|int List of WP_Site objects, a list of site ids when 'fields' is set to 'ids',
+	 *                   or the number of sites when 'count' is passed as a query var.
 	 */
 	public function get_sites() {
 		$this->parse_query();
@@ -241,17 +236,18 @@ class WP_Site_Query {
 		 *
 		 * @since 4.6.0
 		 *
-		 * @param WP_Site_Query &$this Current instance of WP_Site_Query, passed by reference.
+		 * @param WP_Site_Query $this Current instance of WP_Site_Query (passed by reference).
 		 */
 		do_action_ref_array( 'pre_get_sites', array( &$this ) );
 
 		// $args can include anything. Only use the args defined in the query_var_defaults to compute the key.
-		$key = md5( serialize( wp_array_slice_assoc( $this->query_vars, array_keys( $this->query_var_defaults ) ) ) );
-		$last_changed = wp_cache_get( 'last_changed', 'sites' );
-		if ( ! $last_changed ) {
-			$last_changed = microtime();
-			wp_cache_set( 'last_changed', $last_changed, 'sites' );
-		}
+		$_args = wp_array_slice_assoc( $this->query_vars, array_keys( $this->query_var_defaults ) );
+
+		// Ignore the $fields argument as the queried result will be the same regardless.
+		unset( $_args['fields'] );
+
+		$key = md5( serialize( $_args ) );
+		$last_changed = wp_cache_get_last_changed( 'sites' );
 
 		$cache_key = "get_sites:$key:$last_changed";
 		$cache_value = wp_cache_get( $cache_key, 'sites' );
@@ -308,8 +304,8 @@ class WP_Site_Query {
 		 *
 		 * @since 4.6.0
 		 *
-		 * @param array         $results An array of sites.
-		 * @param WP_Site_Query &$this   Current instance of WP_Site_Query, passed by reference.
+		 * @param array         $_sites An array of WP_Site objects.
+		 * @param WP_Site_Query $this   Current instance of WP_Site_Query (passed by reference).
 		 */
 		$_sites = apply_filters_ref_array( 'the_sites', array( $_sites, &$this ) );
 
@@ -323,7 +319,6 @@ class WP_Site_Query {
 	 * Used internally to get a list of site IDs matching the query vars.
 	 *
 	 * @since 4.6.0
-	 * @access protected
 	 *
 	 * @global wpdb $wpdb WordPress database abstraction object.
 	 *
@@ -454,7 +449,7 @@ class WP_Site_Query {
 
 		if ( is_numeric( $this->query_vars['archived'] ) ) {
 			$archived = absint( $this->query_vars['archived'] );
-			$this->sql_clauses['where']['archived'] = $wpdb->prepare( "archived = %d ", $archived );
+			$this->sql_clauses['where']['archived'] = $wpdb->prepare( "archived = %s ", absint( $archived ) );
 		}
 
 		if ( is_numeric( $this->query_vars['mature'] ) ) {
@@ -475,6 +470,21 @@ class WP_Site_Query {
 		if ( is_numeric( $this->query_vars['public'] ) ) {
 			$public = absint( $this->query_vars['public'] );
 			$this->sql_clauses['where']['public'] = $wpdb->prepare( "public = %d ", $public );
+		}
+
+		if ( is_numeric( $this->query_vars['lang_id'] ) ) {
+			$lang_id = absint( $this->query_vars['lang_id'] );
+			$this->sql_clauses['where']['lang_id'] = $wpdb->prepare( "lang_id = %d ", $lang_id );
+		}
+
+		// Parse site language IDs for an IN clause.
+		if ( ! empty( $this->query_vars['lang__in'] ) ) {
+			$this->sql_clauses['where']['lang__in'] = 'lang_id IN ( ' . implode( ',', wp_parse_id_list( $this->query_vars['lang__in'] ) ) . ' )';
+		}
+
+		// Parse site language IDs for a NOT IN clause.
+		if ( ! empty( $this->query_vars['lang__not_in'] ) ) {
+			$this->sql_clauses['where']['lang__not_in'] = 'lang_id NOT IN ( ' . implode( ',', wp_parse_id_list( $this->query_vars['lang__not_in'] ) ) . ' )';
 		}
 
 		// Falsey search strings are ignored.
@@ -511,6 +521,8 @@ class WP_Site_Query {
 			$this->sql_clauses['where']['date_query'] = preg_replace( '/^\s*AND\s*/', '', $this->date_query->get_sql() );
 		}
 
+		$join = '';
+
 		$where = implode( ' AND ', $this->sql_clauses['where'] );
 
 		$pieces = array( 'fields', 'join', 'where', 'orderby', 'limits', 'groupby' );
@@ -520,8 +532,8 @@ class WP_Site_Query {
 		 *
 		 * @since 4.6.0
 		 *
-		 * @param array $pieces A compacted array of site query clauses.
-		 * @param WP_Site_Query &$this Current instance of WP_Site_Query, passed by reference.
+		 * @param array         $pieces A compacted array of site query clauses.
+		 * @param WP_Site_Query $this   Current instance of WP_Site_Query (passed by reference).
 		 */
 		$clauses = apply_filters_ref_array( 'sites_clauses', array( compact( $pieces ), &$this ) );
 
@@ -571,7 +583,6 @@ class WP_Site_Query {
 	 * if the limit clause was used.
 	 *
 	 * @since 4.6.0
-	 * @access private
 	 *
 	 * @global wpdb $wpdb WordPress database abstraction object.
 	 */
@@ -597,7 +608,6 @@ class WP_Site_Query {
 	 * Used internally to generate an SQL string for searching across multiple columns.
 	 *
 	 * @since 4.6.0
-	 * @access protected
 	 *
 	 * @global wpdb  $wpdb WordPress database abstraction object.
 	 *
@@ -626,7 +636,6 @@ class WP_Site_Query {
 	 * Parses and sanitizes 'orderby' keys passed to the site query.
 	 *
 	 * @since 4.6.0
-	 * @access protected
 	 *
 	 * @global wpdb $wpdb WordPress database abstraction object.
 	 *
@@ -674,7 +683,6 @@ class WP_Site_Query {
 	 * Parses an 'order' query variable and cast it to 'ASC' or 'DESC' as necessary.
 	 *
 	 * @since 4.6.0
-	 * @access protected
 	 *
 	 * @param string $order The 'order' query variable.
 	 * @return string The sanitized 'order' query variable.

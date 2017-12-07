@@ -30,7 +30,6 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 * Setting type.
 	 *
 	 * @since 4.3.0
-	 * @access public
 	 * @var string
 	 */
 	public $type = self::TYPE;
@@ -39,7 +38,6 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 * Default setting value.
 	 *
 	 * @since 4.3.0
-	 * @access public
 	 * @var array
 	 *
 	 * @see wp_get_nav_menu_object()
@@ -55,7 +53,6 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 * Default transport.
 	 *
 	 * @since 4.3.0
-	 * @access public
 	 * @var string
 	 */
 	public $transport = 'postMessage';
@@ -66,7 +63,6 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 * A negative value represents a placeholder ID for a new menu not yet saved.
 	 *
 	 * @since 4.3.0
-	 * @access public
 	 * @var int
 	 */
 	public $term_id;
@@ -80,7 +76,6 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 * a real term.
 	 *
 	 * @since 4.3.0
-	 * @access public
 	 * @var int
 	 *
 	 * @see WP_Customize_Nav_Menu_Setting::update()
@@ -92,7 +87,6 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 * Whether or not update() was called.
 	 *
 	 * @since 4.3.0
-	 * @access protected
 	 * @var bool
 	 */
 	protected $is_updated = false;
@@ -106,7 +100,6 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 * When status is error, the error is stored in `$update_error`.
 	 *
 	 * @since 4.3.0
-	 * @access public
 	 * @var string updated|inserted|deleted|error
 	 *
 	 * @see WP_Customize_Nav_Menu_Setting::update()
@@ -118,7 +111,6 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 * Any error object returned by wp_update_nav_menu_object() when setting is updated.
 	 *
 	 * @since 4.3.0
-	 * @access public
 	 * @var WP_Error
 	 *
 	 * @see WP_Customize_Nav_Menu_Setting::update()
@@ -132,7 +124,6 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 * Any supplied $args override class property defaults.
 	 *
 	 * @since 4.3.0
-	 * @access public
 	 *
 	 * @param WP_Customize_Manager $manager Bootstrap Customizer instance.
 	 * @param string               $id      An specific ID of the setting. Can be a
@@ -159,7 +150,6 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 * Get the instance data for a given widget setting.
 	 *
 	 * @since 4.3.0
-	 * @access public
 	 *
 	 * @see wp_get_nav_menu_object()
 	 *
@@ -206,7 +196,6 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 *
 	 * @since 4.3.0
 	 * @since 4.4.0 Added boolean return value
-	 * @access public
 	 *
 	 * @see WP_Customize_Manager::post_value()
 	 *
@@ -240,7 +229,6 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 * Filters the wp_get_nav_menus() result to ensure the inserted menu object is included, and the deleted one is removed.
 	 *
 	 * @since 4.3.0
-	 * @access public
 	 *
 	 * @see wp_get_nav_menus()
 	 *
@@ -287,8 +275,9 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 
 		// Make sure the menu objects get re-sorted after an update/insert.
 		if ( ! $is_delete && ! empty( $args['orderby'] ) ) {
-			$this->_current_menus_sort_orderby = $args['orderby'];
-			usort( $menus, array( $this, '_sort_menus_by_orderby' ) );
+			$menus = wp_list_sort( $menus, array(
+				$args['orderby'] => 'ASC',
+			) );
 		}
 		// @todo add support for $args['hide_empty'] === true
 
@@ -299,7 +288,6 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 * Temporary non-closure passing of orderby value to function.
 	 *
 	 * @since 4.3.0
-	 * @access protected
 	 * @var string
 	 *
 	 * @see WP_Customize_Nav_Menu_Setting::filter_wp_get_nav_menus()
@@ -313,7 +301,8 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 * This is a workaround for a lack of closures.
 	 *
 	 * @since 4.3.0
-	 * @access protected
+	 * @deprecated 4.7.0 Use wp_list_sort()
+	 *
 	 * @param object $menu1
 	 * @param object $menu2
 	 * @return int
@@ -321,6 +310,8 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 * @see WP_Customize_Nav_Menu_Setting::filter_wp_get_nav_menus()
 	 */
 	protected function _sort_menus_by_orderby( $menu1, $menu2 ) {
+		_deprecated_function( __METHOD__, '4.7.0', 'wp_list_sort' );
+
 		$key = $this->_current_menus_sort_orderby;
 		return strcmp( $menu1->$key, $menu2->$key );
 	}
@@ -331,7 +322,6 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 * Requesting a nav_menu object by anything but ID is not supported.
 	 *
 	 * @since 4.3.0
-	 * @access public
 	 *
 	 * @see wp_get_nav_menu_object()
 	 *
@@ -380,7 +370,6 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 * Filters the nav_menu_options option to include this menu's auto_add preference.
 	 *
 	 * @since 4.3.0
-	 * @access public
 	 *
 	 * @param array $nav_menu_options Nav menu options including auto_add.
 	 * @return array (Kaybe) modified nav menu options.
@@ -407,7 +396,6 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 * we remove that in this override.
 	 *
 	 * @since 4.3.0
-	 * @access public
 	 *
 	 * @param array $value The value to sanitize.
 	 * @return array|false|null Null if an input isn't valid. False if it is marked for deletion.
@@ -451,7 +439,6 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 *
 	 * See {@see 'customize_save_response'}.
 	 *
-	 * @access protected
 	 * @since 4.3.0
 	 * @var array
 	 *
@@ -469,7 +456,6 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 * To delete a menu, the client can send false as the value.
 	 *
 	 * @since 4.3.0
-	 * @access protected
 	 *
 	 * @see wp_update_nav_menu_object()
 	 *
@@ -592,7 +578,6 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 * Updates a nav_menu_options array.
 	 *
 	 * @since 4.3.0
-	 * @access protected
 	 *
 	 * @see WP_Customize_Nav_Menu_Setting::filter_nav_menu_options()
 	 * @see WP_Customize_Nav_Menu_Setting::update()
@@ -622,7 +607,6 @@ class WP_Customize_Nav_Menu_Setting extends WP_Customize_Setting {
 	 * Export data for the JS client.
 	 *
 	 * @since 4.3.0
-	 * @access public
 	 *
 	 * @see WP_Customize_Nav_Menu_Setting::update()
 	 *

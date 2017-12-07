@@ -12,7 +12,6 @@ class WP {
 	 * Long list of public query variables.
 	 *
 	 * @since 2.0.0
-	 * @access public
 	 * @var array
 	 */
 	public $public_query_vars = array('m', 'p', 'posts', 'w', 'cat', 'withcomments', 'withoutcomments', 's', 'search', 'exact', 'sentence', 'calendar', 'page', 'paged', 'more', 'tb', 'pb', 'author', 'order', 'orderby', 'year', 'monthnum', 'day', 'hour', 'minute', 'second', 'name', 'category_name', 'tag', 'feed', 'author_name', 'static', 'pagename', 'page_id', 'error', 'attachment', 'attachment_id', 'subpost', 'subpost_id', 'preview', 'robots', 'taxonomy', 'term', 'cpage', 'post_type', 'embed' );
@@ -23,16 +22,14 @@ class WP {
 	 * Long list of private query variables.
 	 *
 	 * @since 2.0.0
-	 * @access public
 	 * @var array
 	 */
-	public $private_query_vars = array( 'offset', 'posts_per_page', 'posts_per_archive_page', 'showposts', 'nopaging', 'post_type', 'post_status', 'category__in', 'category__not_in', 'category__and', 'tag__in', 'tag__not_in', 'tag__and', 'tag_slug__in', 'tag_slug__and', 'tag_id', 'post_mime_type', 'perm', 'comments_per_page', 'post__in', 'post__not_in', 'post_parent', 'post_parent__in', 'post_parent__not_in', 'title' );
+	public $private_query_vars = array( 'offset', 'posts_per_page', 'posts_per_archive_page', 'showposts', 'nopaging', 'post_type', 'post_status', 'category__in', 'category__not_in', 'category__and', 'tag__in', 'tag__not_in', 'tag__and', 'tag_slug__in', 'tag_slug__and', 'tag_id', 'post_mime_type', 'perm', 'comments_per_page', 'post__in', 'post__not_in', 'post_parent', 'post_parent__in', 'post_parent__not_in', 'title', 'fields' );
 
 	/**
 	 * Extra query variables set by the user.
 	 *
 	 * @since 2.1.0
-	 * @access public
 	 * @var array
 	 */
 	public $extra_query_vars = array();
@@ -41,7 +38,6 @@ class WP {
 	 * Query variables for setting up the WordPress Query Loop.
 	 *
 	 * @since 2.0.0
-	 * @access public
 	 * @var array
 	 */
 	public $query_vars;
@@ -50,7 +46,6 @@ class WP {
 	 * String parsed to set the query variables.
 	 *
 	 * @since 2.0.0
-	 * @access public
 	 * @var string
 	 */
 	public $query_string;
@@ -59,7 +54,6 @@ class WP {
 	 * The request path, e.g. 2015/05/06.
 	 *
 	 * @since 2.0.0
-	 * @access public
 	 * @var string
 	 */
 	public $request;
@@ -68,7 +62,6 @@ class WP {
 	 * Rewrite rule the request matched.
 	 *
 	 * @since 2.0.0
-	 * @access public
 	 * @var string
 	 */
 	public $matched_rule;
@@ -77,7 +70,6 @@ class WP {
 	 * Rewrite query the request matched.
 	 *
 	 * @since 2.0.0
-	 * @access public
 	 * @var string
 	 */
 	public $matched_query;
@@ -86,7 +78,6 @@ class WP {
 	 * Whether already did the permalink.
 	 *
 	 * @since 2.0.0
-	 * @access public
 	 * @var bool
 	 */
 	public $did_permalink = false;
@@ -95,7 +86,6 @@ class WP {
 	 * Add name to list of public query variables.
 	 *
 	 * @since 2.1.0
-	 * @access public
 	 *
 	 * @param string $qv Query variable name.
 	 */
@@ -108,7 +98,6 @@ class WP {
 	 * Removes a query variable from a list of public query variables.
 	 *
 	 * @since 4.5.0
-	 * @access public
 	 *
 	 * @param string $name Query variable name.
 	 */
@@ -120,7 +109,6 @@ class WP {
 	 * Set the value of a query variable.
 	 *
 	 * @since 2.3.0
-	 * @access public
 	 *
 	 * @param string $key Query variable name.
 	 * @param mixed $value Query variable value.
@@ -136,7 +124,6 @@ class WP {
 	 * filters and actions that can be used to further manipulate the result.
 	 *
 	 * @since 2.0.0
-	 * @access public
 	 *
 	 * @global WP_Rewrite $wp_rewrite
 	 *
@@ -381,7 +368,7 @@ class WP {
 		 *
 		 * @since 2.1.0
 		 *
-		 * @param WP &$this Current WordPress environment instance (passed by reference).
+		 * @param WP $this Current WordPress environment instance (passed by reference).
 		 */
 		do_action_ref_array( 'parse_request', array( &$this ) );
 	}
@@ -394,7 +381,6 @@ class WP {
 	 *
 	 * @since 2.0.0
 	 * @since 4.4.0 `X-Pingback` header is added conditionally after posts have been queried in handle_404().
-	 * @access public
 	 */
 	public function send_headers() {
 		$headers = array();
@@ -422,22 +408,30 @@ class WP {
 			}
 			$headers['Content-Type'] = feed_content_type( $type ) . '; charset=' . get_option( 'blog_charset' );
 
-			// We're showing a feed, so WP is indeed the only thing that last changed
-			if ( !empty($this->query_vars['withcomments'])
-				|| false !== strpos( $this->query_vars['feed'], 'comments-' )
-				|| ( empty($this->query_vars['withoutcomments'])
-					&& ( !empty($this->query_vars['p'])
-						|| !empty($this->query_vars['name'])
-						|| !empty($this->query_vars['page_id'])
-						|| !empty($this->query_vars['pagename'])
-						|| !empty($this->query_vars['attachment'])
-						|| !empty($this->query_vars['attachment_id'])
-					)
-				)
-			)
-				$wp_last_modified = mysql2date('D, d M Y H:i:s', get_lastcommentmodified('GMT'), 0).' GMT';
-			else
-				$wp_last_modified = mysql2date('D, d M Y H:i:s', get_lastpostmodified('GMT'), 0).' GMT';
+			// We're showing a feed, so WP is indeed the only thing that last changed.
+			if ( ! empty( $this->query_vars['withcomments'] )
+			     || false !== strpos( $this->query_vars['feed'], 'comments-' )
+			     || ( empty( $this->query_vars['withoutcomments'] )
+			          && ( ! empty( $this->query_vars['p'] )
+			               || ! empty( $this->query_vars['name'] )
+			               || ! empty( $this->query_vars['page_id'] )
+			               || ! empty( $this->query_vars['pagename'] )
+			               || ! empty( $this->query_vars['attachment'] )
+			               || ! empty( $this->query_vars['attachment_id'] )
+			          )
+			     )
+			) {
+				$wp_last_modified = mysql2date( 'D, d M Y H:i:s', get_lastcommentmodified( 'GMT' ), false );
+			} else {
+				$wp_last_modified = mysql2date( 'D, d M Y H:i:s', get_lastpostmodified( 'GMT' ), false );
+			}
+
+			if ( ! $wp_last_modified ) {
+				$wp_last_modified = date( 'D, d M Y H:i:s' );
+			}
+
+			$wp_last_modified .= ' GMT';
+
 			$wp_etag = '"' . md5($wp_last_modified) . '"';
 			$headers['Last-Modified'] = $wp_last_modified;
 			$headers['ETag'] = $wp_etag;
@@ -505,7 +499,7 @@ class WP {
 		 *
 		 * @since 2.1.0
 		 *
-		 * @param WP &$this Current WordPress environment instance (passed by reference).
+		 * @param WP $this Current WordPress environment instance (passed by reference).
 		 */
 		do_action_ref_array( 'send_headers', array( &$this ) );
 	}
@@ -517,7 +511,6 @@ class WP {
 	 * use the {@see 'request'} filter instead.
 	 *
 	 * @since 2.0.0
-	 * @access public
 	 */
 	public function build_query_string() {
 		$this->query_string = '';
@@ -552,7 +545,6 @@ class WP {
 	 * WordPress environment.
 	 *
 	 * @since 2.0.0
-	 * @access public
 	 *
 	 * @global WP_Query     $wp_query
 	 * @global string       $query_string Query string for the loop.
@@ -589,7 +581,6 @@ class WP {
 	 * Set up the current user.
 	 *
 	 * @since 2.0.0
-	 * @access public
 	 */
 	public function init() {
 		wp_get_current_user();
@@ -599,7 +590,6 @@ class WP {
 	 * Set up the Loop based on the query variables.
 	 *
 	 * @since 2.0.0
-	 * @access public
 	 *
 	 * @global WP_Query $wp_the_query
 	 */
@@ -623,8 +613,7 @@ class WP {
 	 * a 404 so that canonical redirection logic can kick in.
 	 *
 	 * @since 2.0.0
-     * @access public
-	 *
+     *
 	 * @global WP_Query $wp_query
  	 */
 	public function handle_404() {
@@ -662,7 +651,7 @@ class WP {
 
 				// Only set X-Pingback for single posts that allow pings.
 				if ( $p && pings_open( $p ) ) {
-					@header( 'X-Pingback: ' . get_bloginfo( 'pingback_url' ) );
+					@header( 'X-Pingback: ' . get_bloginfo( 'pingback_url', 'display' ) );
 				}
 
 				// check for paged content that exceeds the max number of pages
@@ -716,7 +705,6 @@ class WP {
 	 * object.
 	 *
 	 * @since 2.0.0
-	 * @access public
 	 *
 	 * @param string|array $query_args Passed to parse_request().
 	 */
@@ -733,98 +721,8 @@ class WP {
 		 *
 		 * @since 2.1.0
 		 *
-		 * @param WP &$this Current WordPress environment instance (passed by reference).
+		 * @param WP $this Current WordPress environment instance (passed by reference).
 		 */
 		do_action_ref_array( 'wp', array( &$this ) );
-	}
-}
-
-/**
- * Helper class to remove the need to use eval to replace $matches[] in query strings.
- *
- * @since 2.9.0
- */
-class WP_MatchesMapRegex {
-	/**
-	 * store for matches
-	 *
-	 * @access private
-	 * @var array
-	 */
-	private $_matches;
-
-	/**
-	 * store for mapping result
-	 *
-	 * @access public
-	 * @var string
-	 */
-	public $output;
-
-	/**
-	 * subject to perform mapping on (query string containing $matches[] references
-	 *
-	 * @access private
-	 * @var string
-	 */
-	private $_subject;
-
-	/**
-	 * regexp pattern to match $matches[] references
-	 *
-	 * @var string
-	 */
-	public $_pattern = '(\$matches\[[1-9]+[0-9]*\])'; // magic number
-
-	/**
-	 * constructor
-	 *
-	 * @param string $subject subject if regex
-	 * @param array  $matches data to use in map
-	 */
-	public function __construct($subject, $matches) {
-		$this->_subject = $subject;
-		$this->_matches = $matches;
-		$this->output = $this->_map();
-	}
-
-	/**
-	 * Substitute substring matches in subject.
-	 *
-	 * static helper function to ease use
-	 *
-	 * @static
-	 * @access public
-	 *
-	 * @param string $subject subject
-	 * @param array  $matches data used for substitution
-	 * @return string
-	 */
-	public static function apply($subject, $matches) {
-		$oSelf = new WP_MatchesMapRegex($subject, $matches);
-		return $oSelf->output;
-	}
-
-	/**
-	 * do the actual mapping
-	 *
-	 * @access private
-	 * @return string
-	 */
-	private function _map() {
-		$callback = array($this, 'callback');
-		return preg_replace_callback($this->_pattern, $callback, $this->_subject);
-	}
-
-	/**
-	 * preg_replace_callback hook
-	 *
-	 * @access public
-	 * @param  array $matches preg_replace regexp matches
-	 * @return string
-	 */
-	public function callback($matches) {
-		$index = intval(substr($matches[0], 9, -1));
-		return ( isset( $this->_matches[$index] ) ? urlencode($this->_matches[$index]) : '' );
 	}
 }

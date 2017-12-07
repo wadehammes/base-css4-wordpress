@@ -84,7 +84,7 @@ function ms_site_check() {
 	if ( is_super_admin() )
 		return true;
 
-	$blog = get_blog_details();
+	$blog = get_site();
 
 	if ( '1' == $blog->deleted ) {
 		if ( file_exists( WP_CONTENT_DIR . '/blog-deleted.php' ) )
@@ -97,7 +97,7 @@ function ms_site_check() {
 		if ( file_exists( WP_CONTENT_DIR . '/blog-inactive.php' ) ) {
 			return WP_CONTENT_DIR . '/blog-inactive.php';
 		} else {
-			$admin_email = str_replace( '@', ' AT ', get_site_option( 'admin_email', 'support@' . get_current_site()->domain ) );
+			$admin_email = str_replace( '@', ' AT ', get_site_option( 'admin_email', 'support@' . get_network()->domain ) );
 			wp_die(
 				/* translators: %s: admin email link */
 				sprintf( __( 'This site has not been activated yet. If you are having problems activating your site, please contact %s.' ),
@@ -134,35 +134,24 @@ function get_network_by_path( $domain, $path, $segments = null ) {
 }
 
 /**
- * Retrieve an object containing information about the requested network.
+ * Retrieves the closest matching site object by its domain and path.
+ *
+ * This will not necessarily return an exact match for a domain and path. Instead, it
+ * breaks the domain and path into pieces that are then used to match the closest
+ * possibility from a query.
+ *
+ * The intent of this method is to match a site object during bootstrap for a
+ * requested site address
  *
  * @since 3.9.0
- *
- * @internal In 4.6.0, converted to use get_network()
- *
- * @param object|int $network The network's database row or ID.
- * @return WP_Network|false Object containing network information if found, false if not.
- */
-function wp_get_network( $network ) {
-	$network = get_network( $network );
-	if ( null === $network ) {
-		return false;
-	}
-
-	return $network;
-}
-
-/**
- * Retrieve a site object by its domain and path.
- *
- * @since 3.9.0
+ * @since 4.7.0 Updated to always return a `WP_Site` object.
  *
  * @global wpdb $wpdb WordPress database abstraction object.
  *
  * @param string   $domain   Domain to check.
  * @param string   $path     Path to check.
  * @param int|null $segments Path segments to use. Defaults to null, or the full path.
- * @return object|false Site object if successful. False when no site is found.
+ * @return WP_Site|false Site object if successful. False when no site is found.
  */
 function get_site_by_path( $domain, $path, $segments = null ) {
 	$path_segments = array_filter( explode( '/', trim( $path, '/' ) ) );
@@ -205,21 +194,24 @@ function get_site_by_path( $domain, $path, $segments = null ) {
 	 *
 	 * @since 3.9.0
 	 *
-	 * @param null|bool|object $site     Site value to return by path.
-	 * @param string           $domain   The requested domain.
-	 * @param string           $path     The requested path, in full.
-	 * @param int|null         $segments The suggested number of paths to consult.
-	 *                                   Default null, meaning the entire path was to be consulted.
-	 * @param array            $paths    The paths to search for, based on $path and $segments.
+	 * @param null|bool|WP_Site $site     Site value to return by path.
+	 * @param string            $domain   The requested domain.
+	 * @param string            $path     The requested path, in full.
+	 * @param int|null          $segments The suggested number of paths to consult.
+	 *                                    Default null, meaning the entire path was to be consulted.
+	 * @param array             $paths    The paths to search for, based on $path and $segments.
 	 */
 	$pre = apply_filters( 'pre_get_site_by_path', null, $domain, $path, $segments, $paths );
 	if ( null !== $pre ) {
+		if ( false !== $pre && ! $pre instanceof WP_Site ) {
+			$pre = new WP_Site( $pre );
+		}
 		return $pre;
 	}
 
 	/*
 	 * @todo
-	 * get_blog_details(), caching, etc. Consider alternative optimization routes,
+	 * caching, etc. Consider alternative optimization routes,
 	 * perhaps as an opt-in for plugins, rather than using the pre_* filter.
 	 * For example: The segments filter can expand or ignore paths.
 	 * If persistent caching is enabled, we could query the DB for a path <> '/'
@@ -251,7 +243,6 @@ function get_site_by_path( $domain, $path, $segments = null ) {
 	$site = array_shift( $result );
 
 	if ( $site ) {
-		// @todo get_blog_details()
 		return $site;
 	}
 
@@ -277,7 +268,6 @@ function get_site_by_path( $domain, $path, $segments = null ) {
  * @since 4.6.0
  * @access private
  *
- * @global wpdb       $wpdb         WordPress database abstraction object.
  * @global WP_Network $current_site The current network.
  * @global WP_Site    $current_blog The current site.
  *
@@ -290,7 +280,7 @@ function get_site_by_path( $domain, $path, $segments = null ) {
  *                     Redirect URL if parts exist, but the request as a whole can not be fulfilled.
  */
 function ms_load_current_site_and_network( $domain, $path, $subdomain = false ) {
-	global $wpdb, $current_site, $current_blog;
+	global $current_site, $current_blog;
 
 	// If the network is defined in wp-config.php, we can simply use that.
 	if ( defined( 'DOMAIN_CURRENT_SITE' ) && defined( 'PATH_CURRENT_SITE' ) ) {
@@ -317,17 +307,17 @@ function ms_load_current_site_and_network( $domain, $path, $subdomain = false ) 
 
 	} elseif ( ! $subdomain ) {
 		/*
-		 * A "subdomain" install can be re-interpreted to mean "can support any domain".
-		 * If we're not dealing with one of these installs, then the important part is determining
+		 * A "subdomain" installation can be re-interpreted to mean "can support any domain".
+		 * If we're not dealing with one of these installations, then the important part is determining
 		 * the network first, because we need the network's path to identify any sites.
 		 */
 		if ( ! $current_site = wp_cache_get( 'current_network', 'site-options' ) ) {
 			// Are there even two networks installed?
-			$one_network = $wpdb->get_row( "SELECT * FROM $wpdb->site LIMIT 2" ); // [sic]
-			if ( 1 === $wpdb->num_rows ) {
-				$current_site = new WP_Network( $one_network );
+			$networks = get_networks( array( 'number' => 2 ) );
+			if ( count( $networks ) === 1 ) {
+				$current_site = array_shift( $networks );
 				wp_cache_add( 'current_network', $current_site, 'site-options' );
-			} elseif ( 0 === $wpdb->num_rows ) {
+			} elseif ( empty( $networks ) ) {
 				// A network not found hook should fire here.
 				return false;
 			}
@@ -410,10 +400,10 @@ function ms_load_current_site_and_network( $domain, $path, $subdomain = false ) 
 		do_action( 'ms_site_not_found', $current_site, $domain, $path );
 
 		if ( $subdomain && ! defined( 'NOBLOGREDIRECT' ) ) {
-			// For a "subdomain" install, redirect to the signup form specifically.
+			// For a "subdomain" installation, redirect to the signup form specifically.
 			$destination .= 'wp-signup.php?new=' . str_replace( '.' . $current_site->domain, '', $domain );
 		} elseif ( $subdomain ) {
-			// For a "subdomain" install, the NOBLOGREDIRECT constant
+			// For a "subdomain" installation, the NOBLOGREDIRECT constant
 			// can be used to avoid a redirect to the signup form.
 			// Using the ms_site_not_found action is preferred to the constant.
 			if ( '%siteurl%' !== NOBLOGREDIRECT ) {
@@ -433,13 +423,7 @@ function ms_load_current_site_and_network( $domain, $path, $subdomain = false ) 
 
 	// Figure out the current network's main site.
 	if ( empty( $current_site->blog_id ) ) {
-		if ( $current_blog->domain === $current_site->domain && $current_blog->path === $current_site->path ) {
-			$current_site->blog_id = $current_blog->blog_id;
-		} elseif ( ! $current_site->blog_id = wp_cache_get( 'network:' . $current_site->id . ':main_site', 'site-options' ) ) {
-			$current_site->blog_id = $wpdb->get_var( $wpdb->prepare( "SELECT blog_id FROM $wpdb->blogs WHERE domain = %s AND path = %s",
-				$current_site->domain, $current_site->path ) );
-			wp_cache_add( 'network:' . $current_site->id . ':main_site', $current_site->blog_id, 'site-options' );
-		}
+		$current_site->blog_id = get_main_site_id( $current_site->id );
 	}
 
 	return true;
@@ -541,4 +525,27 @@ function wpmu_current_site() {
 	global $current_site;
 	_deprecated_function( __FUNCTION__, '3.9.0' );
 	return $current_site;
+}
+
+/**
+ * Retrieve an object containing information about the requested network.
+ *
+ * @since 3.9.0
+ * @deprecated 4.7.0 Use `get_network()`
+ * @see get_network()
+ *
+ * @internal In 4.6.0, converted to use get_network()
+ *
+ * @param object|int $network The network's database row or ID.
+ * @return WP_Network|false Object containing network information if found, false if not.
+ */
+function wp_get_network( $network ) {
+	_deprecated_function( __FUNCTION__, '4.7.0', 'get_network()' );
+
+	$network = get_network( $network );
+	if ( null === $network ) {
+		return false;
+	}
+
+	return $network;
 }

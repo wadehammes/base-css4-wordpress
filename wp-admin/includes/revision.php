@@ -70,10 +70,10 @@ function wp_get_revision_ui_diff( $post, $compare_from, $compare_to ) {
 		 * @param string  null                  The context of whether the current revision is the old
 		 *                                      or the new one. Values are 'to' or 'from'.
 		 */
-		$content_from = $compare_from ? apply_filters( "_wp_post_revision_field_$field", $compare_from->$field, $field, $compare_from, 'from' ) : '';
+		$content_from = $compare_from ? apply_filters( "_wp_post_revision_field_{$field}", $compare_from->$field, $field, $compare_from, 'from' ) : '';
 
 		/** This filter is documented in wp-admin/includes/revision.php */
-		$content_to = apply_filters( "_wp_post_revision_field_$field", $compare_to->$field, $field, $compare_to, 'to' );
+		$content_to = apply_filters( "_wp_post_revision_field_{$field}", $compare_to->$field, $field, $compare_to, 'to' );
 
 		$args = array(
 			'show_split_view' => true
@@ -166,7 +166,7 @@ function wp_prepare_revisions_for_js( $post, $selected_revision_id, $from = null
 
 	foreach ( $revisions as $revision ) {
 		$modified = strtotime( $revision->post_modified );
-		$modified_gmt = strtotime( $revision->post_modified_gmt );
+		$modified_gmt = strtotime( $revision->post_modified_gmt . ' +0000' );
 		if ( $can_restore ) {
 			$restore_link = str_replace( '&amp;', '&', wp_nonce_url(
 				add_query_arg(
@@ -340,7 +340,7 @@ function wp_print_revision_templates() {
 				}
 				#>
 				/>
-				<?php esc_attr_e( 'Compare any two revisions' ); ?>
+				<?php esc_html_e( 'Compare any two revisions' ); ?>
 			</label>
 		</div>
 	</script>

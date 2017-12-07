@@ -1650,8 +1650,16 @@ function the_author_ID() {
  * @param int $encode_html Optional. How to encode the content.
  */
 function the_content_rss($more_link_text='(more...)', $stripteaser=0, $more_file='', $cut = 0, $encode_html = 0) {
-	_deprecated_function( __FUNCTION__, '2.9.0', 'the_content_feed' );
+	_deprecated_function( __FUNCTION__, '2.9.0', 'the_content_feed()' );
 	$content = get_the_content($more_link_text, $stripteaser);
+
+	/**
+	 * Filters the post content in the context of an RSS feed.
+	 *
+	 * @since 0.71
+	 *
+	 * @param string $content Content of the current post.
+	 */
 	$content = apply_filters('the_content_rss', $content);
 	if ( $cut && !$encode_html )
 		$encode_html = 2;
@@ -2015,7 +2023,7 @@ function sanitize_url( $url, $protocols = null ) {
  *
  * @since 1.2.0
  * @deprecated 3.0.0 Use esc_url()
- * @see Alias for esc_url()
+ * @see esc_url()
  *
  * @param string $url The URL to be cleaned.
  * @param array $protocols Optional. An array of acceptable protocols.
@@ -2357,7 +2365,6 @@ function update_usermeta( $user_id, $meta_key, $meta_value ) {
  * @see get_users()
  *
  * @global wpdb $wpdb    WordPress database abstraction object.
- * @global int  $blog_id The site ID of the site for those that use more than one site.
  *
  * @param int $id Site ID.
  * @return array List of users that are part of that site ID
@@ -2365,9 +2372,10 @@ function update_usermeta( $user_id, $meta_key, $meta_value ) {
 function get_users_of_blog( $id = '' ) {
 	_deprecated_function( __FUNCTION__, '3.1.0', 'get_users()' );
 
-	global $wpdb, $blog_id;
-	if ( empty($id) )
-		$id = (int) $blog_id;
+	global $wpdb;
+	if ( empty( $id ) ) {
+		$id = get_current_blog_id();
+	}
 	$blog_prefix = $wpdb->get_blog_prefix($id);
 	$users = $wpdb->get_results( "SELECT user_id, user_id AS ID, user_login, display_name, user_email, meta_value FROM $wpdb->users, $wpdb->usermeta WHERE {$wpdb->users}.ID = {$wpdb->usermeta}.user_id AND meta_key = '{$blog_prefix}capabilities' ORDER BY {$wpdb->usermeta}.user_id" );
 	return $users;
@@ -2798,7 +2806,7 @@ function wp_admin_bar_dashboard_view_site_menu( $wp_admin_bar ) {
 /**
  * Checks if the current user belong to a given site.
  *
- * @since MU
+ * @since MU (3.0.0)
  * @deprecated 3.3.0 Use is_user_member_of_blog()
  * @see is_user_member_of_blog()
  *
@@ -2825,7 +2833,7 @@ function is_blog_user( $blog_id = 0 ) {
  * @return false Always false.
  */
 function debug_fopen( $filename, $mode ) {
-	_deprecated_function( __FUNCTION__, 'error_log()' );
+	_deprecated_function( __FUNCTION__, '3.4.0', 'error_log()' );
 	return false;
 }
 
@@ -2842,7 +2850,7 @@ function debug_fopen( $filename, $mode ) {
  * @param string $string Message to log.
  */
 function debug_fwrite( $fp, $string ) {
-	_deprecated_function( __FUNCTION__, 'error_log()' );
+	_deprecated_function( __FUNCTION__, '3.4.0', 'error_log()' );
 	if ( ! empty( $GLOBALS['debug'] ) )
 		error_log( $string );
 }
@@ -2859,7 +2867,7 @@ function debug_fwrite( $fp, $string ) {
  * @param mixed $fp Unused.
  */
 function debug_fclose( $fp ) {
-	_deprecated_function( __FUNCTION__, 'error_log()' );
+	_deprecated_function( __FUNCTION__, '3.4.0', 'error_log()' );
 }
 
 /**
@@ -3147,7 +3155,7 @@ function sticky_class( $post_id = null ) {
  * @deprecated 3.5.0 Use get_post_ancestors()
  * @see get_post_ancestors()
  *
- * @param WP_Post &$post Post object, passed by reference (unused).
+ * @param WP_Post $post Post object, passed by reference (unused).
  */
 function _get_post_ancestors( &$post ) {
 	_deprecated_function( __FUNCTION__, '3.5.0' );
@@ -3169,8 +3177,10 @@ function wp_load_image( $file ) {
 	if ( is_numeric( $file ) )
 		$file = get_attached_file( $file );
 
-	if ( ! is_file( $file ) )
-		return sprintf(__('File &#8220;%s&#8221; doesn&#8217;t exist?'), $file);
+	if ( ! is_file( $file ) ) {
+		/* translators: %s: file name */
+		return sprintf( __( 'File &#8220;%s&#8221; doesn&#8217;t exist?' ), $file );
+	}
 
 	if ( ! function_exists('imagecreatefromstring') )
 		return __('The GD image library is not installed.');
@@ -3180,8 +3190,10 @@ function wp_load_image( $file ) {
 
 	$image = imagecreatefromstring( file_get_contents( $file ) );
 
-	if ( !is_resource( $image ) )
-		return sprintf(__('File &#8220;%s&#8221; is not an image.'), $file);
+	if ( ! is_resource( $image ) ) {
+		/* translators: %s: file name */
+		return sprintf( __( 'File &#8220;%s&#8221; is not an image.' ), $file );
+	}
 
 	return $image;
 }
@@ -3360,7 +3372,7 @@ function _search_terms_tidy( $t ) {
  * Determine if TinyMCE is available.
  *
  * Checks to see if the user has deleted the tinymce files to slim down
- * their WordPress install.
+ * their WordPress installation.
  *
  * @since 2.1.0
  * @deprecated 3.9.0
@@ -3529,7 +3541,8 @@ function preview_theme_ob_filter_callback( $matches ) {
  * be applied to an empty string.
  *
  * @since 2.0.0
- * @deprecated 4.3.0
+ * @deprecated 4.3.0 Use format_for_editor()
+ * @see format_for_editor()
  *
  * @param string $text The text to be formatted.
  * @return string The formatted text after filter is applied.
@@ -3753,4 +3766,181 @@ function wp_embed_handler_googlevideo( $matches, $attr, $url, $rawattr ) {
 	_deprecated_function( __FUNCTION__, '4.6.0' );
 
 	return '';
+}
+
+/**
+ * Retrieve path of paged template in current or parent template.
+ *
+ * @since 1.5.0
+ * @deprecated 4.7.0 The paged.php template is no longer part of the theme template hierarchy.
+ *
+ * @return string Full path to paged template file.
+ */
+function get_paged_template() {
+	_deprecated_function( __FUNCTION__, '4.7.0' );
+
+	return get_query_template( 'paged' );
+}
+
+/**
+ * Removes the HTML JavaScript entities found in early versions of Netscape 4.
+ *
+ * Previously, this function was pulled in from the original
+ * import of kses and removed a specific vulnerability only
+ * existent in early version of Netscape 4. However, this
+ * vulnerability never affected any other browsers and can
+ * be considered safe for the modern web.
+ *
+ * The regular expression which sanitized this vulnerability
+ * has been removed in consideration of the performance and
+ * energy demands it placed, now merely passing through its
+ * input to the return.
+ *
+ * @since 1.0.0
+ * @deprecated 4.7.0 Officially dropped security support for Netscape 4.
+ *
+ * @param string $string
+ * @return string
+ */
+function wp_kses_js_entities( $string ) {
+	_deprecated_function( __FUNCTION__, '4.7.0' );
+
+	return preg_replace( '%&\s*\{[^}]*(\}\s*;?|$)%', '', $string );
+}
+
+/**
+ * Sort categories by ID.
+ *
+ * Used by usort() as a callback, should not be used directly. Can actually be
+ * used to sort any term object.
+ *
+ * @since 2.3.0
+ * @deprecated 4.7.0 Use wp_list_sort()
+ * @access private
+ *
+ * @param object $a
+ * @param object $b
+ * @return int
+ */
+function _usort_terms_by_ID( $a, $b ) {
+	_deprecated_function( __FUNCTION__, '4.7.0', 'wp_list_sort()' );
+
+	if ( $a->term_id > $b->term_id )
+		return 1;
+	elseif ( $a->term_id < $b->term_id )
+		return -1;
+	else
+		return 0;
+}
+
+/**
+ * Sort categories by name.
+ *
+ * Used by usort() as a callback, should not be used directly. Can actually be
+ * used to sort any term object.
+ *
+ * @since 2.3.0
+ * @deprecated 4.7.0 Use wp_list_sort()
+ * @access private
+ *
+ * @param object $a
+ * @param object $b
+ * @return int
+ */
+function _usort_terms_by_name( $a, $b ) {
+	_deprecated_function( __FUNCTION__, '4.7.0', 'wp_list_sort()' );
+
+	return strcmp( $a->name, $b->name );
+}
+
+/**
+ * Sort menu items by the desired key.
+ *
+ * @since 3.0.0
+ * @deprecated 4.7.0 Use wp_list_sort()
+ * @access private
+ *
+ * @global string $_menu_item_sort_prop
+ *
+ * @param object $a The first object to compare
+ * @param object $b The second object to compare
+ * @return int -1, 0, or 1 if $a is considered to be respectively less than, equal to, or greater than $b.
+ */
+function _sort_nav_menu_items( $a, $b ) {
+	global $_menu_item_sort_prop;
+
+	_deprecated_function( __FUNCTION__, '4.7.0', 'wp_list_sort()' );
+
+	if ( empty( $_menu_item_sort_prop ) )
+		return 0;
+
+	if ( ! isset( $a->$_menu_item_sort_prop ) || ! isset( $b->$_menu_item_sort_prop ) )
+		return 0;
+
+	$_a = (int) $a->$_menu_item_sort_prop;
+	$_b = (int) $b->$_menu_item_sort_prop;
+
+	if ( $a->$_menu_item_sort_prop == $b->$_menu_item_sort_prop )
+		return 0;
+	elseif ( $_a == $a->$_menu_item_sort_prop && $_b == $b->$_menu_item_sort_prop )
+		return $_a < $_b ? -1 : 1;
+	else
+		return strcmp( $a->$_menu_item_sort_prop, $b->$_menu_item_sort_prop );
+}
+
+/**
+ * Retrieves the Press This bookmarklet link.
+ *
+ * @since 2.6.0
+ * @deprecated 4.9.0
+ *
+ */
+function get_shortcut_link() {
+	_deprecated_function( __FUNCTION__, '4.9.0' );
+
+	$link = '';
+
+	/**
+	 * Filters the Press This bookmarklet link.
+	 *
+	 * @since 2.6.0
+	 * @deprecated 4.9.0
+	 *
+	 * @param string $link The Press This bookmarklet link.
+	 */
+	return apply_filters( 'shortcut_link', $link );
+}
+
+/**
+* Ajax handler for saving a post from Press This.
+*
+* @since 4.2.0
+* @deprecated 4.9.0
+*/
+function wp_ajax_press_this_save_post() {
+	_deprecated_function( __FUNCTION__, '4.9.0' );
+	if ( is_plugin_active( 'press-this/press-this-plugin.php' ) ) {
+		include( WP_PLUGIN_DIR . '/press-this/class-wp-press-this-plugin.php' );
+		$wp_press_this = new WP_Press_This_Plugin();
+		$wp_press_this->save_post();
+	} else {
+		wp_send_json_error( array( 'errorMessage' => __( 'The Press This plugin is required.' ) ) );
+	}
+}
+
+/**
+* Ajax handler for creating new category from Press This.
+*
+* @since 4.2.0
+* @deprecated 4.9.0
+*/
+function wp_ajax_press_this_add_category() {
+	_deprecated_function( __FUNCTION__, '4.9.0' );
+	if ( is_plugin_active( 'press-this/press-this-plugin.php' ) ) {
+		include( WP_PLUGIN_DIR . '/press-this/class-wp-press-this-plugin.php' );
+		$wp_press_this = new WP_Press_This_Plugin();
+		$wp_press_this->add_category();
+	} else {
+		wp_send_json_error( array( 'errorMessage' => __( 'The Press This plugin is required.' ) ) );
+	}
 }

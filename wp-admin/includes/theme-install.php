@@ -1,6 +1,6 @@
 <?php
 /**
- * WordPress Theme Install Administration API
+ * WordPress Theme Installation Administration API
  *
  * @package WordPress
  * @subpackage Administration
@@ -85,7 +85,7 @@ function install_theme_search_form( $type_selector = true ) {
 	<label class="screen-reader-text" for="s"><?php _e('Search by keyword'); ?></label>
 	<?php endif; ?>
 	<input type="search" name="s" id="s" size="30" value="<?php echo esc_attr($term) ?>" autofocus="autofocus" />
-	<?php submit_button( __( 'Search' ), 'button', 'search', false ); ?>
+	<?php submit_button( __( 'Search' ), '', 'search', false ); ?>
 </form>
 <?php
 }
@@ -130,7 +130,7 @@ function install_themes_dashboard() {
 
 </div>
 <br class="clear" />
-<?php submit_button( __( 'Find Themes' ), 'button', 'search' ); ?>
+<?php submit_button( __( 'Find Themes' ), '', 'search' ); ?>
 </form>
 <?php
 }
@@ -145,7 +145,7 @@ function install_themes_upload() {
 	<?php wp_nonce_field( 'theme-upload' ); ?>
 	<label class="screen-reader-text" for="themezip"><?php _e( 'Theme zip file' ); ?></label>
 	<input type="file" id="themezip" name="themezip" />
-	<?php submit_button( __( 'Install Now' ), 'button', 'install-theme-submit', false ); ?>
+	<?php submit_button( __( 'Install Now' ), '', 'install-theme-submit', false ); ?>
 </form>
 	<?php
 }
@@ -202,7 +202,7 @@ function install_theme_information() {
 	if ( is_wp_error( $theme ) )
 		wp_die( $theme );
 
-	iframe_header( __('Theme Install') );
+	iframe_header( __('Theme Installation') );
 	if ( ! isset( $wp_list_table ) ) {
 		$wp_list_table = _get_list_table('WP_Theme_Install_List_Table');
 	}

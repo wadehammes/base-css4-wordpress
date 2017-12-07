@@ -19,7 +19,6 @@ class WP_Automatic_Updater {
 	 * Tracks update results during processing.
 	 *
 	 * @var array
-	 * @access protected
 	 */
 	protected $update_results = array();
 
@@ -27,11 +26,10 @@ class WP_Automatic_Updater {
 	 * Whether the entire automatic updater is disabled.
 	 *
 	 * @since 3.7.0
-	 * @access public
 	 */
 	public function is_disabled() {
 		// Background updates are disabled if you don't want file changes.
-		if ( defined( 'DISALLOW_FILE_MODS' ) && DISALLOW_FILE_MODS )
+		if ( ! wp_is_file_mod_allowed( 'automatic_updater' ) )
 			return true;
 
 		if ( wp_installing() )
@@ -68,7 +66,6 @@ class WP_Automatic_Updater {
 	 * how things get updated.
 	 *
 	 * @since 3.7.0
-	 * @access public
 	 *
 	 * @param string $context The filesystem path to check, in addition to ABSPATH.
 	 */
@@ -121,7 +118,6 @@ class WP_Automatic_Updater {
 	 * Tests to see if we can and should update a specific item.
 	 *
 	 * @since 3.7.0
-	 * @access public
 	 *
 	 * @global wpdb $wpdb WordPress database abstraction object.
 	 *
@@ -176,7 +172,7 @@ class WP_Automatic_Updater {
 		 * @param bool   $update Whether to update.
 		 * @param object $item   The update offer.
 		 */
-		$update = apply_filters( 'auto_update_' . $type, $update, $item );
+		$update = apply_filters( "auto_update_{$type}", $update, $item );
 
 		if ( ! $update ) {
 			if ( 'core' == $type )
@@ -205,7 +201,6 @@ class WP_Automatic_Updater {
 	 * Notifies an administrator of a core update.
 	 *
 	 * @since 3.7.0
-	 * @access protected
 	 *
 	 * @param object $item The update offer.
 	 */
@@ -249,7 +244,6 @@ class WP_Automatic_Updater {
 	 * Update an item, if appropriate.
 	 *
 	 * @since 3.7.0
-	 * @access public
 	 *
 	 * @param string $type The type of update being checked: 'core', 'theme', 'plugin', 'translation'.
 	 * @param object $item The update offer.
@@ -370,14 +364,8 @@ class WP_Automatic_Updater {
 	 * Kicks off the background update process, looping through all pending updates.
 	 *
 	 * @since 3.7.0
-	 * @access public
-	 *
-	 * @global wpdb   $wpdb
-	 * @global string $wp_version
 	 */
 	public function run() {
-		global $wpdb, $wp_version;
-
 		if ( $this->is_disabled() )
 			return;
 
@@ -455,9 +443,9 @@ class WP_Automatic_Updater {
 			wp_update_plugins(); // Check for Plugin updates
 		}
 
-		// Send debugging email to all development installs.
+		// Send debugging email to admin for all development installations.
 		if ( ! empty( $this->update_results ) ) {
-			$development_version = false !== strpos( $wp_version, '-' );
+			$development_version = false !== strpos( get_bloginfo( 'version' ), '-' );
 
 			/**
 			 * Filters whether to send a debugging email for each automatic background update.
@@ -491,15 +479,12 @@ class WP_Automatic_Updater {
 	 * If we tried to perform a core update, check if we should send an email,
 	 * and if we need to avoid processing future updates.
 	 *
-	 * @since Unknown
-	 * @access protected
-	 *
-	 * @global string $wp_version
+	 * @since 3.7.0
 	 *
 	 * @param object $update_result The result of the core update. Includes the update offer and result.
 	 */
 	protected function after_core_update( $update_result ) {
-		global $wp_version;
+		$wp_version = get_bloginfo( 'version' );
 
 		$core_update = $update_result->item;
 		$result      = $update_result->result;
@@ -582,9 +567,6 @@ class WP_Automatic_Updater {
 	 * Sends an email upon the completion or failure of a background core update.
 	 *
 	 * @since 3.7.0
-	 * @access protected
-	 *
-	 * @global string $wp_version
 	 *
 	 * @param string $type        The type of email to send. Can be one of 'success', 'fail', 'manual', 'critical'.
 	 * @param object $core_update The update offer that was attempted.
@@ -722,7 +704,7 @@ class WP_Automatic_Updater {
 
 		if ( 'critical' == $type && is_wp_error( $result ) ) {
 			$body .= "\n***\n\n";
-			$body .= sprintf( __( 'Your site was running version %s.' ), $GLOBALS['wp_version'] );
+			$body .= sprintf( __( 'Your site was running version %s.' ), get_bloginfo( 'version' ) );
 			$body .= ' ' . __( 'We have some data that describes the error your site encountered.' );
 			$body .= ' ' . __( 'Your hosting company, support forum volunteers, or a friendly developer may be able to use this information to help you:' );
 
@@ -782,7 +764,6 @@ class WP_Automatic_Updater {
 	 * Prepares and sends an email of a full log of background update results, useful for debugging and geekery.
 	 *
 	 * @since 3.7.0
-	 * @access protected
 	 */
 	protected function send_debug_email() {
 		$update_count = 0;
