@@ -8,5 +8,20 @@
 	<!-- WP FOOTER ENQUEUES -->
 	<?php wp_footer(); ?>
 
+	<script type="text/javascript">
+		// Add SVG Sprite symbols to document
+		var site = document.querySelector(".bs-site");
+		var xhr = new XMLHttpRequest();
+		xhr.onload = function () {
+			var div = document.createElement("div")
+			div.innerHTML = this.responseText;
+			div.classList.add("bs-svg-symbols");
+			div.style.display = "none";
+			site.parentNode.insertBefore(div, site.nextSibling);
+		}
+		xhr.open("get", "/sprites.svg", true);
+		xhr.send();
+	</script>
+
 </body>
 </html>
