@@ -16,8 +16,7 @@
     <link rel="feed" type="application/rss+xml" href="<?php bloginfo('rss2_url'); ?>" title="RSS Feed">
 
     <!-- TYPEKIT ACCOUNT -->
-    <script src="https://use.typekit.net/pvc7ygj.js"></script>
-    <script>try{Typekit.load({ async: true });}catch(e){}</script>
+    <!-- typekit css link here -->
 
     <!-- HTML5SHIV -->
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.2/html5shiv.min.js"></script>
@@ -39,7 +38,7 @@
     <!-- ADMIN SPECIFIC STYLING -->
     <?php if (is_user_logged_in()) { ?>
       <style>
-        .header-nav.slide {
+        .fixed-header {
           top: 32px;
         }
 
@@ -47,7 +46,7 @@
           #wpadminbar {
             position: fixed !important;
           }
-          .header-nav.slide {
+          .fixed-header {
             top: 46px;
           }
         }

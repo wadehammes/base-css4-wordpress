@@ -85,7 +85,7 @@ b, strong {
 /* Typography Variables */
 :root {
   /* Global Font Family */
-  --global-font-family: 'Open Sans', sans-serif;
+  --global-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 
   /* Line-Heights */
   --line-height-large: 1.75;
