@@ -1055,15 +1055,16 @@ function ewww_image_optimizer_mimetype( $path, $case ) {
 			ewwwio_debug_message( "file command: {$filetype[0]}" );
 			// If we've found a proper binary.
 			if ( ( strpos( $filetype[0], 'ELF' ) && strpos( $filetype[0], 'executable' ) )
-				|| strpos( $filetype[0], 'Mach-O universal binary' )
-				|| strpos( $filetype[0], 'Mach-O fat file with' )
+				|| false !== strpos( $filetype[0], 'Mach-O universal binary' )
+				|| false !== strpos( $filetype[0], 'Mach-O fat file with' )
+				|| false !== strpos( $filetype[0], 'Mach-O 64-bit x86_64 executable' )
 			) {
 				$type = 'application/x-executable';
 			}
 		}
 	}
 	// If we are dealing with a binary, and found an executable.
-	if ( 'b' === $case && preg_match( '/executable|octet-stream|dosexec/', $type ) ) {
+	if ( 'b' === $case && preg_match( '/executable|octet-stream|dosexec|x-mach-binary/', $type ) ) {
 		ewwwio_memory( __FUNCTION__ );
 		return $type;
 		// Otherwise, if we are dealing with an image.
@@ -2476,8 +2477,12 @@ function ewww_image_optimizer( $file, $gallery_type = 4, $converted = false, $ne
 function ewww_image_optimizer_webp_create( $file, $orig_size, $type, $tool, $recreate = false ) {
 	ewwwio_debug_message( '<b>' . __FUNCTION__ . '()</b>' );
 	// Change the file extension.
-	$webpfile = $file . '.webp';
-	if ( ! ewww_image_optimizer_get_option( 'ewww_image_optimizer_webp' ) ) {
+	$webpfile    = $file . '.webp';
+	$bypass_webp = apply_filters( 'ewww_image_optimizer_bypass_webp', false, $file );
+	if ( true === $bypass_webp ) {
+		ewwwio_debug_message( "webp generation bypassed: $file" );
+		return;
+	} elseif ( ! ewww_image_optimizer_get_option( 'ewww_image_optimizer_webp' ) ) {
 		return;
 	} elseif ( is_file( $webpfile ) && empty( $_REQUEST['ewww_force'] ) && ! $recreate ) {
 		ewwwio_debug_message( 'webp file exists, not forcing or recreating' );

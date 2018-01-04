@@ -1,3 +1,23 @@
+= 4.0.6 =
+* changed: dummy images have no args appended with exactdn except for ssl flag
+* fixed: resize_detection.js being combined with other scripts by Autoptimize
+* fixed: retina optimization not deferred in async mode
+* fixed: PDF files could trigger license exceeded message
+* fixed: binary detection not fully functional with MacOS and PHP 7.2
+* fixed: compatibility with Regenerate Thumbnails version 3
+
+= 4.0.5 =
+* added: enable lossy compression with ExactDN: http://docs.ewww.io/article/47-getting-more-from-exactdn
+* added: CSS/JS minification with ExactDN, see http://docs.ewww.io/article/47-getting-more-from-exactdn
+* added: disable WebP for specific files with ewww_image_optimizer_bypass_webp filter
+* added: ExactDN obeys focus point from Theia Smart Thumbnails plugin
+* added: admin-ajax requests for eddvbugm loader work with ExactDN
+* fixed: multisite settings would not save in certain circumstances
+* fixed: compression levels reset for API users on multisite after toggling single-site override on and off
+* fixed: media library items with non-local images rewritten incorrectly by ExactDN
+* fixed: restoring images throws errors on PHP 7.1
+* fixed: has_cap with invalid argument not recognizing utf8-mb4 v5.2
+
 = 4.0.4 =
 * fixed: ExactDN domain validation failing on length check for some domains
 * updated: PEL for better EXIF preservation
