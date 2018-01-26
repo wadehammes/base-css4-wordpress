@@ -1,33 +1,43 @@
+<?php
+if (!defined('WORDFENCE_VERSION')) { exit; }
+if (wfOnboardingController::shouldShowAttempt3()) {
+	echo wfView::create('onboarding/banner')->render();
+}
+?>
 <div class="wrap wordfence">
 	<div class="wf-container-fluid">
-		<?php $pageTitle = "Wordfence Firewall"; $options = array(array('t' => 'Web Application Firewall', 'a' => 'waf'), array('t' => 'Brute Force Protection', 'a' => 'bruteforce'), array('t' => 'Rate Limiting', 'a' => 'ratelimiting')); $wantsLiveActivity = true; include('pageTitle.php'); ?>
+		<?php
+		echo wfView::create('common/page-tabbar', array(
+			'tabs' => array(
+				new wfTab('waf', 'waf', __('Firewall', 'wordfence'), __('Web Application Firewall', 'wordfence')),
+				new wfTab('blocking', 'blocking', __('Blocking', 'wordfence'), __('Blocking', 'wordfence')),
+			),
+		))->render();
+		?>
 		<div class="wf-row">
-			<?php
-			$rightRail = new wfView('marketing/rightrail');
-			echo $rightRail;
-			?>
 			<div class="<?php echo wfStyle::contentClasses(); ?>">
-				<div id="waf" class="wordfenceTopTab" data-title="Wordfence Web Application Firewall">
+				<div id="waf" class="wf-tab-content" data-title="Web Application Firewall">
 					<?php
-					$helpLink = "http://docs.wordfence.com/en/WAF";
-					$helpLabel = "Learn more about the Wordfence Web Application Firewall";
+					echo wfView::create('common/section-title', array(
+						'title' => __('Firewall', 'wordfence'),
+						'headerID' => 'wf-section-firewall',
+						'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_FIREWALL_WAF),
+						'helpLabelHTML' => __('Learn more<span class="wf-hidden-xs"> about the Firewall</span>', 'wordfence'),
+					))->render();
 					require('menu_firewall_waf.php');
 					?>
 				</div> <!-- end waf block -->
-				<div id="bruteforce" class="wordfenceTopTab" data-title="Brute Force Login Security Options">
+				<div id="blocking" class="wf-tab-content" data-title="Blocking">
 					<?php
-					$helpLink = "http://docs.wordfence.com/en/Wordfence_options#Login_Security_Options";
-					$helpLabel = "Learn more about Brute Force Login Security Options";
-					require('menu_firewall_bruteForce.php');
+					echo wfView::create('common/section-title', array(
+						'title' => __('Blocking', 'wordfence'),
+						'headerID' => 'wf-section-blocking',
+						'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_FIREWALL_BLOCKING),
+						'helpLabelHTML' => __('Learn more<span class="wf-hidden-xs"> about Blocking</span>', 'wordfence'),
+					))->render();
+					require('menu_firewall_blocking.php');
 					?>
-				</div> <!-- end bruteforce block -->
-				<div id="ratelimiting" class="wordfenceTopTab" data-title="Rate Limiting Options">
-					<?php
-					$helpLink = "http://docs.wordfence.com/en/Wordfence_options#Rate_Limiting_Rules";
-					$helpLabel = "Learn more about Rate Limiting Options";
-					require('menu_firewall_rateLimiting.php');
-					?>
-				</div> <!-- end ratelimiting block -->
+				</div> <!-- end blocking block -->
 			</div> <!-- end content block -->
 		</div> <!-- end row -->
 	</div> <!-- end container -->

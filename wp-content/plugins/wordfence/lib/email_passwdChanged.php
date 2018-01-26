@@ -1,3 +1,4 @@
+<?php if (!defined('WORDFENCE_VERSION')) { exit; } ?>
 This email was sent from <?php echo $homeURL; ?>. 
 
 We recently used Wordfence to audit the strength of passwords on our website.

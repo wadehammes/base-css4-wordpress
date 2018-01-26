@@ -1,3 +1,4 @@
+<?php if (!defined('WORDFENCE_VERSION')) { exit; } ?>
 <?php if ( ! wfUtils::isAdmin() ) {
 	exit();
 } ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"

@@ -131,4 +131,3 @@ class wfMD5BloomFilter {
 		self::merge($this,$bf,$this,false);
 	}
 }
-?>

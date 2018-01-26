@@ -46,7 +46,7 @@ class wordfenceScanner {
 	}
 	public function __wakeup(){
 	}
-	public function __construct($apiKey, $wordpressVersion, $path){
+	public function __construct($apiKey, $wordpressVersion, $path, $scanEngine) {
 		$this->apiKey = $apiKey;
 		$this->wordpressVersion = $wordpressVersion;
 		$this->api = new wfAPI($this->apiKey, $this->wordpressVersion);
@@ -54,19 +54,21 @@ class wordfenceScanner {
 			$path .= '/';
 		}
 		$this->path = $path;
+		$this->scanEngine = $scanEngine;
 		
 		
 		$this->results = array();
 		$this->errorMsg = false;
-		//First extract hosts or IP's and their URL's into $this->hostsFound and URL's into $this->urlsFound
-		if (wfConfig::get('scansEnabled_fileContentsGSB')) {
+		//First extract hosts or IPs and their URLs into $this->hostsFound and URL's into $this->urlsFound
+		$options = $this->scanEngine->scanController()->scanOptions();
+		if ($options['scansEnabled_fileContentsGSB']) {
 			$this->urlHoover = new wordfenceURLHoover($this->apiKey, $this->wordpressVersion);
 		}
 		else {
 			$this->urlHoover = false;
 		}
 		
-		if (wfConfig::get('scansEnabled_fileContents')) {
+		if ($options['scansEnabled_fileContents']) {
 			$this->setupSigs();
 		}
 		else {
@@ -101,7 +103,7 @@ class wordfenceScanner {
 			foreach ($sigData['rules'] as $key => $signatureRow) {
 				list(, , $pattern) = $signatureRow;
 				$logOnly = (isset($signatureRow[5]) && !empty($signatureRow[5])) ? $signatureRow[5] : false;
-				$commonStringIndexes = (isset($signatureRow[6]) && is_array($signatureRow[6])) ? $signatureRow[6] : array();
+				$commonStringIndexes = (isset($signatureRow[8]) && is_array($signatureRow[8])) ? $signatureRow[8] : array(); 
 				if (@preg_match('/' . $pattern . '/iS', null) === false) {
 					wordfence::status(1, 'error', "A regex Wordfence received from its servers is invalid. The pattern is: " . esc_html($pattern));
 					unset($sigData['rules'][$key]);
@@ -123,19 +125,9 @@ class wordfenceScanner {
 			}
 		}
 
-		$extra = wfConfig::get('scan_include_extra');
-		if (!empty($extra)) {
-			$regexs = explode("\n", $extra);
-			$id = 1000001;
-			foreach($regexs as $r){
-				$r = rtrim($r, "\r");
-				try {
-					preg_match('/' . $r . '/i', "");
-				} catch(Exception $e){
-					throw new Exception("The following user defined scan pattern has an error: $r");
-				}
-				$sigData['rules'][] = array($id++, time(), $r, "User defined scan pattern");
-			}
+		$userSignatures = wfScanner::shared()->userScanSignatures();
+		foreach ($userSignatures as $s) {
+			$sigData['rules'][] = $s;
 		}
 
 		$this->patterns = $sigData;
@@ -159,12 +151,10 @@ class wordfenceScanner {
 		$exParts = array();
 		if (($whichPatterns & self::EXCLUSION_PATTERNS_USER) > 0)
 		{
-			if (wfConfig::get('scan_exclude', false))
-			{
-				$exParts = explode("\n", wfUtils::cleanupOneEntryPerLine(wfConfig::get('scan_exclude')));
-			}
+			$exParts = wfScanner::shared()->userExclusions();
 		}
 		
+		$exParts = array_filter($exParts);
 		foreach ($exParts as &$exPart) {
 			$exPart = preg_quote(trim($exPart), '/');
 			$exPart = preg_replace('/\\\\\*/', '.*', $exPart);
@@ -177,11 +167,10 @@ class wordfenceScanner {
 		}
 
 		if (!empty($exParts)) {
-			//self::$excludePattern = '/^(?:' . implode('|', array_filter($exParts)) . ')$/i';
 			self::$excludePatterns[$whichPatterns] = '/(?:' . implode('|', array_filter($exParts)) . ')$/i';
 		}
 		else {
-			self::$excludePatterns[$whichPatterns]= false;
+			self::$excludePatterns[$whichPatterns] = false;
 		}
 
 		return self::$excludePatterns[$whichPatterns];
@@ -202,8 +191,9 @@ class wordfenceScanner {
 		}
 		
 		//The site's own URL is checked in an earlier scan stage so we exclude it here.
+		$options = $this->scanEngine->scanController()->scanOptions();
 		$hooverExclusions = array();
-		if (wfConfig::get('scansEnabled_fileContentsGSB')) {
+		if ($options['scansEnabled_fileContentsGSB']) {
 			$hooverExclusions = wordfenceURLHoover::standardExcludedHosts();
 		}
 		
@@ -253,13 +243,13 @@ class wordfenceScanner {
 					$isJS = true;
 				}
 				$dontScanForURLs = false;
-				if( (! wfConfig::get('scansEnabled_highSense')) && (preg_match('/^(?:\.htaccess|wp\-config\.php)$/', $file) || $file === ini_get('user_ini.filename'))) {
+				if (!$options['scansEnabled_highSense'] && (preg_match('/^(?:\.htaccess|wp\-config\.php)$/', $file) || $file === ini_get('user_ini.filename'))) {
 					$dontScanForURLs = true;
 				}
 				
 				$isScanImagesFile = false;
 				if (!$isPHP && preg_match('/^(?:jpg|jpeg|mp3|avi|m4v|mov|mp4|gif|png|tiff?|svg|sql|js|tbz2?|bz2?|xz|zip|tgz|gz|tar|log|err\d+)$/', $fileExt)) {
-					if (wfConfig::get('scansEnabled_scanImages')) {
+					if ($options['scansEnabled_scanImages']) {
 						$isScanImagesFile = true;
 					}
 					else if (!$isJS) {
@@ -269,7 +259,7 @@ class wordfenceScanner {
 				}
 				$isHighSensitivityFile = false;
 				if (strtolower($fileExt) == 'sql') {
-					if (wfConfig::get('scansEnabled_highSense')) {
+					if ($options['scansEnabled_highSense']) {
 						$isHighSensitivityFile = true;
 					}
 					else {
@@ -330,8 +320,8 @@ class wordfenceScanner {
 						$extraMsg = ' This file was detected because you have enabled HIGH SENSITIVITY scanning. This option is more aggressive than the usual scans, and may cause false positives.';
 					}
 					
-					$treatAsBinary = ($isPHP || $isHTML || wfConfig::get('scansEnabled_scanImages'));
-					if (wfConfig::get('scansEnabled_fileContents')) {
+					$treatAsBinary = ($isPHP || $isHTML || $options['scansEnabled_scanImages']);
+					if ($options['scansEnabled_fileContents']) {
 						if ($treatAsBinary && wfUtils::strpos($data, '$allowed'.'Sites') !== false && wfUtils::strpos($data, "define ('VER"."SION', '1.") !== false && wfUtils::strpos($data, "TimThum"."b script created by") !== false) {
 							$this->addResult(array(
 								'type' => 'file',
@@ -343,6 +333,7 @@ class wordfenceScanner {
 								'data' => array_merge(array(
 									'file' => $file,
 									'shac' => $record->SHAC,
+									'highSense' => $options['scansEnabled_highSense'],
 								), $dataForFile),
 							));
 							break;
@@ -365,7 +356,7 @@ class wordfenceScanner {
 								
 								$type = (isset($rule[4]) && !empty($rule[4])) ? $rule[4] : 'server';
 								$logOnly = (isset($rule[5]) && !empty($rule[5])) ? $rule[5] : false;
-								$commonStringIndexes = (isset($rule[6]) && is_array($rule[6])) ? $rule[6] : array();
+								$commonStringIndexes = (isset($rule[8]) && is_array($rule[8])) ? $rule[8] : array(); 
 								if ($type == 'server' && !$treatAsBinary) { continue; }
 								else if (($type == 'both' || $type == 'browser') && $fileExt == 'js') { $extraMsg = ''; }
 								else if (($type == 'both' || $type == 'browser') && !$treatAsBinary) { continue; }
@@ -402,6 +393,7 @@ class wordfenceScanner {
 											'data' => array_merge(array(
 												'file' => $file,
 												'shac' => $record->SHAC,
+												'highSense' => $options['scansEnabled_highSense'],
 											), $dataForFile),
 										));
 									}
@@ -420,7 +412,7 @@ class wordfenceScanner {
 							}
 							if ($regexMatched) { break; }
 						}
-						if ($treatAsBinary && wfConfig::get('scansEnabled_highSense')) {
+						if ($treatAsBinary && $options['scansEnabled_highSense']) {
 							$badStringFound = false;
 							if (strpos($data, $this->patterns['badstrings'][0]) !== false) {
 								for ($i = 1; $i < sizeof($this->patterns['badstrings']); $i++) {
@@ -436,11 +428,12 @@ class wordfenceScanner {
 									'severity' => 1,
 									'ignoreP' => $this->path . $file,
 									'ignoreC' => $fileSum,
-									'shortMsg' => "This file may contain malicious executable code: " . esc_html($this->path . $file),
+									'shortMsg' => "This file may contain malicious executable code: " . esc_html($file),
 									'longMsg' => "This file is a PHP executable file and contains the word 'eval' (without quotes) and the word '<span class=\"wf-split-word\">" . esc_html($badStringFound) . "</span>' (without quotes). The eval() function along with an encoding function like the one mentioned are commonly used by hackers to hide their code. If you know about this file you can choose to ignore it to exclude it from future scans. This file was detected because you have enabled HIGH SENSITIVITY scanning. This option is more aggressive than the usual scans, and may cause false positives.",
 									'data' => array_merge(array(
 										'file' => $file,
 										'shac' => $record->SHAC,
+										'highSense' => $options['scansEnabled_highSense'],
 									), $dataForFile),
 								));
 								break;
@@ -448,7 +441,7 @@ class wordfenceScanner {
 						}
 					}
 					
-					if (!$dontScanForURLs && wfConfig::get('scansEnabled_fileContentsGSB')) {
+					if (!$dontScanForURLs && $options['scansEnabled_fileContentsGSB']) {
 						$this->urlHoover->hoover($file, $data, $hooverExclusions);
 					}
 					
@@ -468,7 +461,7 @@ class wordfenceScanner {
 			}
 		}
 		$this->writeScanningStatus();
-		if (wfConfig::get('scansEnabled_fileContentsGSB')) {
+		if ($options['scansEnabled_fileContentsGSB']) {
 			wordfence::status(2, 'info', "Asking Wordfence to check URLs against malware list.");
 			$hooverResults = $this->urlHoover->getBaddies();
 			if($this->urlHoover->errorMsg){
@@ -496,13 +489,14 @@ class wordfenceScanner {
 							'severity' => 1,
 							'ignoreP' => $this->path . $file,
 							'ignoreC' => md5_file($this->path . $file),
-							'shortMsg' => "File contains suspected malware URL: " . esc_html($this->path . $file),
+							'shortMsg' => "File contains suspected malware URL: " . esc_html($file),
 							'longMsg' => "This file contains a suspected malware URL listed on Google's list of malware sites. Wordfence decodes " . esc_html($this->patterns['word3']) . " when scanning files so the URL may not be visible if you view this file. The URL is: " . esc_html($result['URL']) . " - More info available at <a href=\"http://safebrowsing.clients.google.com/safebrowsing/diagnostic?site=" . urlencode($result['URL']) . "&client=googlechrome&hl=en-US\" target=\"_blank\" rel=\"noopener noreferrer\">Google Safe Browsing diagnostic page</a>.",
 							'data' => array_merge(array(
 								'file' => $file,
 								'shac' => $record->SHAC,
 								'badURL' => $result['URL'],
-								'gsb' => 'goog-malware-shavar'
+								'gsb' => 'goog-malware-shavar',
+								'highSense' => $options['scansEnabled_highSense'],
 							), $dataForFile),
 						));
 					}
@@ -512,13 +506,14 @@ class wordfenceScanner {
 							'severity' => 1,
 							'ignoreP' => $this->path . $file,
 							'ignoreC' => md5_file($this->path . $file),
-							'shortMsg' => "File contains suspected phishing URL: " . esc_html($this->path . $file),
+							'shortMsg' => "File contains suspected phishing URL: " . esc_html($file),
 							'longMsg' => "This file contains a URL that is a suspected phishing site that is currently listed on Google's list of known phishing sites. The URL is: " . esc_html($result['URL']),
 							'data' => array_merge(array(
 								'file' => $file,
 								'shac' => $record->SHAC,
 								'badURL' => $result['URL'],
-								'gsb' => 'googpub-phish-shavar'
+								'gsb' => 'googpub-phish-shavar',
+								'highSense' => $options['scansEnabled_highSense'],
 							), $dataForFile),
 						));
 					}
@@ -528,13 +523,14 @@ class wordfenceScanner {
 							'severity' => 1,
 							'ignoreP' => $this->path . $file,
 							'ignoreC' => md5_file($this->path . $file),
-							'shortMsg' => "File contains suspected malware URL: " . esc_html($this->path . $file),
+							'shortMsg' => "File contains suspected malware URL: " . esc_html($file),
 							'longMsg' => "This file contains a URL that is currently listed on Wordfence's domain blacklist. The URL is: " . esc_html($result['URL']),
 							'data' => array_merge(array(
 								'file' => $file,
 								'shac' => $record->SHAC,
 								'badURL' => $result['URL'],
-								'gsb' => 'wordfence-dbl'
+								'gsb' => 'wordfence-dbl',
+								'highSense' => $options['scansEnabled_highSense'],
 							), $dataForFile),
 						));
 					}
@@ -774,5 +770,3 @@ class wordfenceMalwareScanFile {
 		$this->isSafeFile = '0';
 	}
 }
-
-?>

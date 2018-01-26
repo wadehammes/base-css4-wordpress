@@ -16,139 +16,105 @@ class wfWAFUserIPRange {
 	public function __construct($ip_string = null) {
 		$this->setIPString($ip_string);
 	}
-
-	/**
-	 * Check if the supplied IP address is within the user supplied range.
-	 *
-	 * @param string $ip
-	 * @return bool
-	 */
+	
 	public function isIPInRange($ip) {
 		$ip_string = $this->getIPString();
-
-		// IPv4 range
-		if (strpos($ip_string, '.') !== false && strpos($ip, '.') !== false) {
-			// IPv4-mapped-IPv6
-			if (preg_match('/:ffff:([^:]+)$/i', $ip_string, $matches)) {
-				$ip_string = $matches[1];
-			}
-			if (preg_match('/:ffff:([^:]+)$/i', $ip, $matches)) {
-				$ip = $matches[1];
-			}
-			
-			// Range check
-			if (preg_match('/\[\d+\-\d+\]/', $ip_string)) {
-				$IPparts = explode('.', $ip);
-				$whiteParts = explode('.', $ip_string);
-				$mismatch = false;
-				if (count($whiteParts) != 4 || count($IPparts) != 4) {
-					return false;
+		
+		if (strpos($ip_string, '/') !== false) { //CIDR range -- 127.0.0.1/24
+			return wfWAFUtils::subnetContainsIP($ip_string, $ip);
+		}
+		else if (strpos($ip_string, '[') !== false) //Bracketed range -- 127.0.0.[1-100]
+		{
+			// IPv4 range
+			if (strpos($ip_string, '.') !== false && strpos($ip, '.') !== false) {
+				// IPv4-mapped-IPv6
+				if (preg_match('/:ffff:([^:]+)$/i', $ip_string, $matches)) {
+					$ip_string = $matches[1];
+				}
+				if (preg_match('/:ffff:([^:]+)$/i', $ip, $matches)) {
+					$ip = $matches[1];
 				}
 				
-				for ($i = 0; $i <= 3; $i++) {
-					if (preg_match('/^\[(\d+)\-(\d+)\]$/', $whiteParts[$i], $m)) {
-						if ($IPparts[$i] < $m[1] || $IPparts[$i] > $m[2]) {
+				// Range check
+				if (preg_match('/\[\d+\-\d+\]/', $ip_string)) {
+					$IPparts = explode('.', $ip);
+					$whiteParts = explode('.', $ip_string);
+					$mismatch = false;
+					if (count($whiteParts) != 4 || count($IPparts) != 4) {
+						return false;
+					}
+					
+					for ($i = 0; $i <= 3; $i++) {
+						if (preg_match('/^\[(\d+)\-(\d+)\]$/', $whiteParts[$i], $m)) {
+							if ($IPparts[$i] < $m[1] || $IPparts[$i] > $m[2]) {
+								$mismatch = true;
+							}
+						}
+						else if ($whiteParts[$i] != $IPparts[$i]) {
 							$mismatch = true;
 						}
-					} else if ($whiteParts[$i] != $IPparts[$i]) {
-						$mismatch = true;
+					}
+					if ($mismatch === false) {
+						return true; // Is whitelisted because we did not get a mismatch
 					}
 				}
-				if ($mismatch === false) {
-					return true; // Is whitelisted because we did not get a mismatch
-				}
-			} else if ($ip_string == $ip) {
-				return true;
-			}
-
-			// IPv6 range
-		} else if (strpos($ip_string, ':') !== false && strpos($ip, ':') !== false) {
-			$ip = strtolower(wfWAFUtils::expandIPv6Address($ip));
-			$ip_string = strtolower(self::expandIPv6Range($ip_string));
-			if (preg_match('/\[[a-f0-9]+\-[a-f0-9]+\]/i', $ip_string)) {
-				$IPparts = explode(':', $ip);
-				$whiteParts = explode(':', $ip_string);
-				$mismatch = false;
-				if (count($whiteParts) != 8 || count($IPparts) != 8) {
-					return false;
+				else if ($ip_string == $ip) {
+					return true;
 				}
 				
-				for ($i = 0; $i <= 7; $i++) {
-					if (preg_match('/^\[([a-f0-9]+)\-([a-f0-9]+)\]$/i', $whiteParts[$i], $m)) {
-						$ip_group = hexdec($IPparts[$i]);
-						$range_group_from = hexdec($m[1]);
-						$range_group_to = hexdec($m[2]);
-						if ($ip_group < $range_group_from || $ip_group > $range_group_to) {
+				// IPv6 range
+			}
+			else if (strpos($ip_string, ':') !== false && strpos($ip, ':') !== false) {
+				$ip = strtolower(wfWAFUtils::expandIPv6Address($ip));
+				$ip_string = strtolower(self::expandIPv6Range($ip_string));
+				if (preg_match('/\[[a-f0-9]+\-[a-f0-9]+\]/i', $ip_string)) {
+					$IPparts = explode(':', $ip);
+					$whiteParts = explode(':', $ip_string);
+					$mismatch = false;
+					if (count($whiteParts) != 8 || count($IPparts) != 8) {
+						return false;
+					}
+					
+					for ($i = 0; $i <= 7; $i++) {
+						if (preg_match('/^\[([a-f0-9]+)\-([a-f0-9]+)\]$/i', $whiteParts[$i], $m)) {
+							$ip_group = hexdec($IPparts[$i]);
+							$range_group_from = hexdec($m[1]);
+							$range_group_to = hexdec($m[2]);
+							if ($ip_group < $range_group_from || $ip_group > $range_group_to) {
+								$mismatch = true;
+								break;
+							}
+						}
+						else if ($whiteParts[$i] != $IPparts[$i]) {
 							$mismatch = true;
 							break;
 						}
-					} else if ($whiteParts[$i] != $IPparts[$i]) {
-						$mismatch = true;
-						break;
+					}
+					if ($mismatch === false) {
+						return true; // Is whitelisted because we did not get a mismatch
 					}
 				}
-				if ($mismatch === false) {
-					return true; // Is whitelisted because we did not get a mismatch
+				else if ($ip_string == $ip) {
+					return true;
 				}
-			} else if ($ip_string == $ip) {
+			}
+		}
+		else if (strpos($ip_string, '-') !== false) { //Linear range -- 127.0.0.1 - 127.0.1.100
+			list($ip1, $ip2) = explode('-', $ip_string);
+			$ip1N = wfWAFUtils::inet_pton($ip1);
+			$ip2N = wfWAFUtils::inet_pton($ip2);
+			$ipN = wfWAFUtils::inet_pton($ip);
+			return (strcmp($ip1N, $ipN) <= 0 && strcmp($ip2N, $ipN) >= 0);
+		}
+		else { //Treat as a literal IP
+			$ip1 = @wfWAFUtils::inet_pton($ip_string);
+			$ip2 = @wfWAFUtils::inet_pton($ip);
+			if ($ip1 !== false && $ip1 == $ip2) {
 				return true;
 			}
 		}
-
-		return false;
-	}
-
-	/**
-	 * Return a set of where clauses to use in MySQL.
-	 *
-	 * @param string $column
-	 * @return false|null|string
-	 */
-	public function toSQL($column = 'ip') {
-		/** @var wpdb $wpdb */
-		global $wpdb;
-		$ip_string = $this->getIPString();
-
-		if (strpos($ip_string, '.') !== false && preg_match('/\[\d+\-\d+\]/', $ip_string)) {
-			$whiteParts = explode('.', $ip_string);
-			$sql = "(SUBSTR($column, 1, 12) = LPAD(CHAR(0xff, 0xff), 12, CHAR(0)) AND ";
-
-			for ($i = 0, $j = 24; $i <= 3; $i++, $j -= 8) {
-				// MySQL can only perform bitwise operations on integers
-				$conv = sprintf('CAST(CONV(HEX(SUBSTR(%s, 13, 8)), 16, 10) as UNSIGNED INTEGER)', $column);
-				if (preg_match('/^\[(\d+)\-(\d+)\]$/', $whiteParts[$i], $m)) {
-					$sql .= $wpdb->prepare("$conv >> $j & 0xFF BETWEEN %d AND %d", $m[1], $m[2]);
-				} else {
-					$sql .= $wpdb->prepare("$conv >> $j & 0xFF = %d", $whiteParts[$i]);
-				}
-				$sql .= ' AND ';
-			}
-			$sql = substr($sql, 0, -5) . ')';
-			return $sql;
-			
-		} else if (strpos($ip_string, ':') !== false) {
-			$ip_string = strtolower(self::expandIPv6Range($ip_string));
-			if (preg_match('/\[[a-f0-9]+\-[a-f0-9]+\]/i', $ip_string)) {
-				$whiteParts = explode(':', $ip_string);
-				$sql = '(';
-				
-				for ($i = 0; $i <= 7; $i++) {
-					// MySQL can only perform bitwise operations on integers
-					$conv = sprintf('CAST(CONV(HEX(SUBSTR(%s, %d, 8)), 16, 10) as UNSIGNED INTEGER)', $column, $i < 4 ? 1 : 9);
-					$j = 16 * (3 - ($i % 4));
-					if (preg_match('/^\[([a-f0-9]+)\-([a-f0-9]+)\]$/i', $whiteParts[$i], $m)) {
-						$sql .= $wpdb->prepare("$conv >> $j & 0xFFFF BETWEEN 0x%x AND 0x%x", hexdec($m[1]), hexdec($m[2]));
-					} else {
-						$sql .= $wpdb->prepare("$conv >> $j & 0xFFFF = 0x%x", hexdec($whiteParts[$i]));
-					}
-					$sql .= ' AND ';
-				}
-				$sql = substr($sql, 0, -5) . ')';
-				return $sql;
-			}
-		}
 		
-		return $wpdb->prepare("($column = %s)", wfWAFUtils::inet_pton($ip_string));
+		return false;
 	}
 
 	/**
@@ -194,32 +160,48 @@ class wfWAFUserIPRange {
 	 * @return bool
 	 */
 	public function isValidRange() {
-		return $this->isValidIPv4Range() || $this->isValidIPv6Range();
+		return $this->isValidCIDRRange() || $this->isValidBracketedRange() || $this->isValidLinearRange() || filter_var($this->getIPString(), FILTER_VALIDATE_IP) !== false;
 	}
-
-	/**
-	 * @return bool
-	 */
-	public function isValidIPv4Range() {
+	
+	public function isValidCIDRRange() { //e.g., 192.0.2.1/24
 		$ip_string = $this->getIPString();
-		if (preg_match_all('/(\d+)/', $ip_string, $matches) > 0) {
-			foreach ($matches[1] as $match) {
-				$group = (int) $match;
-				if ($group > 255 || $group < 0) {
-					return false;
+		if (preg_match('/[^0-9a-f:\/\.]/i', $ip_string)) { return false; }
+		$components = explode('/', $ip_string);
+		if (count($components) != 2) { return false; }
+		
+		list($ip, $prefix) = $components;
+		if (filter_var($ip, FILTER_VALIDATE_IP) === false) { return false; }
+		
+		if (!preg_match('/^\d+$/', $prefix)) { return false; }
+		
+		if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+			if ($prefix < 0 || $prefix > 32) { return false; }
+		}
+		else {
+			if ($prefix < 1 || $prefix > 128) { return false; }
+		}
+		
+		return true;
+	}
+	
+	public function isValidBracketedRange() { //e.g., 192.0.2.[1-10]
+		$ip_string = $this->getIPString();
+		if (preg_match('/[^0-9a-f:\.\[\]\-]/i', $ip_string)) { return false; }
+		if (strpos($ip_string, '.') !== false) { //IPv4
+			if (preg_match_all('/(\d+)/', $ip_string, $matches) > 0) {
+				foreach ($matches[1] as $match) {
+					$group = (int) $match;
+					if ($group > 255 || $group < 0) {
+						return false;
+					}
 				}
 			}
+			
+			$group_regex = '([0-9]{1,3}|\[[0-9]{1,3}\-[0-9]{1,3}\])';
+			return preg_match('/^' . str_repeat("{$group_regex}\\.", 3) . $group_regex . '$/i', $ip_string) > 0;
 		}
-
-		$group_regex = '([0-9]{1,3}|\[[0-9]{1,3}\-[0-9]{1,3}\])';
-		return preg_match('/^' . str_repeat("$group_regex.", 3) . $group_regex . '$/i', $ip_string) > 0;
-	}
-
-	/**
-	 * @return bool
-	 */
-	public function isValidIPv6Range() {
-		$ip_string = $this->getIPString();
+		
+		//IPv6
 		if (strpos($ip_string, '::') !== false) {
 			$ip_string = self::expandIPv6Range($ip_string);
 		}
@@ -228,6 +210,35 @@ class wfWAFUserIPRange {
 		}
 		$group_regex = '([a-f0-9]{1,4}|\[[a-f0-9]{1,4}\-[a-f0-9]{1,4}\])';
 		return preg_match('/^' . str_repeat("$group_regex:", 7) . $group_regex . '$/i', $ip_string) > 0;
+	}
+	
+	public function isValidLinearRange() { //e.g., 192.0.2.1-192.0.2.100
+		$ip_string = $this->getIPString();
+		if (preg_match('/[^0-9a-f:\.\-]/i', $ip_string)) { return false; }
+		list($ip1, $ip2) = explode("-", $ip_string);
+		$ip1N = @wfWAFUtils::inet_pton($ip1);
+		$ip2N = @wfWAFUtils::inet_pton($ip2);
+		
+		if ($ip1N === false || filter_var($ip1, FILTER_VALIDATE_IP) === false || $ip2N === false || filter_var($ip2, FILTER_VALIDATE_IP) === false) {
+			return false;
+		}
+		
+		return strcmp($ip1N, $ip2N) <= 0;
+	}
+	
+	protected function _sanitizeIPRange($ip_string) {
+		$ip_string = preg_replace('/\s/', '', $ip_string); //Strip whitespace
+		$ip_string = preg_replace('/[\\x{2013}-\\x{2015}]/u', '-', $ip_string); //Non-hyphen dashes to hyphen
+		$ip_string = strtolower($ip_string);
+		
+		if (preg_match('/^\d+-\d+$/', $ip_string)) { //v5 32 bit int style format
+			list($start, $end) = explode('-', $ip_string);
+			$start = long2ip($start);
+			$end = long2ip($end);
+			$ip_string = "{$start}-{$end}";
+		}
+		
+		return $ip_string;
 	}
 
 
@@ -242,6 +253,6 @@ class wfWAFUserIPRange {
 	 * @param string|null $ip_string
 	 */
 	public function setIPString($ip_string) {
-		$this->ip_string = strtolower(preg_replace('/[\x{2013}-\x{2015}]/u', '-', $ip_string)); //Replace em-dash, en-dash, and horizontal bar with a regular dash
+		$this->ip_string = $this->_sanitizeIPRange($ip_string);
 	}
 }

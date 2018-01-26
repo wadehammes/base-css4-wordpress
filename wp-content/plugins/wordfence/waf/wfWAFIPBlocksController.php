@@ -32,6 +32,17 @@ class wfWAFIPBlocksController
 		self::$_currentController = $currentController;
 	}
 	
+	/**
+	 * Schedules a config sync to happen at the end of the current process's execution.
+	 */
+	public static function setNeedsSynchronizeConfigSettings() {
+		static $willSynchronize = false;
+		if (!$willSynchronize) {
+			$willSynchronize = true;
+			register_shutdown_function('wfWAFIPBlocksController::synchronizeConfigSettings');
+		}
+	}
+	
 	public static function synchronizeConfigSettings() {
 		if (!class_exists('wfConfig')) { // Ensure this is only called when WordPress and the plugin are fully loaded
 			return;
@@ -43,55 +54,66 @@ class wfWAFIPBlocksController
 		}
 		$isSynchronizing = true;
 		
-		global $wpdb;
-		$db = new wfDB();
-		
 		// Pattern Blocks
-		$r1 = $db->querySelect("SELECT id, blockType, blockString FROM {$wpdb->base_prefix}wfBlocksAdv");
+		$blocks = wfBlock::patternBlocks(true);
 		$patternBlocks = array();
-		foreach ($r1 as $blockRec) {
-			if ($blockRec['blockType'] == 'IU') {
-				$bDat = explode('|', $blockRec['blockString']);
-				$ipRange = isset($bDat[0]) ? $bDat[0] : '';
-				$uaPattern = isset($bDat[1]) ? $bDat[1] : '';
-				$refPattern = isset($bDat[2]) ? $bDat[2] : '';
-				$hostnamePattern = isset($bDat[3]) ? $bDat[3] : '';
-				
-				$patternBlocks[] = array('id' => $blockRec['id'], 'ipRange' => $ipRange, 'hostnamePattern' => $hostnamePattern, 'uaPattern' => $uaPattern, 'refPattern' => $refPattern);
-			}
+		foreach ($blocks as $b) {
+			$patternBlocks[] = array('id' => $b->id, 'ipRange' => $b->ipRange, 'hostnamePattern' => $b->hostname, 'uaPattern' => $b->userAgent, 'refPattern' => $b->referrer, 'expiration' => $b->expiration);
 		}
 		
 		// Country Blocks
-		$wfLog = new wfLog(wfConfig::get('apiKey'), wfUtils::getWPVersion());
-		$cblCookie = $wfLog->getCBLCookieVal(); //Ensure we have the bypass cookie option set
-		
 		$countryBlocks = array();
+		$countryBlockEntries = wfBlock::countryBlocks(true);
+		$countryBlocks['blocks'] = array();
+		foreach ($countryBlockEntries as $b) {
+			$reason = __('Access from your area has been temporarily limited for security reasons', 'wordfence');
+			
+			$countryBlocks['blocks'][] = array(
+				'id' => $b->id,
+				'countries' => $b->countries,
+				'blockLogin' => $b->blockLogin,
+				'blockSite' => $b->blockSite,
+				'reason' => $reason,
+				'expiration' => $b->expiration,
+			);
+		}
 		$countryBlocks['action'] = wfConfig::get('cbl_action', false);
 		$countryBlocks['loggedInBlocked'] = wfConfig::get('cbl_loggedInBlocked', false);
-		$countryBlocks['loginFormBlocked'] = wfConfig::get('cbl_loginFormBlocked', false);
-		$countryBlocks['restOfSiteBlocked'] = wfConfig::get('cbl_restOfSiteBlocked', false);
 		$countryBlocks['bypassRedirURL'] = wfConfig::get('cbl_bypassRedirURL', '');
 		$countryBlocks['bypassRedirDest'] = wfConfig::get('cbl_bypassRedirDest', '');
 		$countryBlocks['bypassViewURL'] = wfConfig::get('cbl_bypassViewURL', '');
 		$countryBlocks['redirURL'] = wfConfig::get('cbl_redirURL', '');
-		$countryBlocks['countries'] = explode(',', wfConfig::get('cbl_countries', ''));
-		$countryBlocks['cookieVal'] = $cblCookie;
+		$countryBlocks['cookieVal'] = wfBlock::countryBlockingBypassCookieValue();
 		
 		//Other Blocks
 		$otherBlocks = array('blockedTime' => wfConfig::get('blockedTime', 0));
-		$otherBlockEntries = $db->querySelect("SELECT IP, blockedTime, reason, permanent, wfsn FROM {$wpdb->base_prefix}wfBlocks WHERE permanent = 1 OR (blockedTime + %d > unix_timestamp())", $otherBlocks['blockedTime']);
-		$otherBlocks['blocks'] = (is_array($otherBlockEntries) ? $otherBlockEntries : array());
-		foreach ($otherBlocks['blocks'] as &$b) {
-			$b['IP'] = base64_encode($b['IP']);
+		$otherBlockEntries = wfBlock::ipBlocks(true);
+		$otherBlocks['blocks'] = array();
+		foreach ($otherBlockEntries as $b) {
+			$reason = $b->reason;
+			if ($b->type == wfBlock::TYPE_IP_MANUAL || $b->type == wfBlock::TYPE_IP_AUTOMATIC_PERMANENT) {
+				$reason = __('Manual block by administrator', 'wordfence');
+			}
+			
+			$otherBlocks['blocks'][] = array(
+				'id' => $b->id,
+				'IP' => base64_encode(wfUtils::inet_pton($b->ip)),
+				'reason' => $reason,
+				'expiration' => $b->expiration,
+			);
 		}
 		
 		//Lockouts
+		$lockoutEntries = wfBlock::lockouts(true);
 		$lockoutSecs = wfConfig::get('loginSec_lockoutMins') * 60;
-		$lockouts = array('lockedOutTime' => $lockoutSecs);
-		$lockoutEntries = $db->querySelect("SELECT IP, blockedTime, reason FROM {$wpdb->base_prefix}wfLockedOut WHERE (blockedTime + %d) > UNIX_TIMESTAMP() ORDER BY blockedTime DESC, IP DESC", $lockoutSecs);
-		$lockouts['lockouts'] = (is_array($lockoutEntries) ? $lockoutEntries : array());
-		foreach ($lockouts['lockouts'] as &$l) {
-			$l['IP'] = base64_encode($l['IP']);
+		$lockouts = array('lockedOutTime' => $lockoutSecs, 'lockouts' => array());
+		foreach ($lockoutEntries as $l) {
+			$lockouts['lockouts'][] = array(
+				'id' => $l->id,
+				'IP' => base64_encode(wfUtils::inet_pton($l->ip)),
+				'reason' => $l->reason,
+				'expiration' => $l->expiration,
+			);
 		}
 		
 		// Save it
@@ -175,18 +197,15 @@ class wfWAFIPBlocksController
 				$expectedBits = 0;
 				$foundBits = 0;
 				
+				if (isset($b['expiration']) && $b['expiration'] < time() && $b['expiration'] != 0) {
+					continue;
+				}
+				
 				if (!empty($b['ipRange'])) {
 					$expectedBits |= (1 << $ipRangeOffset);
-					list($start_range, $end_range) = explode('-', $b['ipRange']);
-					if (preg_match('/[\.:]/', $start_range)) {
-						$start_range = wfWAFUtils::inet_pton($start_range);
-						$end_range = wfWAFUtils::inet_pton($end_range);
-					} else {
-						$start_range = wfWAFUtils::inet_pton(long2ip($start_range));
-						$end_range = wfWAFUtils::inet_pton(long2ip($end_range));
-					}
 					
-					if (strcmp($ipNum, $start_range) >= 0 && strcmp($ipNum, $end_range) <= 0) {
+					$range = new wfWAFUserIPRange($b['ipRange']); 
+					if ($range->isIPInRange($ip)) {
 						$foundBits |= (1 << $ipRangeOffset);
 					}
 				}
@@ -225,58 +244,61 @@ class wfWAFIPBlocksController
 		// Country Blocking
 		if ($isPaid) {
 			$countryBlocks = @wfWAFUtils::json_decode($countryBlocksJSON, true);
-			if (is_array($countryBlocks)) {
-				$blockedCountries = $countryBlocks['countries'];
-				$bareRequestURI = wfWAFUtils::extractBareURI($request->getURI());
-				$bareBypassRedirURI = wfWAFUtils::extractBareURI($countryBlocks['bypassRedirURL']);
-				$skipCountryBlocking = false;
-				
-				if ($bareBypassRedirURI && $bareRequestURI == $bareBypassRedirURI) { // Run this before country blocking because even if the user isn't blocked we need to set the bypass cookie so they can bypass future blocks.
-					if ($countryBlocks['bypassRedirDest']) {
+			if (is_array($countryBlocks) && isset($countryBlocks['blocks'])) {
+				$blocks = $countryBlocks['blocks'];
+				foreach ($blocks as $b) {
+					$blockedCountries = $b['countries'];
+					$bareRequestURI = wfWAFUtils::extractBareURI($request->getURI());
+					$bareBypassRedirURI = wfWAFUtils::extractBareURI($countryBlocks['bypassRedirURL']);
+					$skipCountryBlocking = false;
+					
+					if ($bareBypassRedirURI && $bareRequestURI == $bareBypassRedirURI) { // Run this before country blocking because even if the user isn't blocked we need to set the bypass cookie so they can bypass future blocks.
+						if ($countryBlocks['bypassRedirDest']) {
+							setcookie('wfCBLBypass', $countryBlocks['cookieVal'], time() + (86400 * 365), '/', null, $this->isFullSSL(), true);
+							return array('action' => self::WFWAF_BLOCK_COUNTRY_BYPASS_REDIR, 'id' => $b['id']);
+						}
+					}
+					
+					$bareBypassViewURI = wfWAFUtils::extractBareURI($countryBlocks['bypassViewURL']);
+					if ($bareBypassViewURI && $bareBypassViewURI == $bareRequestURI) {
 						setcookie('wfCBLBypass', $countryBlocks['cookieVal'], time() + (86400 * 365), '/', null, $this->isFullSSL(), true);
-						return array('action' => self::WFWAF_BLOCK_COUNTRY_BYPASS_REDIR);
-					}
-				}
-				
-				$bareBypassViewURI = wfWAFUtils::extractBareURI($countryBlocks['bypassViewURL']);
-				if ($bareBypassViewURI && $bareBypassViewURI == $bareRequestURI) {
-					setcookie('wfCBLBypass', $countryBlocks['cookieVal'], time() + (86400 * 365), '/', null, $this->isFullSSL(), true);
-					$skipCountryBlocking = true;
-				}
-				
-				$bypassCookieSet = false;
-				$bypassCookie = $request->getCookies('wfCBLBypass');
-				if (isset($bypassCookie) && $bypassCookie == $countryBlocks['cookieVal']) {
-					$bypassCookieSet = true;
-				}
-				
-				if (!$skipCountryBlocking && $blockedCountries && !$bypassCookieSet) {
-					$isAuthRequest = (strpos($bareRequestURI, '/wp-login.php') !== false);
-					$isXMLRPC = (strpos($bareRequestURI, '/xmlrpc.php') !== false);
-					$isUserLoggedIn = wfWAF::getInstance()->parseAuthCookie() !== false;
-					
-					// If everything is checked, make sure this always runs.
-					if ($countryBlocks['loggedInBlocked'] && $countryBlocks['loginFormBlocked'] && $countryBlocks['restOfSiteBlocked']) {
-						if ($blocked = $this->checkForBlockedCountry($countryBlocks, $ip, $bareRequestURI)) { return $blocked; }
-					}
-					// Block logged in users.
-					if ($countryBlocks['loggedInBlocked'] && $isUserLoggedIn) {
-						if ($blocked = $this->checkForBlockedCountry($countryBlocks, $ip, $bareRequestURI)) { return $blocked; }
-					}
-					// Block the login form itself and any attempt to authenticate.
-					if ($countryBlocks['loginFormBlocked'] && $isAuthRequest) {
-						if ($blocked = $this->checkForBlockedCountry($countryBlocks, $ip, $bareRequestURI)) { return $blocked; }
-					}
-					// Block requests that aren't to the login page, xmlrpc.php, or a user already logged in.
-					if ($countryBlocks['restOfSiteBlocked'] && !$isAuthRequest && !$isXMLRPC && !$isUserLoggedIn) {
-						if ($blocked = $this->checkForBlockedCountry($countryBlocks, $ip, $bareRequestURI)) { return $blocked; }
-					}
-					// XMLRPC is inaccesible when public portion of the site and auth is disabled.
-					if ($countryBlocks['loginFormBlocked'] && $countryBlocks['restOfSiteBlocked'] && $isXMLRPC) {
-						if ($blocked = $this->checkForBlockedCountry($countryBlocks, $ip, $bareRequestURI)) { return $blocked; }
+						$skipCountryBlocking = true;
 					}
 					
-					// Any bypasses and other block possibilities will be checked at the plugin level once WordPress loads
+					$bypassCookieSet = false;
+					$bypassCookie = $request->getCookies('wfCBLBypass');
+					if (isset($bypassCookie) && $bypassCookie == $countryBlocks['cookieVal']) {
+						$bypassCookieSet = true;
+					}
+					
+					if (!$skipCountryBlocking && $blockedCountries && !$bypassCookieSet) {
+						$isAuthRequest = (strpos($bareRequestURI, '/wp-login.php') !== false);
+						$isXMLRPC = (strpos($bareRequestURI, '/xmlrpc.php') !== false);
+						$isUserLoggedIn = wfWAF::getInstance()->parseAuthCookie() !== false;
+						
+						// If everything is checked, make sure this always runs.
+						if ($countryBlocks['loggedInBlocked'] && $b['blockLogin'] && $b['blockSite']) {
+							if ($blocked = $this->checkForBlockedCountry($countryBlocks, $ip, $bareRequestURI)) { $blocked['id'] = $b['id']; return $blocked; }
+						}
+						// Block logged in users.
+						if ($countryBlocks['loggedInBlocked'] && $isUserLoggedIn) {
+							if ($blocked = $this->checkForBlockedCountry($countryBlocks, $ip, $bareRequestURI)) { $blocked['id'] = $b['id']; return $blocked; }
+						}
+						// Block the login form itself and any attempt to authenticate.
+						if ($b['blockLogin'] && $isAuthRequest) {
+							if ($blocked = $this->checkForBlockedCountry($countryBlocks, $ip, $bareRequestURI)) { $blocked['id'] = $b['id']; return $blocked; }
+						}
+						// Block requests that aren't to the login page, xmlrpc.php, or a user already logged in.
+						if ($b['blockSite'] && !$isAuthRequest && !$isXMLRPC && !$isUserLoggedIn) {
+							if ($blocked = $this->checkForBlockedCountry($countryBlocks, $ip, $bareRequestURI)) { $blocked['id'] = $b['id']; return $blocked; }
+						}
+						// XMLRPC is inaccesible when public portion of the site and auth is disabled.
+						if ($b['blockLogin'] && $b['blockSite'] && $isXMLRPC) {
+							if ($blocked = $this->checkForBlockedCountry($countryBlocks, $ip, $bareRequestURI)) { $blocked['id'] = $b['id']; return $blocked; }
+						}
+						
+						// Any bypasses and other block possibilities will be checked at the plugin level once WordPress loads
+					}
 				}
 			}
 		}
@@ -285,12 +307,11 @@ class wfWAFIPBlocksController
 		// Other Blocks
 		$otherBlocks = @wfWAFUtils::json_decode($otherBlocksJSON, true);
 		if (is_array($otherBlocks)) {
-			$blockedTime = $otherBlocks['blockedTime'];
 			$blocks = $otherBlocks['blocks'];
 			$bareRequestURI = wfWAFUtils::extractBareURI($request->getURI());
 			$isAuthRequest = (stripos($bareRequestURI, '/wp-login.php') !== false);
 			foreach ($blocks as $b) {
-				if (!$b['permanent'] && ($b['blockedTime'] + $blockedTime) < time()) {
+				if (isset($b['expiration']) && $b['expiration'] < time() && $b['expiration'] != 0) {
 					continue;
 				}
 				
@@ -299,10 +320,10 @@ class wfWAFIPBlocksController
 				}
 				
 				if ($isAuthRequest && isset($b['wfsn']) && $b['wfsn']) {
-					return array('action' => self::WFWAF_BLOCK_WFSN);
+					return array('action' => self::WFWAF_BLOCK_WFSN, 'id' => $b['id']);
 				}
 				
-				return array('action' => (empty($b['reason']) ? '' : $b['reason']), 'block' => true);
+				return array('action' => (empty($b['reason']) ? '' : $b['reason']), 'id' => $b['id'], 'block' => true);
 			}
 		}
 		// End Other Blocks
@@ -310,23 +331,20 @@ class wfWAFIPBlocksController
 		// Lockouts
 		$lockouts = @wfWAFUtils::json_decode($lockoutsJSON, true);
 		if (is_array($lockouts)) {
-			$lockedOutTime = $lockouts['lockedOutTime'];
 			$lockouts = $lockouts['lockouts'];
-			foreach ($lockouts as $l) {
-				if ($l['blockedTime'] + $lockedOutTime < time()) {
-					continue;
+			$isAuthRequest = (stripos($bareRequestURI, '/wp-login.php') !== false) || (stripos($bareRequestURI, '/xmlrpc.php') !== false);
+			if ($isAuthRequest) {
+				foreach ($lockouts as $l) {
+					if (isset($l['expiration']) && $l['expiration'] < time()) {
+						continue;
+					}
+					
+					if (base64_decode($l['IP']) != $ipNum) {
+						continue;
+					}
+					
+					return array('action' => (empty($l['reason']) ? '' : $l['reason']), 'id' => $l['id'], 'lockout' => true);
 				}
-				
-				if (base64_decode($l['IP']) != $ipNum) {
-					continue;
-				}
-				
-				$isAuthRequest = (stripos($bareRequestURI, '/wp-login.php') !== false) || (stripos($bareRequestURI, '/xmlrpc.php') !== false);
-				if (!$isAuthRequest) {
-					continue;
-				}
-				
-				return array('action' => (empty($l['reason']) ? '' : $l['reason']), 'lockout' => true);
 			}
 		}
 		// End Lockouts
@@ -380,25 +398,28 @@ class wfWAFIPBlocksController
 		
 		$bareRequestURI = rtrim($bareRequestURI, '/\\');
 		if ($country = $this->ip2Country($ip)) {
-			foreach ($countryBlock['countries'] as $blocked) {
-				if (strtoupper($blocked) == strtoupper($country)) {
-					if ($countryBlock['action'] == 'redir') {
-						$redirURL = $countryBlock['redirURL'];
-						$eRedirHost = wfWAFUtils::extractHostname($redirURL);
-						$isExternalRedir = false;
-						if ($eRedirHost && $homeURL && $eRedirHost != wfWAFUtils::extractHostname($homeURL)) {
-							$isExternalRedir = true;
-						}
-						
-						if ((!$isExternalRedir) && rtrim(wfWAFUtils::extractBareURI($redirURL), '/\\') == $bareRequestURI){ //Is this the URI we want to redirect to, then don't block it
-							//Do nothing
+			$blocks = $countryBlock['blocks'];
+			foreach ($blocks as $b) {
+				foreach ($b['countries'] as $blocked) {
+					if (strtoupper($blocked) == strtoupper($country)) {
+						if ($countryBlock['action'] == 'redir') {
+							$redirURL = $countryBlock['redirURL'];
+							$eRedirHost = wfWAFUtils::extractHostname($redirURL);
+							$isExternalRedir = false;
+							if ($eRedirHost && $homeURL && $eRedirHost != wfWAFUtils::extractHostname($homeURL)) {
+								$isExternalRedir = true;
+							}
+							
+							if ((!$isExternalRedir) && rtrim(wfWAFUtils::extractBareURI($redirURL), '/\\') == $bareRequestURI){ //Is this the URI we want to redirect to, then don't block it
+								//Do nothing
+							}
+							else {
+								return array('action' => self::WFWAF_BLOCK_COUNTRY_REDIR);
+							}
 						}
 						else {
-							return array('action' => self::WFWAF_BLOCK_COUNTRY_REDIR);
+							return array('action' => self::WFWAF_BLOCK_COUNTRY);
 						}
-					}
-					else {
-						return array('action' => self::WFWAF_BLOCK_COUNTRY);
 					}
 				}
 			}
@@ -409,7 +430,7 @@ class wfWAFIPBlocksController
 	
 	protected function checkForWhitelisted($ip) {
 		$wordfenceLib = realpath(dirname(__FILE__) . '/../lib');
-		include($wordfenceLib . '/wfIPWhitelist.php'); // defines $wfIPWhitelist
+		include($wordfenceLib . '/wfIPWhitelist.php'); /** @var $wfIPWhitelist */
 		foreach ($wfIPWhitelist as $group) {
 			foreach ($group as $subnet) {
 				if ($subnet instanceof wfWAFUserIPRange) { //Not currently reached

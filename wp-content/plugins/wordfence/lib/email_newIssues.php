@@ -1,3 +1,4 @@
+<?php if (!defined('WORDFENCE_VERSION')) { exit; } ?>
 <p>This email was sent from your website "<?php echo get_bloginfo('name', 'raw'); ?>" by the Wordfence plugin.</p>
 
 <p>Wordfence found the following new issues on "<?php echo get_bloginfo('name', 'raw'); ?>".</p>
@@ -13,7 +14,7 @@
 
 <?php if ($timeLimitReached): ?>
 	<div style="margin: 12px 0;padding: 8px; background-color: #ffffe0; border: 1px solid #ffd975; border-width: 1px 1px 1px 10px;">
-		<em>The scan was terminated early because it reached the time limit for scans. If you would like to allow your scans to run longer, you can customize the limit on the options page: <a href="<?php echo esc_attr(network_admin_url('admin.php?page=WordfenceSecOpt')); ?>"><?php echo esc_attr(network_admin_url('admin.php?page=WordfenceSecOpt')); ?></a> or read more about scan options to improve scan speed here: <a href="https://docs.wordfence.com/en/Scan_time_limit">https://docs.wordfence.com/en/Scan_time_limit</a></em>
+		<em>The scan was terminated early because it reached the time limit for scans. If you would like to allow your scans to run longer, you can customize the limit on the options page: <a href="<?php echo esc_attr(network_admin_url('admin.php?page=WordfenceScan&subpage=scan_options#wf-scanner-options-performance')); ?>"><?php echo esc_attr(network_admin_url('admin.php?page=WordfenceScan&subpage=scan_options')); ?></a> or read more about scan options to improve scan speed here: <a href="<?php echo wfSupportController::esc_supportURL(wfSupportController::ITEM_SCAN_TIME_LIMIT); ?>"><?php echo esc_html(wfSupportController::supportURL(wfSupportController::ITEM_SCAN_TIME_LIMIT)); ?></a></em>
 	</div>
 <?php endif ?>
 

@@ -1,4 +1,5 @@
 <?php
+if (!defined('WORDFENCE_VERSION')) { exit; }
 /**
  * @var wfActivityReportView $this
  */
@@ -170,7 +171,7 @@ h6 a:visited { color: purple !important; }
 				</table>
 
 				<p style="font-size: 100%; vertical-align: baseline; margin: 1em 0; padding: 0; border: 0;">
-					<a class="button" href="<?php echo network_admin_url('admin.php?page=WordfenceBlocking#top#blockedips') ?>"  style="font-size: 13px; vertical-align: baseline; outline: none; color: #FFF; text-decoration: none; display: inline-block; line-height: 26px; height: 28px; cursor: pointer; border-radius: 3px; white-space: nowrap; box-sizing: border-box; box-shadow: 0 1px 0 rgba(120, 200, 230, 0.5) inset, 0 1px 0 rgba(0, 0, 0, 0.15); background-image: none; background-attachment: scroll; background-repeat: repeat; background-color: #2EA2CC; margin: 0; padding: 0 10px 1px; border: 1px solid #0074a2;">Update Blocked IPs</a>
+					<a class="button" href="<?php echo network_admin_url('admin.php?page=WordfenceWAF#top#blocking') ?>"  style="font-size: 13px; vertical-align: baseline; outline: none; color: #FFF; text-decoration: none; display: inline-block; line-height: 26px; height: 28px; cursor: pointer; border-radius: 3px; white-space: nowrap; box-sizing: border-box; box-shadow: 0 1px 0 rgba(120, 200, 230, 0.5) inset, 0 1px 0 rgba(0, 0, 0, 0.15); background-image: none; background-attachment: scroll; background-repeat: repeat; background-color: #2EA2CC; margin: 0; padding: 0 10px 1px; border: 1px solid #0074a2;">Update Blocked IPs</a>
 				</p>
 
 				<?php wfHelperString::cycle(); ?>
@@ -216,7 +217,7 @@ h6 a:visited { color: purple !important; }
 				</table>
 
 				<p style="font-size: 100%; vertical-align: baseline; margin: 1em 0; padding: 0; border: 0;">
-					<a class="button" href="<?php echo network_admin_url('admin.php?page=WordfenceBlocking#top#countryblocking') ?>" style="font-size: 13px; vertical-align: baseline; outline: none; color: #FFF; text-decoration: none; display: inline-block; line-height: 26px; height: 28px; cursor: pointer; border-radius: 3px; white-space: nowrap; box-sizing: border-box; box-shadow: 0 1px 0 rgba(120, 200, 230, 0.5) inset, 0 1px 0 rgba(0, 0, 0, 0.15); background-image: none; background-attachment: scroll; background-repeat: repeat; background-color: #2EA2CC; margin: 0; padding: 0 10px 1px; border: 1px solid #0074a2;">Update Blocked Countries</a>
+					<a class="button" href="<?php echo network_admin_url('admin.php?page=WordfenceWAF#top#blocking') ?>" style="font-size: 13px; vertical-align: baseline; outline: none; color: #FFF; text-decoration: none; display: inline-block; line-height: 26px; height: 28px; cursor: pointer; border-radius: 3px; white-space: nowrap; box-sizing: border-box; box-shadow: 0 1px 0 rgba(120, 200, 230, 0.5) inset, 0 1px 0 rgba(0, 0, 0, 0.15); background-image: none; background-attachment: scroll; background-repeat: repeat; background-color: #2EA2CC; margin: 0; padding: 0 10px 1px; border: 1px solid #0074a2;">Update Blocked Countries</a>
 				</p>
 
 				<?php wfHelperString::cycle(); ?>
@@ -254,7 +255,7 @@ h6 a:visited { color: purple !important; }
 				</table>
 
 				<p style="font-size: 100%; vertical-align: baseline; margin: 1em 0; padding: 0; border: 0;">
-					<a class="button" href="<?php echo network_admin_url('admin.php?page=WordfenceSecOpt#wfMarkerLoginSecurity') ?>" style="font-size: 13px; vertical-align: baseline; outline: none; color: #FFF; text-decoration: none; display: inline-block; line-height: 26px; height: 28px; cursor: pointer; border-radius: 3px; white-space: nowrap; box-sizing: border-box; box-shadow: 0 1px 0 rgba(120, 200, 230, 0.5) inset, 0 1px 0 rgba(0, 0, 0, 0.15); background-image: none; background-attachment: scroll; background-repeat: repeat; background-color: #2EA2CC; margin: 0; padding: 0 10px 1px; border: 1px solid #0074a2;">Update Login Security Options</a>
+					<a class="button" href="<?php echo network_admin_url('admin.php?page=WordfenceWAF&subpage=waf_options#waf-options-bruteforce') ?>" style="font-size: 13px; vertical-align: baseline; outline: none; color: #FFF; text-decoration: none; display: inline-block; line-height: 26px; height: 28px; cursor: pointer; border-radius: 3px; white-space: nowrap; box-sizing: border-box; box-shadow: 0 1px 0 rgba(120, 200, 230, 0.5) inset, 0 1px 0 rgba(0, 0, 0, 0.15); background-image: none; background-attachment: scroll; background-repeat: repeat; background-color: #2EA2CC; margin: 0; padding: 0 10px 1px; border: 1px solid #0074a2;">Update Login Security Options</a>
 				</p>
 				
 				<?php wfHelperString::cycle(); ?>
@@ -300,7 +301,7 @@ h6 a:visited { color: purple !important; }
 				<?php endif ?> 
 				
 				<p style="font-size: 100%; vertical-align: baseline; margin: 1em 0; padding: 0; border: 0;">
-					<a class="button" href="<?php echo network_admin_url('admin.php?page=WordfenceActivity') ?>" style="font-size: 13px; vertical-align: baseline; outline: none; color: #FFF; text-decoration: none; display: inline-block; line-height: 26px; height: 28px; cursor: pointer; border-radius: 3px; white-space: nowrap; box-sizing: border-box; box-shadow: 0 1px 0 rgba(120, 200, 230, 0.5) inset, 0 1px 0 rgba(0, 0, 0, 0.15); background-image: none; background-attachment: scroll; background-repeat: repeat; background-color: #2EA2CC; margin: 0; padding: 0 10px 1px; border: 1px solid #0074a2;">View Recent Traffic</a>
+					<a class="button" href="<?php echo network_admin_url('admin.php?page=WordfenceTools&subpage=livetraffic') ?>" style="font-size: 13px; vertical-align: baseline; outline: none; color: #FFF; text-decoration: none; display: inline-block; line-height: 26px; height: 28px; cursor: pointer; border-radius: 3px; white-space: nowrap; box-sizing: border-box; box-shadow: 0 1px 0 rgba(120, 200, 230, 0.5) inset, 0 1px 0 rgba(0, 0, 0, 0.15); background-image: none; background-attachment: scroll; background-repeat: repeat; background-color: #2EA2CC; margin: 0; padding: 0 10px 1px; border: 1px solid #0074a2;">View Recent Traffic</a>
 				</p>
 
 				<?php wfHelperString::cycle(); ?>
@@ -381,7 +382,7 @@ h6 a:visited { color: purple !important; }
 				<?php endif ?>
 
 				<p style="font-size: 100%; vertical-align: baseline; margin: 1em 0; padding: 0; border: 0;">
-					If you would like to sign-in to <a href="<?php echo network_site_url() ?>"><?php echo network_site_url() ?></a> please <a href="<?php echo network_admin_url() ?>">click here</a> now. You can change the frequency of this email or turn it on and off by visiting your <a href="<?php echo network_admin_url('admin.php?page=WordfenceSecOpt#wfMarkerEmailSummary') ?>">Wordfence options page</a>.
+					If you would like to sign-in to <a href="<?php echo network_site_url() ?>"><?php echo network_site_url() ?></a> please <a href="<?php echo network_admin_url() ?>">click here</a> now. You can change the frequency of this email or turn it on and off by visiting your <a href="<?php echo network_admin_url('admin.php?page=Wordfence&subpage=global_options#global-options-email-summary') ?>">Wordfence options page</a>.
 				</p>
 			</div>
 		</td>

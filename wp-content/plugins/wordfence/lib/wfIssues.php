@@ -9,16 +9,16 @@ class wfIssues {
 	const ISSUE_IGNOREC = 'ic';
 	
 	//Possible status message states
-	const STATUS_NONE = 'n';
+	const STATUS_NONE = 'n'; //Default state before running
 	
-	const STATUS_SKIPPED = 's';
-	const STATUS_IGNORED = 'i';
+	const STATUS_SKIPPED = 's'; //The scan job was skipped because it didn't need to run
+	const STATUS_IGNORED = 'i'; //The scan job found an issue, but it matched an entry in the ignore list
 	
-	const STATUS_PROBLEM = 'p';
-	const STATUS_SECURE = 'r';
+	const STATUS_PROBLEM = 'p'; //The scan job found an issue
+	const STATUS_SECURE = 'r'; //The scan job found no issues
 	
-	const STATUS_FAILED = 'f';
-	const STATUS_SUCCESS = 'c';
+	const STATUS_FAILED = 'f'; //The scan job failed
+	const STATUS_SUCCESS = 'c'; //The scan job succeeded
 	
 	const STATUS_PAIDONLY = 'x';
 	
@@ -118,6 +118,19 @@ class wfIssues {
 		return (time() > wfConfig::get('wf_scanLastStatusTime', 0) + $threshold) ? wfConfig::get('wf_scanLastStatusTime', 0) : false;
 	}
 	
+	/**
+	 * Returns the singleton wfIssues.
+	 *
+	 * @return wfIssues
+	 */
+	public static function shared() {
+		static $_issues = null;
+		if ($_issues === null) {
+			$_issues = new wfIssues();
+		}
+		return $_issues;
+	}
+	
 	public function __sleep(){ //Same order here as vars above
 		return array('updateCalled', 'issuesTable', 'pendingIssuesTable', 'maxIssues', 'newIssues', 'totalIssues', 'totalCriticalIssues', 'totalWarningIssues', 'totalIgnoredIssues');
 	}
@@ -205,7 +218,7 @@ class wfIssues {
 		
 		if (isset($updateID)) {
 			$this->getDB()->queryWrite(
-				"UPDATE {$table} SET status = '%s', type = '%s', severity = %d, ignoreP = '%s', ignoreC = '%s', shortMsg = '%s', longMsg = '%s', data = '%s' WHERE id = %d",
+				"UPDATE {$table} SET lastUpdated = UNIX_TIMESTAMP(), status = '%s', type = '%s', severity = %d, ignoreP = '%s', ignoreC = '%s', shortMsg = '%s', longMsg = '%s', data = '%s' WHERE id = %d",
 				'new',
 				$type,
 				$severity,
@@ -218,7 +231,7 @@ class wfIssues {
 			return self::ISSUE_UPDATED;
 		}
 		
-		$this->getDB()->queryWrite("INSERT INTO {$table} (time, status, type, severity, ignoreP, ignoreC, shortMsg, longMsg, data) VALUES (unix_timestamp(), '%s', '%s', %d, '%s', '%s', '%s', '%s', '%s')",
+		$this->getDB()->queryWrite("INSERT INTO {$table} (time, lastUpdated, status, type, severity, ignoreP, ignoreC, shortMsg, longMsg, data) VALUES (UNIX_TIMESTAMP(), UNIX_TIMESTAMP(), '%s', '%s', %d, '%s', '%s', '%s', '%s', '%s')",
 			'new',
 			$type,
 			$severity,
@@ -344,6 +357,7 @@ class wfIssues {
 		foreach($q1 as $i){
 			$i['data'] = unserialize($i['data']);
 			$i['timeAgo'] = wfUtils::makeTimeAgo(time() - $i['time']);
+			$i['displayTime'] = wfUtils::formatLocalTime(get_option('date_format') . ' ' . get_option('time_format'), $i['time']);
 			$i['longMsg'] = wp_kses($i['longMsg'], 'post');
 			if($i['status'] == 'new'){
 				$ret['new'][] = $i;
@@ -397,6 +411,9 @@ class wfIssues {
 	}
 	public function getPendingIssueCount() {
 		return (int) $this->getDB()->querySingle("select COUNT(*) from " . $this->pendingIssuesTable . " WHERE status = 'new'");
+	}
+	public function getLastIssueUpdateTimestamp() {
+		return (int) $this->getDB()->querySingle("select MAX(lastUpdated) from " . $this->issuesTable);
 	}
 	public function reconcileUpgradeIssues($report = null, $useCachedValued = false) {
 		if ($report === null) {
@@ -453,77 +470,6 @@ class wfIssues {
 		
 		wfScanEngine::refreshScanNotification($this);
 	}
-	public function updateSummaryItem($key, $val){
-		$arr = wfConfig::get_ser('wf_summaryItems', array());
-		$arr[$key] = $val;
-		$arr['lastUpdate'] = time();
-		wfConfig::set_ser('wf_summaryItems', $arr);
-	}
-	public function getSummaryItem($key){
-		$arr = wfConfig::get_ser('wf_summaryItems', array());
-		if(array_key_exists($key, $arr)){
-			return $arr[$key];
-		} else { return ''; }
-	}
-	public function summaryUpdateRequired(){
-		$last = $this->getSummaryItem('lastUpdate');
-		if( (! $last) || (time() - $last > (86400 * 7))){
-			return true;
-		}
-		return false;
-	}
-	public function getSummaryItems(){
-		if(! $this->updateCalled){
-			$this->updateCalled = true;
-			$this->updateSummaryItems();
-		}
-		$arr = wfConfig::get_ser('wf_summaryItems', array());
-		//$arr['scanTimeAgo'] = wfUtils::makeTimeAgo(sprintf('%.0f', time() - $arr['scanTime']));
-		$arr['scanRunning'] = wfUtils::isScanRunning() ? '1' : '0';
-		$arr['scheduledScansEnabled'] = wfConfig::get('scheduledScansEnabled');
-		$secsToGo = wp_next_scheduled('wordfence_scheduled_scan') - time();
-		if($secsToGo < 1){
-			$nextRun = 'now';
-		} else {
-			$nextRun = wfUtils::makeTimeAgo($secsToGo) . ' from now';
-		}
-		$arr['nextRun'] = $nextRun;
-
-		$arr['totalCritical'] = $this->getDB()->querySingle("select count(*) as cnt from " . $this->issuesTable . " where status='new' and severity=1");
-		$arr['totalWarning'] = $this->getDB()->querySingle("select count(*) as cnt from " . $this->issuesTable . " where status='new' and severity=2");
-
-		return $arr;
-	}
-	private function updateSummaryItems(){
-		global $wpdb;
-		$dat = array();
-		$users = $wpdb->get_col("SELECT $wpdb->users.ID FROM $wpdb->users");
-		$dat['totalUsers'] = sizeof($users);
-		$res1 = $wpdb->get_col("SELECT count(*) as cnt FROM $wpdb->posts where post_type='page' and post_status NOT IN ('auto-draft')"); $dat['totalPages'] = $res1['0'];
-		$res1 = $wpdb->get_col("SELECT count(*) as cnt FROM $wpdb->posts where post_type='post' and post_status NOT IN ('auto-draft')"); $dat['totalPosts'] = $res1['0'];
-		$res1 = $wpdb->get_col("SELECT count(*) as cnt FROM $wpdb->comments"); $dat['totalComments'] = $res1['0'];
-		$res1 = $wpdb->get_col("SELECT count(*) as cnt FROM $wpdb->term_taxonomy where taxonomy='category'"); $dat['totalCategories'] = $res1['0'];
-		$res1 = $wpdb->get_col("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE()"); $dat['totalTables'] = sizeof($res1);
-		$totalRows = 0;
-		foreach($res1 as $table){
-			$res2 = $wpdb->get_col("select count(*) from `$table`");
-			if(isset($res2[0]) ){
-				$totalRows += $res2[0];
-			}
-		}
-		$dat['totalRows'] = $totalRows;
-		$arr = wfConfig::get_ser('wf_summaryItems', array());
-		foreach($dat as $key => $val){
-			$arr[$key] = $val;
-		}
-		wfConfig::set_ser('wf_summaryItems', $arr);
-	}
-	public function setScanTimeNow(){
-		$this->updateSummaryItem('scanTime', microtime(true));
-	}
-	public function getScanTime(){
-		return $this->getSummaryItem('scanTime');
-	}
 	private function getDB(){
 		if(! $this->db){
 			$this->db = new wfDB();
@@ -531,5 +477,3 @@ class wfIssues {
 		return $this->db;
 	}
 }
-
-?>

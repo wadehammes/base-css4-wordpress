@@ -30,7 +30,7 @@
 					$.wordfenceBox({
 						closeButton: false,
 						width: '400px',
-						html: "<h3>Background Request Blocked</h3><p>Wordfence Firewall blocked a background request to WordPress for the URL <code>" + requestURLEscaped + "</code>. If this occurred as a result of an intentional action, you may consider whitelisting the request to allow it in the future.</p><p class=\"textright\"><a href=\"https://docs.wordfence.com/en/Web_Application_Firewall_-_Blocked_Ajax_Requests\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"wfboxhelp\"></a><a href=\"#\" class=\"button\" id=\"background-block-whitelist\">Whitelist this action</a> <a href=\"#\" class=\"button\" id=\"background-block-dismiss\">Dismiss</a></p>",
+						html: "<h3>Background Request Blocked</h3><p>Wordfence Firewall blocked a background request to WordPress for the URL <code>" + requestURLEscaped + "</code>. If this occurred as a result of an intentional action, you may consider whitelisting the request to allow it in the future.</p><p class=\"wf-right\"><a href=\"https://www.wordfence.com/help/?query=ajax-blocked\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"wfboxhelp\"></a><a href=\"#\" class=\"button\" id=\"background-block-whitelist\">Whitelist this action</a> <a href=\"#\" class=\"button\" id=\"background-block-dismiss\">Dismiss</a></p>",
 						onComplete: function() {
 							$('#background-block-dismiss').click(function(event) {
 								event.preventDefault();

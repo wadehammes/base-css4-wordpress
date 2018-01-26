@@ -1,4 +1,5 @@
 <?php
+if (!defined('WORDFENCE_VERSION')) { exit; }
 /**
  * @var wfActivityReportView $this
  */
@@ -329,7 +330,7 @@ $title = 'Wordfence Activity for the week of ' . wfUtils::formatLocalTime(get_op
 				</table>
 
 				<p>
-					<a class="button" href="<?php echo network_admin_url('admin.php?page=WordfenceBlocking#top#blockedips') ?>">Update Blocked IPs</a>
+					<a class="button" href="<?php echo network_admin_url('admin.php?page=WordfenceWAF#top#blocking') ?>">Update Blocked IPs</a>
 				</p>
 
 				<?php wfHelperString::cycle(); ?>
@@ -364,7 +365,7 @@ $title = 'Wordfence Activity for the week of ' . wfUtils::formatLocalTime(get_op
 				</table>
 
 				<p>
-					<a class="button" href="<?php echo network_admin_url('admin.php?page=WordfenceBlocking#top#countryblocking') ?>">Update Blocked Countries</a>
+					<a class="button" href="<?php echo network_admin_url('admin.php?page=WordfenceWAF#top#blocking') ?>">Update Blocked Countries</a>
 				</p>
 
 				<?php wfHelperString::cycle(); ?>
@@ -391,7 +392,7 @@ $title = 'Wordfence Activity for the week of ' . wfUtils::formatLocalTime(get_op
 				</table>
 
 				<p>
-					<a class="button" href="<?php echo network_admin_url('admin.php?page=WordfenceSecOpt#wfMarkerLoginSecurity') ?>">Update Login Security Options</a>
+					<a class="button" href="<?php echo network_admin_url('admin.php?page=WordfenceWAF&subpage=waf_options#waf-options-bruteforce') ?>">Update Login Security Options</a>
 				</p>
 
 				<?php wfHelperString::cycle(); ?>

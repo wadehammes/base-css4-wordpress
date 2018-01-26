@@ -1,4 +1,4 @@
-<?php
+<?php if (!defined('WORDFENCE_VERSION')) { exit; }
 
 if (!function_exists('str_getcsv')) {
 

@@ -9,6 +9,14 @@ class wfBrowscap {
 	const COMPRESSION_PATTERN_START = '@';
 	const COMPRESSION_PATTERN_DELIMITER = '|';
 	const REGEX_DELIMITER = '@';
+	
+	public static function shared() {
+		static $_browscap = null;
+		if ($_browscap === null) {
+			$_browscap = new wfBrowscap();
+		}
+		return $_browscap;
+	}
 
     public function getBrowser($user_agent){
         if (!$this->_cacheLoaded) {

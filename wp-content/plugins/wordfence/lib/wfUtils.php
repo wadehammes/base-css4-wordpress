@@ -450,6 +450,48 @@ class wfUtils {
 	public static function makeRandomIP(){
 		return rand(11,230) . '.' . rand(0,255) . '.' . rand(0,255) . '.' . rand(0,255);
 	}
+	
+	/**
+	 * Converts a truthy value to a boolean, checking in this order:
+	 * - already a boolean
+	 * - numeric (0 => false, otherwise true)
+	 * - 'false', 'f', 'no', 'n', or 'off' => false
+	 * - 'true', 't', 'yes', 'y', or 'on' => true
+	 * - empty value => false, otherwise true
+	 * 
+	 * @param $value
+	 * @return bool
+	 */
+	public static function truthyToBoolean($value) {
+		if ($value === true || $value === false) {
+			return $value;
+		}
+		
+		if (is_numeric($value)) {
+			return !!$value;
+		}
+		
+		if (preg_match('/^(?:f(?:alse)?|no?|off)$/i', $value)) {
+			return false;
+		}
+		else if (preg_match('/^(?:t(?:rue)?|y(?:es)?|on)$/i', $value)) {
+			return true;
+		}
+		
+		return !empty($value);
+	}
+	
+	/**
+	 * Converts a truthy value to 1 or 0.
+	 * 
+	 * @see wfUtils::truthyToBoolean
+	 * 
+	 * @param $value
+	 * @return int
+	 */
+	public static function truthyToInt($value) {
+		return self::truthyToBoolean($value) ? 1 : 0;
+	}
 
 	/**
 	 * Get the list of whitelisted IPs and networks
@@ -787,6 +829,14 @@ class wfUtils {
 		
 		return true;
 	}
+	public static function isValidEmail($email, $strict = false) {
+		//We don't default to strict, full validation because poorly-configured servers can crash due to the regex PHP uses in filter_var($email, FILTER_VALIDATE_EMAIL)
+		if ($strict) {
+			return filter_var($email, FILTER_VALIDATE_EMAIL !== false);
+		}
+		
+		return preg_match('/^[^@\s]+@[^@\s]+\.[^@\s]+$/i', $email) === 1;
+	}
 	public static function getRequestedURL() {
 		if (isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) {
 			$host = $_SERVER['HTTP_HOST'];
@@ -978,7 +1028,7 @@ class wfUtils {
 
 	public static function endProcessingFile() {
 		wfConfig::set('scanFileProcessing', null);
-		if (wfConfig::get('lowResourceScansEnabled')) {
+		if (wfScanner::shared()->useLowResourceScanning()) {
 			usleep(10000); //10 ms
 		}
 	}
@@ -999,14 +1049,6 @@ class wfUtils {
 
 		wfConfig::set('wf_scanRunning', '');
 		wfIssues::updateScanStillRunning(false);
-	}
-	public static function isScanRunning(){
-		$scanRunning = wfConfig::get('wf_scanRunning');
-		if($scanRunning && time() - $scanRunning < WORDFENCE_MAX_SCAN_LOCK_TIME){
-			return true;
-		} else {
-			return false;
-		}
 	}
 	public static function getIPGeo($IP){ //Works with int or dotted
 
@@ -1098,6 +1140,11 @@ class wfUtils {
 	}
 
 	public static function reverseLookup($IP) {
+		static $_memoryCache = array();
+		if (isset($_memoryCache[$IP])) {
+			return $_memoryCache[$IP];
+		}
+		
 		$db = new wfDB();
 		global $wpdb;
 		$reverseTable = $wpdb->base_prefix . 'wfReverseCache';
@@ -1123,14 +1170,17 @@ class wfUtils {
 					}
 				}
 			}
+			$_memoryCache[$IP] = $host;
 			if (!$host) {
 				$host = 'NONE';
 			}
 			$db->queryWrite("insert into " . $reverseTable . " (IP, host, lastUpdate) values (%s, '%s', unix_timestamp()) ON DUPLICATE KEY UPDATE host='%s', lastUpdate=unix_timestamp()", $IPn, $host, $host);
 		}
 		if ($host == 'NONE') {
+			$_memoryCache[$IP] = '';
 			return '';
 		} else {
+			$_memoryCache[$IP] = $host;
 			return $host;
 		}
 	}
@@ -2391,5 +2441,3 @@ class wfWebServerInfo {
 		$this->softwareName = $softwareName;
 	}
 }
-
-?>

@@ -1,3 +1,4 @@
+<?php if (!defined('WORDFENCE_VERSION')) { exit; } ?>
 <?php if (!wfConfig::get('isPaid')) { ?>
 	<div id="wordfenceRightRail" class="<?php echo wfStyle::rightRailClasses(); ?>"> 
 		<ul>

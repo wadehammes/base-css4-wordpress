@@ -1,3 +1,4 @@
+<?php if (!defined('WORDFENCE_VERSION')) { exit; } ?>
 <div class="wf-live-activity" data-mode="auto">
 	<div class="wf-live-activity-inner">
 		<div class="wf-live-activity-content">

@@ -48,36 +48,57 @@ class wfDiagnostic
 	);
 
 	protected $description = array(
-		'Filesystem' => array(
-			'isTmpReadable' => 'Checking if web server can read from <code>~/plugins/wordfence/tmp</code>',
-			'isTmpWritable' => 'Checking if web server can write to <code>~/plugins/wordfence/tmp</code>',
-			'isWAFReadable' => 'Checking if web server can read from <code>~/wp-content/wflogs</code>',
-			'isWAFWritable' => 'Checking if web server can write to <code>~/wp-content/wflogs</code>',
+		'Wordfence Status' => array(
+			'description' => 'General information about the Wordfence installation.',
+			'tests' => array(
+				'wfVersion' => 'Wordfence Version',
+			),
 		),
-		'Config' => array(
-			'configWritableSet' => 'Checking basic config reading/writing',
-			'configWritableSetSer' => 'Checking serialized config reading/writing',	
+		'Filesystem' => array(
+			'description' => 'Ability to read/write various files.',
+			'tests' => array(
+				'isTmpReadable' => 'Checking if web server can read from <code>~/plugins/wordfence/tmp</code>',
+				'isTmpWritable' => 'Checking if web server can write to <code>~/plugins/wordfence/tmp</code>',
+				'isWAFReadable' => 'Checking if web server can read from <code>~/wp-content/wflogs</code>',
+				'isWAFWritable' => 'Checking if web server can write to <code>~/wp-content/wflogs</code>',
+			),
+		),
+		'Wordfence Config' => array(
+			'description' => 'Ability to save Wordfence settings to the database.',
+			'tests' => array(
+				'configWritableSet' => 'Checking basic config reading/writing',
+				'configWritableSetSer' => 'Checking serialized config reading/writing',
+			),
 		),
 		'MySQL' => array(
-			'userCanDelete' => 'Checking if MySQL user has <code>DELETE</code> privilege',
-			'userCanInsert' => 'Checking if MySQL user has <code>INSERT</code> privilege',
-			'userCanUpdate' => 'Checking if MySQL user has <code>UPDATE</code> privilege',
-			'userCanSelect' => 'Checking if MySQL user has <code>SELECT</code> privilege',
-			'userCanCreate' => 'Checking if MySQL user has <code>CREATE TABLE</code> privilege',
-			'userCanAlter'  => 'Checking if MySQL user has <code>ALTER TABLE</code> privilege',
-			'userCanDrop'   => 'Checking if MySQL user has <code>DROP</code> privilege',
-			'userCanTruncate'   => 'Checking if MySQL user has <code>TRUNCATE</code> privilege',
+			'description' => 'Database privileges.',
+			'tests' => array(
+				'userCanDelete' => 'Checking if MySQL user has <code>DELETE</code> privilege',
+				'userCanInsert' => 'Checking if MySQL user has <code>INSERT</code> privilege',
+				'userCanUpdate' => 'Checking if MySQL user has <code>UPDATE</code> privilege',
+				'userCanSelect' => 'Checking if MySQL user has <code>SELECT</code> privilege',
+				'userCanCreate' => 'Checking if MySQL user has <code>CREATE TABLE</code> privilege',
+				'userCanAlter'  => 'Checking if MySQL user has <code>ALTER TABLE</code> privilege',
+				'userCanDrop'   => 'Checking if MySQL user has <code>DROP</code> privilege',
+				'userCanTruncate'   => 'Checking if MySQL user has <code>TRUNCATE</code> privilege',
+			)
 		),
-		'PHP' => array(
-			'phpVersion' => 'PHP version >= PHP 5.2.4<br><em> (<a href="https://wordpress.org/about/requirements/" target="_blank" rel="noopener noreferrer">Minimum version required by WordPress</a>)</em>',
-			'processOwner' => 'Process Owner',
-			'hasOpenSSL' => 'Checking for OpenSSL support',
-			'hasCurl'    => 'Checking for cURL support',
+		'PHP Environment' => array(
+			'description' => 'PHP version, important PHP extensions.',
+			'tests' => array(
+				'phpVersion' => 'PHP version >= PHP 5.2.4<br><em> (<a href="https://wordpress.org/about/requirements/" target="_blank" rel="noopener noreferrer">Minimum version required by WordPress</a>)</em>',
+				'processOwner' => 'Process Owner',
+				'hasOpenSSL' => 'Checking for OpenSSL support',
+				'hasCurl'    => 'Checking for cURL support',
+			)
 		),
 		'Connectivity' => array(
-			'connectToServer1' => 'Connecting to Wordfence servers (http)',
-			'connectToServer2' => 'Connecting to Wordfence servers (https)',
-			'connectToSelf' => 'Connecting back to this site',
+			'description' => 'Ability to connect to the Wordfence servers and your own site.',
+			'tests' => array(
+				'connectToServer1' => 'Connecting to Wordfence servers (http)',
+				'connectToServer2' => 'Connecting to Wordfence servers (https)',
+				'connectToSelf' => 'Connecting back to this site',
+			)
 		),
 //		'Configuration' => array(
 //			'howGetIPs' => 'How does get IPs',
@@ -89,8 +110,14 @@ class wfDiagnostic
 	public function __construct()
 	{
 		foreach ($this->description as $title => $tests) {
-			$this->results[$title] = array();
-			foreach ($tests as $name => $description) {
+			$this->results[$title] = array(
+				'description' => $tests['description'],
+			);
+			foreach ($tests['tests'] as $name => $description) {
+				if (!method_exists($this, $name)) {
+					continue;
+				}
+				
 				$result = $this->$name();
 
 				if (is_bool($result)) {
@@ -101,8 +128,9 @@ class wfDiagnostic
 				}
 
 				$result['label'] = $description;
+				$result['name'] = $name;
 
-				$this->results[$title][] = $result;
+				$this->results[$title]['results'][] = $result;
 			}
 		}
 	}
@@ -110,6 +138,10 @@ class wfDiagnostic
 	public function getResults()
 	{
 		return $this->results;
+	}
+	
+	public function wfVersion() {
+		return array('test' => true, 'message' => WORDFENCE_VERSION . ' (' . WORDFENCE_BUILD_NUMBER . ')');
 	}
 
 	public function isTmpReadable() {

@@ -20,7 +20,7 @@ $nonce = $waf->createNonce('wf-form');
 if (!empty($siteURL) && !empty($nonce)) : ?>
 	<br />
 	
-	If you are a site administrator and have been accidentally locked out, please enter your email in the box below and click "Send". If the email address you enter belongs to a known site administrator or someone set to receive Wordfence alerts, we will send you an email to help you regain access. <a href="https://docs.wordfence.com/en/Help!_I_locked_myself_out_and_can't_get_back_in._What_can_I_do%3F" target="_blank" rel="noopener noreferrer">Please read this FAQ entry if this does not work.</a>
+	If you are a site administrator and have been accidentally locked out, please enter your email in the box below and click "Send". If the email address you enter belongs to a known site administrator or someone set to receive Wordfence alerts, we will send you an email to help you regain access. <a href="https://www.wordfence.com/help/?query=locked-out" target="_blank" rel="noopener noreferrer">Please read this FAQ entry if this does not work.</a>
 	<br /><br />
 	<form method="POST" id="unlock-form" action="#">
 		<input type="hidden" name="nonce" value="<?php echo $nonce; ?>" />

@@ -1,3 +1,4 @@
+<?php if (!defined('WORDFENCE_VERSION')) { exit; } ?>
 <?php //$data is defined here as an array of login attempts: array('t' => timestamp, 'name' => username, 'ip' => IP address) ?>
 <table class="wf-table wf-table-hover">
 	<thead>

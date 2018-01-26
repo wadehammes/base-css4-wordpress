@@ -1,78 +1,111 @@
-<div class="wordfenceHelpLink"><a href="<?php echo $helpLink; ?>" target="_blank" rel="noopener noreferrer" class="wfhelp"></a><a href="<?php echo $helpLink; ?>" target="_blank" rel="noopener noreferrer"><?php echo $helpLabel; ?></a></div>
-<div>
-	<div class="wordfenceModeElem" id="wordfenceMode_whois"></div>
 <?php
-if (!function_exists('fsockopen')) {
+if (!defined('WORDFENCE_VERSION')) { exit; }
 ?>
-	<p style="color: #F00; width: 600px;">
-		Sorry, but your web hosting provider has disabled the 'fsockopen' function on your WordPress server. That means you can't 
-		use WHOIS. Please log a support call with them asking them to enable this function. Explain that you need it to be able to 
-		perform Whois lookups on IP addresses which will allow you to determine who owns the IPs that are attacking your website.
-		<br /><br />
-		If you are hosting your own site, edit your php.ini config file and make sure 'fsockopen' does not appear
-		next to disable_functions in php.ini. You may have to restart your web server for the changes to take effect.
-	</p>
-<?php
-} else {
-?>
-	</p>
-	<p class="wf-form">
-		<input type="text" class="wf-form-control" name="whois" id="wfwhois" value="" maxlength="255" onkeydown="if(event.keyCode == 13){ WFAD.whois(jQuery('#wfwhois').val()); }" />&nbsp;<input type="button" name="whoisbutton" id="whoisbutton" class="wf-btn wf-btn-primary" value="Look up IP or Domain" onclick="WFAD.whois(jQuery('#wfwhois').val());">
-	</p>
-	<?php if(isset($_GET['wfnetworkblock']) && $_GET['wfnetworkblock']) { ?>
-	<h2>How to block a network</h2>
-	<p style="width: 600px;">
-		You've chosen to block the network that <span style="color: #F00;"><?php echo wp_kses($_GET['whoisval'], array()); ?></span> is part of.
-		We've marked the networks we found that this IP address belongs to in red below.
-		Make sure you read all the WHOIS information so that you see all networks this IP belongs to. We recommend blocking the network with the lowest number of addresses.
-		You may find this is listed at the end as part of the 'rWHOIS' query which contacts
-		the local WHOIS server that is run by the network administrator.
-	</p>
-	<?php } ?>
-	<div id="wfrawhtml"></div>
-</div>
-<script type="text/x-jquery-template" id="wfBlockedRangesTmpl">
-<div>
-<div style="border-bottom: 1px solid #CCC; padding-bottom: 10px; margin-bottom: 10px;">
-<table border="0" style="width: 100%">
-{{each(idx, elem) results}}
-<tr><td></td></tr>
-{{/each}}
-</table>
-</div>
-</div>
-</script>
-<script type="text/javascript">
-var whoisval = "<?php if( isset( $_GET['whoisval'] ) ) { echo wp_kses($_GET['whoisval'], array()); } ?>";
-if(whoisval){
-	jQuery(function(){
-		jQuery('#wfwhois').val(whoisval);
-		WFAD.whois(whoisval);
+<script type="application/javascript">
+	(function($) {
+		$(function() {
+			document.title = "<?php esc_attr_e('Whois Lookup', 'wordfence'); ?>" + " \u2039 " + WFAD.basePageName;
 		});
-}
+	})(jQuery);
 </script>
-<script type="text/x-jquery-template" id="wfWelcomeContentWhois">
-<div>
-<h3>WHOIS: Look up domains and IP owners</h3>
-<strong><p>Find out who's attacking you and report them!</p></strong>
-<p>
-	Wordfence includes a new feature called "WHOIS". This feature works hand-in-glove with our
-	new "Advanced Blocking". Using WHOIS you can look up the owner of an IP address. 
-	The owner information includes which networks the IP is part of. This information empowers you to do 
-	several things. 
-</p>
-<p>
-	Firstly you can report any malicious IP address to the network that owns it using the abuse email addresses provided. Secondly, you can simply
-	click on the network ranges in the whois information and block that entire network.
-</p>
-<p>
-	Wordfence WHOIS queries in real-time the WHOIS servers belonging to the Regional Internet Registries ARIN, RIPE, APNIC, AFRINIC and LACNIC.
-	We then do a further query to any local WHOIS servers that administer the networks we find and this data is returned as a rWHOIS record
-	at the bottom of the WHOIS result. 
-</p>
-</div>
-</script>
-<?php
-} //closing paren for function_exists('fsockopen')
-?>
 
+<div class="wordfenceModeElem" id="wordfenceMode_whois"></div>
+
+<div id="wf-tools-whois">
+	<div class="wf-section-title">
+		<h2><?php _e('Whois Lookup', 'wordfence') ?></h2>
+		<span><?php printf(__('<a href="%s" target="_blank" rel="noopener noreferrer" class="wf-help-link">Learn more<span class="wf-hidden-xs"> about Whois Lookup</span></a>', 'wordfence'), wfSupportController::esc_supportURL(wfSupportController::ITEM_TOOLS_WHOIS_LOOKUP)); ?>
+			<i class="wf-fa wf-fa-external-link" aria-hidden="true"></i></span>
+	</div>
+
+	<p><?php _e("The whois service gives you a way to look up who owns an IP address or domain name that is visiting your website or is engaging in malicious activity on your website.", 'wordfence') ?></p>
+
+	<div>
+
+		<div class="wf-form wf-flex-row">
+			<div class="wf-flex-row-1">
+				<input type="text" class="wf-form-control" name="whois" id="wfwhois" value="" maxlength="255" onkeydown="if(event.keyCode == 13){ whois(jQuery('#wfwhois').val()) }"/>
+			</div>
+			<div class="wf-flex-row-0 wf-padding-add-left">
+				<input type="button" name="whoisbutton" id="whoisbutton" class="wf-btn wf-btn-primary" value="Look up IP or Domain" onclick="whois(jQuery('#wfwhois').val());">
+			</div>
+		</div>
+		<?php if (isset($_GET['wfnetworkblock']) && $_GET['wfnetworkblock']) { ?>
+			<h2><?php _e('How to block a network', 'wordfence') ?></h2>
+			<p style="width: 600px;">
+				<?php printf(__("You've chosen to block the network that <span style=\"color: #F00;\">%s</span> is part of. We've marked the networks we found that this IP address belongs to in red below. Make sure you read all the WHOIS information so that you see all networks this IP belongs to. We recommend blocking the network with the lowest number of addresses. You may find this is listed at the end as part of the 'rWHOIS' query which contacts the local WHOIS server that is run by the network administrator."), esc_html($_GET['whoisval'])) ?>
+			</p>
+		<?php } ?>
+		<div id="wfrawhtml" class="wf-padding-add-top"></div>
+	</div>
+	<script type="text/x-jquery-template" id="wfBlockedRangesTmpl">
+		<div>
+			<div style="border-bottom: 1px solid #CCC; padding-bottom: 10px; margin-bottom: 10px;">
+				<table border="0" style="width: 100%">
+					{{each(idx, elem) results}}
+					<tr>
+						<td></td>
+					</tr>
+					{{/each}}
+				</table>
+			</div>
+		</div>
+	</script>
+	<script type="text/javascript">
+		var whoisval = "<?php if (isset($_GET['whoisval'])) {
+			echo esc_js($_GET['whoisval']);
+		} ?>";
+		if (whoisval) {
+			jQuery(function() {
+				jQuery('#wfwhois').val(whoisval);
+				whois(whoisval);
+			});
+		}
+	</script>
+
+	<script type="text/x-jquery-template" id="wfWhoisBlock">
+		<div class="wf-block wf-active">
+			<div class="wf-block-header">
+				<div class="wf-block-header-content">
+					<div class="wf-block-title">
+						<strong><?php _e('Whois Lookup', 'wordfence') ?> <a>${ip}</a></strong>
+					</div>
+				</div>
+			</div>
+			<div class="wf-block-content wf-clearfix">
+				<ul class="wf-block-list">
+					<li>
+						<div class="wf-padding-add-top">{{html whois}}</div>
+					</li>
+				</ul>
+			</div>
+		</div>
+	</script>
+
+</div>
+
+<script type="text/javascript">
+	function whois(ip) {
+		var val = ip.replace(' ', '');
+		if (!/\w+/.test(val)) {
+			WFAD.colorboxModal('300px', "Enter a valid IP or domain", "Please enter a valid IP address or domain name for your whois lookup.");
+			return;
+		}
+		var whoisButton = jQuery('#whoisbutton').attr('disabled', 'disabled')
+			.attr('value', 'Loading...');
+		WFAD.ajax('wordfence_whois', {
+			val: val
+		}, function(res) {
+			whoisButton.removeAttr('disabled')
+				.attr('value', 'Look up IP or Domain');
+			if (res.ok) {
+				var whoisHTML = WFAD.completeWhois(res, true);
+				console.log(whoisHTML);
+				jQuery('#wfrawhtml').html(jQuery('#wfWhoisBlock').tmpl({
+					ip: val,
+					whois: whoisHTML
+				}));
+			}
+		});
+	}
+</script>

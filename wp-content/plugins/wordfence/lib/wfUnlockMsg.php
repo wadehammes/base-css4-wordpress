@@ -1,4 +1,5 @@
-If you are a site administrator and have been accidentally locked out, please enter your email in the box below and click "Send". If the email address you enter belongs to a known site administrator or someone set to receive Wordfence alerts, we will send you an email to help you regain access. <a href="https://docs.wordfence.com/en/Help!_I_locked_myself_out_and_can't_get_back_in._What_can_I_do%3F" target="_blank" rel="noopener noreferrer">Please read this FAQ entry if this does not work.</a>
+<?php if (!defined('WORDFENCE_VERSION')) { exit; } ?>
+If you are a site administrator and have been accidentally locked out, please enter your email in the box below and click "Send". If the email address you enter belongs to a known site administrator or someone set to receive Wordfence alerts, we will send you an email to help you regain access. <a href="<?php echo wfSupportController::esc_supportURL(wfSupportController::ITEM_LOCKED_OUT); ?>" target="_blank" rel="noopener noreferrer">Please read this FAQ entry if this does not work.</a>
 <br /><br />
 <form method="POST" id="unlock-form" action="#">
 <?php require_once(ABSPATH .'wp-includes/pluggable.php'); ?>

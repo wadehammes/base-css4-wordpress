@@ -2,7 +2,7 @@
 
 	var LISTING_LIMIT = 50;
 
-	var LiveTrafficViewModel = function(listings, filters) {
+	LiveTrafficViewModel = function(listings, filters) {
 		var self = this;
 		var listingIDTable = {};
 		self.listings = ko.observableArray(listings);
@@ -146,7 +146,7 @@
 				if (groupByKO) {
 					groupBy = groupByKO.param();
 				}
-				
+
 				var newListings = [];
 				for (var i = 0; i < listings.length; i++) {
 					newListings.push(new ListingModel(listings[i], groupBy));
@@ -260,33 +260,38 @@
 			});
 		};
 
-		/*
-			Blocking functions
-		*/
-		self.unblockIP = function(item) {
-			WFAD.unblockIP(item.IP(), function() {
-				ko.utils.arrayForEach(self.listings(), function(listing) {
-					if (listing.IP() == item.IP()) {
-						listing.blocked(false);
-					}
-				});
+		self.trimIP = function(ip) {
+			if (ip && ip.length > 16) {
+				return ip.substring(0, 16) + "\u2026";
+			}
+			return ip;
+		};
+
+		$(window).on('wf-live-traffic-ip-blocked', function(e, ip) {
+			ko.utils.arrayForEach(self.listings(), function(listing) {
+				if (listing.IP() === ip) {
+					listing.blocked(true);
+				}
 			});
-		};
-		self.unblockNetwork = function(item) {
-			WFAD.unblockNetwork(item.ipRangeID());
-		};
-		self.blockIP = function(item) {
-			WFAD.blockIP(item.IP(), 'Manual block by administrator', function() {
-				ko.utils.arrayForEach(self.listings(), function(listing) {
-					if (listing.IP() == item.IP()) {
-						listing.blocked(true);
-					}
-				});
+		}).on('wf-live-traffic-ip-unblocked', function(e, ip) {
+			ko.utils.arrayForEach(self.listings(), function(listing) {
+				if (listing.IP() === ip) {
+					listing.blocked(false);
+				}
 			});
-		};
+		});
 
 		// For debuggering-a-ding
 		self.sql = ko.observable('');
+	};
+
+	LiveTrafficViewModel.truncateText = function(text, maxLength) {
+		maxLength = maxLength || 100;
+		if (text && text.length > maxLength) {
+			return text.substring(0, Math.round(maxLength)) + "\u2026";
+			// return text.substring(0, Math.round(maxLength / 2)) + " ... " + text.substring(text.length - Math.round(maxLength / 2));
+		}
+		return text;
 	};
 
 	var ListingModel = function(data, groupBy) {
@@ -320,6 +325,10 @@
 		self.actionData = ko.observable();
 
 		self.highlighted = ko.observable(false);
+		self.showDetails = ko.observable(false);
+		self.toggleDetails = function() {
+			self.showDetails(!self.showDetails());
+		};
 		//self.highlighted.subscribe(function(val) {
 		//	if (val) {
 		//		_classes += ' highlighted';
@@ -332,13 +341,21 @@
 
 		for (var prop in data) {
 			if (data.hasOwnProperty(prop)) {
+				if (prop === 'blocked' || prop === 'rangeBlocked') {
+					data[prop] = !!data[prop];
+				}
 				self[prop] !== undefined && self[prop](data[prop]);
 			}
 		}
-		
+
 		if (data['lastHit'] !== undefined) {
-			self['ctime'](data['lastHit']); 
+			self['ctime'](data['lastHit']);
 		}
+
+		self.timestamp = ko.pureComputed(function() {
+			var date = new Date(self.ctime() * 1000);
+			return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+		}, self);
 
 		// Use the same format as these update.
 		self.timeAgo = ko.pureComputed(function() {
@@ -346,17 +363,21 @@
 			return $(WFAD.showTimestamp(this.ctime(), serverTime)).text();
 		}, self);
 
-		var formatBlockedParam = function(text, maxLength) {
-			maxLength = maxLength || 100;
-			if (text && text.length > maxLength) {
-				return text.substring(0, Math.round(maxLength)) + "\u2026";
-				// return text.substring(0, Math.round(maxLength / 2)) + " ... " + text.substring(text.length - Math.round(maxLength / 2));
-			}
-			return text;
-		};
-
 		self.displayURL = ko.pureComputed(function() {
-			return formatBlockedParam(self.URL(), 135);
+			return LiveTrafficViewModel.truncateText(self.URL(), 105);
+		});
+
+		self.displayURLShort = ko.pureComputed(function() {
+			var a = document.createElement('a');
+			if (!self.URL()) {
+				return '';
+			}
+			a.href = self.URL();
+			if (a.host !== location.host) {
+				return LiveTrafficViewModel.truncateText(self.URL(), 30);
+			}
+			var url = a.pathname + (typeof a.search === 'string' ? a.search : '');
+			return LiveTrafficViewModel.truncateText(url, 30);
 		});
 
 		self.firewallAction = ko.pureComputed(function() {
@@ -378,7 +399,7 @@
 						return 'Blocked by Wordfence';
 				}
 			}
-			
+
 			//Standard listing
 			var desc = '';
 			switch (self.action()) {
@@ -387,7 +408,7 @@
 
 				case 'blocked:waf-always':
 				case 'blocked:wordfence':
-				case 'blocked:wfsnrepeat': 
+				case 'blocked:wfsnrepeat':
 					desc = self.actionDescription();
 					if (desc && desc.toLowerCase().indexOf('block') === 0) {
 						return 'b' + desc.substring(1);
@@ -409,16 +430,16 @@
 						if (matches) {
 							switch (matches[1]) {
 								case 'request.queryString':
-									desc = self.actionDescription() + ' in query string: ' + matches[2] + '=' + formatBlockedParam(encodeURIComponent(paramValue));
+									desc = self.actionDescription() + ' in query string: ' + matches[2] + '=' + LiveTrafficViewModel.truncateText(encodeURIComponent(paramValue));
 									break;
 								case 'request.body':
-									desc = self.actionDescription() + ' in POST body: ' + matches[2] + '=' + formatBlockedParam(encodeURIComponent(paramValue));
+									desc = self.actionDescription() + ' in POST body: ' + matches[2] + '=' + LiveTrafficViewModel.truncateText(encodeURIComponent(paramValue));
 									break;
 								case 'request.cookie':
-									desc = self.actionDescription() + ' in cookie: ' + matches[2] + '=' + formatBlockedParam(encodeURIComponent(paramValue));
+									desc = self.actionDescription() + ' in cookie: ' + matches[2] + '=' + LiveTrafficViewModel.truncateText(encodeURIComponent(paramValue));
 									break;
 								case 'request.fileNames':
-									desc = 'a ' + self.actionDescription() + ' in file: ' + matches[2] + '=' + formatBlockedParam(encodeURIComponent(paramValue));
+									desc = 'a ' + self.actionDescription() + ' in file: ' + matches[2] + '=' + LiveTrafficViewModel.truncateText(encodeURIComponent(paramValue));
 									break;
 							}
 						}
@@ -433,7 +454,7 @@
 		});
 
 		self.cssClasses = ko.pureComputed(function() {
-			var classes = 'wfActEvent';
+			var classes = 'wf-live-traffic-hit-type';
 			if (self.statusCode() == 403 || self.statusCode() == 503) {
 				classes += ' wfActionBlocked';
 			}
@@ -446,11 +467,103 @@
 			if (self.actionData() && self.actionData().learningMode) {
 				classes += ' wfWAFLearningMode';
 			}
-			if (self.highlighted()) {
-				classes += ' highlighted';
+			// if (self.highlighted()) {
+			// 	classes += ' highlighted';
+			// }
+			return classes;
+		});
+
+		self.typeIconClass = ko.pureComputed(function() {
+			var classes = 'wf-live-traffic-type-icon';
+			if (self.statusCode() == 403 || self.statusCode() == 503) {
+				classes += ' wf-icon-blocked wf-ion-android-cancel';
+			} else if (self.statusCode() == 404) {
+				classes += ' wf-icon-warning wf-ion-alert-circled';
+			} else if (self.jsRun() == 1) {
+				classes += ' wf-icon-human wf-ion-ios-person';
+			} else {
+				// classes += ' wf-ion-soup-can';
+				classes += ' wf-ion-bug';
 			}
 			return classes;
 		});
+
+		self.typeText = ko.pureComputed(function() {
+			var type = 'Type: ';
+			if (self.statusCode() == 403 || self.statusCode() == 503) {
+				type += 'Blocked';
+			} else if (self.statusCode() == 404) {
+				type += '404 Not Found';
+			} else if (self.jsRun() == 1) {
+				type += 'Human';
+			} else {
+				type += 'Bot';
+			}
+			return type;
+		});
+
+		function slideInDrawer() {
+			overlayWrapper.fadeIn(400);
+			overlay.css({
+				right: '-800px'
+			})
+			.stop()
+			.animate({
+				right: 0
+			}, 500);
+		}
+
+		self.showWhoisOverlay = function() {
+			slideInDrawer();
+			overlayHeader.html($('#wfActEvent_' + self.id()).html());
+			overlayBody.html('').css('opacity', 0);
+
+			WFAD.ajax('wordfence_whois', {
+				val: self.IP()
+			}, function(result) {
+				var whoisHTML = WFAD.completeWhois(result, true);
+				overlayBody.stop()
+				.animate({
+					opacity: 1
+				}, 200)
+				.html('<h4 style=\'margin-top:0;\'>WHOIS LOOKUP</h4>' + whoisHTML);
+				$(window).trigger('wf-live-traffic-overlay-bind', self);
+			});
+		};
+
+		self.showRecentTraffic = function() {
+			slideInDrawer();
+			overlayHeader.html($('#wfActEvent_' + self.id()).html());
+			overlayBody.html('').css('opacity', 0);
+
+			WFAD.ajax('wordfence_recentTraffic', {
+				ip: self.IP()
+			}, function(result) {
+				overlayBody.stop()
+				.animate({
+					opacity: 1
+				}, 200)
+				.html('<h3 style=\'margin-top:0;\'>Recent Activity</h3>' + result.result);
+				$(window).trigger('wf-live-traffic-overlay-bind', self);
+			});
+		};
+
+		/*
+			Blocking functions
+		*/
+		self.unblockIP = function() {
+			WFAD.unblockIP(self.IP(), function() {
+				$(window).trigger('wf-live-traffic-ip-unblocked', self.IP());
+			});
+		};
+		self.unblockNetwork = function() {
+			WFAD.unblockNetwork(self.ipRangeID());
+		};
+		self.blockIP = function() {
+			WFAD.blockIP(self.IP(), 'Manual block by administrator', function() {
+				$(window).trigger('wf-live-traffic-ip-blocked', self.IP());
+			});
+		};
 	};
 
 	var ListingsFilterModel = function(viewModel, param, value, operator) {
@@ -669,9 +782,47 @@
 		}
 	};
 
-
+	var overlayWrapper = null,
+		overlay = null,
+		overlayCloseButton = null,
+		overlayHeader = null,
+		overlayBody = null;
 	$(function() {
+
 		var liveTrafficWrapper = $('#wf-live-traffic');
+		$('#wf-lt-preset-filters').select2({
+			templateSelection: function(value) {
+				return $('<span><em>Filter Traffic</em>: ' + value.text + '</span>');
+			}
+		});
+
+		overlayWrapper = $('#wf-live-traffic-util-overlay-wrapper').on('click', function(evt) {
+			if (evt.target === this) {
+				overlayCloseButton.trigger('click');
+			}
+		});
+		overlay = overlayWrapper.find('.wf-live-traffic-util-overlay');
+		overlayCloseButton = overlayWrapper.find('.wf-live-traffic-util-overlay-close').on('click', function() {
+			overlayWrapper.fadeOut(250);
+			overlay
+			.stop()
+			.animate({
+				right: '-800px'
+			}, 250);
+			overlayHeader.html('');
+			overlayBody.html('').css('opacity', 0);
+			$(window).trigger('wf-live-traffic-overlay-unbind');
+		});
+		overlayHeader = overlayWrapper.find('.wf-live-traffic-util-overlay-header');
+		overlayBody = overlayWrapper.find('.wf-live-traffic-util-overlay-body');
+		$([overlayHeader, overlayBody]).on('click', function() {
+			return false;
+		});
+
+		// liveTrafficWrapper.find('#wf-lt-advanced-filters select').select2({
+		//
+		// });
+
 		WFAD.wfLiveTraffic = new LiveTrafficViewModel();
 		ko.applyBindings(WFAD.wfLiveTraffic, liveTrafficWrapper.get(0));
 		liveTrafficWrapper.find('form').submit();
@@ -691,7 +842,7 @@
 			if (needsSticky) {
 				var legendWidth = legend.width();
 				var legendHeight = legend.height();
-				
+
 				legend.addClass('sticky');
 				legend.css('width', legendWidth);
 				legend.css('height', legendHeight);
@@ -706,7 +857,7 @@
 			}
 
 			var firstRow = liveTrafficListings.children().first();
-			if (firstRow.offset().top + firstRow.height() < win.scrollTop() + adminBar.outerHeight() + 20) {
+			if (firstRow.length > 0 && firstRow.offset().top + firstRow.height() < win.scrollTop() + adminBar.outerHeight() + 20) {
 				if (WFAD.mode != 'liveTraffic_paused') {
 					WFAD.mode = 'liveTraffic_paused';
 				}
@@ -732,6 +883,17 @@
 				hasScrolled = true;
 				// console.log('no infinite scroll');
 			}
+		})
+		.on('wf-live-traffic-overlay-bind', function(e, item) {
+			ko.applyBindings(item, overlayHeader.get(0));
+		})
+		.on('wf-live-traffic-overlay-unbind', function(e, item) {
+			ko.cleanNode(overlayHeader.get(0));
+		});
+
+		$([liveTrafficWrapper.find('.wf-filtered-traffic'), overlayWrapper]).tooltip({
+			tooltipClass: "wf-tooltip",
+			track: true
 		});
 	});
 })

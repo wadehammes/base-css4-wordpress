@@ -256,4 +256,3 @@ class wfCountryMap {
 'ZW' => "Zimbabwe"
 );
 }
-?>

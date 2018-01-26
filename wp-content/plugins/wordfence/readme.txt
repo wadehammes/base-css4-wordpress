@@ -1,25 +1,41 @@
-=== Wordfence Security ===
+=== Wordfence Security - Firewall & Malware Scan ===
 Contributors: mmaunder 
-Tags: security, firewall, login security, limit login attempts, malware scanner, antivirus, web application firewall, block hackers, country blocking, clean hacked site, blacklist, waf
+Tags: security, firewall, malware scanner, web application firewall, antivirus, block hackers, country blocking, clean hacked site, blacklist, waf, login security
 Requires at least: 3.9
-Tested up to: 4.9.1
-Stable tag: 6.3.22
+Tested up to: 4.9.2
+Stable tag: 7.0.1
 
 Secure your website with the most comprehensive WordPress security plugin. Firewall, malware scan, blocking, live traffic, login security & more.
 
 == Description ==
 
-= THE MOST POPULAR WORDPRESS SECURITY PLUGIN =
+### THE MOST POPULAR WORDPRESS FIREWALL & SECURITY SCANNER
 
-Wordfence Security is 100% free and open-source security software supported by a large team dedicated exclusively to WordPress security. A deep set of features makes Wordfence the most comprehensive WordPress security solution available:
+Wordfence includes an endpoint firewall and malware scanner that were built from the ground up to protect WordPress. Our Threat Defense Feed arms Wordfence with the newest firewall rules, malware signatures and malicious IP addresses it needs to keep your website safe. Rounded out by a suite of additional features, Wordfence is the most comprehensive WordPress security solution available.
 
-* Firewall blocks complex and brute force attacks
-* Security Scan alerts you quickly in the event of a security issue
-* Threat Defense Feed keeps Wordfence up to date with the latest security data
-* Robust login security features
-* Configurable security alerts
-* Gain insight into traffic and hack attempts
-* Security incident recovery tools
+#### WORDPRESS FIREWALL
+* Web Application Firewall identifies and blocks malicious traffic. Built and maintained by a large team focused 100% on WordPress security.
+* [Premium] Real-time firewall rule and malware signature updates via the Threat Defense Feed (free version is delayed by 30 days).
+* [Premium] Real-time IP Blacklist blocks all requests from the most malicious IPs, protecting your site while reducing load.
+* Protects your site at the endpoint, enabling deep integration with WordPress. Unlike cloud alternatives does not break encryption, cannot be bypassed and cannot leak data.
+* Integrated malware scanner blocks requests that include malicious code or content.
+* Protection from brute force attacks by limiting login attempts, enforcing strong passwords and other login security measures.
+
+#### WORDPRESS SECURITY SCANNER
+* Malware scanner checks core files, themes and plugins for malware, bad URLs, backdoors, SEO spam, malicious redirects and code injections.
+* [Premium] Real-time malware signature updates via the Threat Defense Feed (free version is delayed by 30 days).
+* Compares your core files, themes and plugins with what is in the WordPress.org repository, checking their integrity and reporting any changes to you.
+* Repair files that have changed by overwriting them with a pristine, original version. Delete any files that don’t belong easily within the Wordfence interface.
+* Checks your site for known security vulnerabilities and alerts you to any issues. Also alerts you to potential security issues when a plugin has been closed or abandoned.
+* Checks your content safety by scanning file contents, posts and comments for dangerous URLs and suspicious content.
+* [Premium] Checks to see if your site or IP have been blacklisted for malicious activity, generating spam or other security issue.
+
+#### SECURITY TOOLS
+* With Live Traffic, monitor visits and hack attempts not shown in other analytics packages in real time; including origin, their IP address, the time of day and time spent on your site.
+* [Premium] Stop brute force attacks permanently by using two factor authentication, one of the most secure forms of remote system authentication available.
+* [Premium] Password Audit ensures your passwords are strong by simulating a hack attempt using our password auditing GPU cluster.
+* The free version of Wordfence includes an excellent comment spam filter. [Premium] An advanced comment spam filter is automatically enabled for premium customers.
+* Block attackers by IP or build advanced rules based on IP Range, Hostname, User Agent and Referrer. [Premium] Country blocking available with Wordfence Premium.
 
 == Installation ==
 
@@ -36,7 +52,7 @@ Secure your website using the following steps to install Wordfence:
 To install the Wordfence on WordPress Multi-Site installations:
 
 1. Install Wordfence via the plugin directory or by uploading the ZIP file.
-2. Network Activate Wordfence. This step is important because until you network activate it, your sites will see the plugin option on their plugins menu. Once activated that option dissappears. 
+2. Network Activate Wordfence. This step is important because until you network activate it, your sites will see the plugin option on their plugins menu. Once activated that option disappears. 
 3. Now that Wordfence is network activated it will appear on your Network Admin menu. Wordfence will not appear on any individual site's menu. 
 4. Go to the "Scan" menu and start your first scan. 
 5. Wordfence will do a scan of all files in your WordPress installation including those in the blogs.dir directory of your individual sites. 
@@ -45,11 +61,11 @@ To install the Wordfence on WordPress Multi-Site installations:
 
 == Frequently Asked Questions ==
 
-[Visit our documentation website which includes feature descriptions, common solutions and comprehensive help.](http://support.wordfence.com/)
+[Visit our website to access our official documentation which includes security feature descriptions, common solutions and comprehensive help.](https://wordfence.com/help/)
 
 = How does Wordfence Security protect sites from attackers? =
 
-The WordPress security plugin provides the best protection available for your website. Powered by the constantly updated Threat Defense Feed, WordFence Firewall stops you from getting hacked. Wordfence Scan leverages the same proprietary feed, alerting you quickly in the event your site is compromised. The Live Traffic view gives you real-time visibility into traffic and hack attempts on your website. A deep set of additional tools round out the most comprehensive WordPress security solution available.
+The WordPress security plugin provides the best protection available for your website. Powered by the constantly updated Threat Defense Feed, WordFence Firewall stops you from getting hacked. Wordfence Scan leverages the same proprietary feed, alerting you quickly about security issues or if your site is compromised. The Live Traffic view gives you real-time visibility into traffic and hack attempts on your website. A deep set of additional tools round out the most comprehensive WordPress security solution available.
 
 = What features does Wordfence Premium enable? =
 
@@ -141,14 +157,21 @@ Designed for every skill level, [The WordPress Security Learning Center](https:/
 Secure your website with Wordfence. 
 
 1. The dashboard gives you an overview of your site's security including notifications, attack statistics and Wordfence feature status.
-2. The Web Application Firewall protects your site from common types of attacks and known security vulnerabilities.
-3. The Wordfence Malware Scanner lets you know if your site has been compromised and alerts you to other security issues that need to be addressed.  
-4. The Wordfence Live Traffic view shows you real-time activity on your site including bot traffic and exploit attempts.
-5. Block IPs that are known to be malicious, manage IPs that have been locked out and see recently throttled IPs that violated security rules.
-6. The Wordfence Options page is where you manage high-level Wordfence features and upgrade your license to Premium.
-7. The Advanced Options page allows technically-minded users fine-tune their security settings.
+2. The firewall protects your site from common types of attacks and known security vulnerabilities.
+3. The Wordfence Security Scanner lets you know if your site has been compromised and alerts you to other security issues that need to be addressed.  
+4. Wordfence is highly configurable, with a deep set of options available for each feature. High level scan options are shown above.
+5. Brute Force Protection features protect you from password guessing attacks.
+6. Block attackers by IP, Country, IP range, Hostname, Browser or Referrer.
+7. The Wordfence Live Traffic view shows you real-time activity on your site including bot traffic and exploit attempts.
+8. Take login security to the next level with Two Factor Authentication.
+9. Audit the strength of your site passwords with our high performance GPU cluster.
+
 
 == Changelog ==
+
+= 7.0.1 =
+* Comprehensive UI refresh.
+* Improvement: Updated bundled GeoIP database.
 
 = 6.3.22 =
 * Fix: Addressed a warning that could occur on PHP 7.1 when reading php.ini size values.
@@ -603,4 +626,4 @@ Secure your website with Wordfence.
 	* Publicly accessible common (database or wp-config.php) backup files
 * Improvement: Updated Live Traffic with filters and to include blocked requests in the feed.
 
-You can find a [complete changelog](https://docs.wordfence.com/en/Changelog) on our documentation site.
+You can find a [complete changelog](https://www.wordfence.com/help/advanced/changelog/) on our documentation site.

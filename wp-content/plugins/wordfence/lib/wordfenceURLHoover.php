@@ -96,7 +96,7 @@ class wordfenceURLHoover {
 	
 	public function hoover($id, $data, $excludedHosts = array()) {
 		$this->currentHooverID = $id;
-		$this->_foundSome = false;
+		$this->_foundSome = 0;
 		$this->_excludedHosts = $excludedHosts;
 		@preg_replace_callback('/\b((?:[a-z][\w-]+:(?:\/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:\'".,<>?«»“”‘’]))/i', array($this, 'captureURL'), $data);
 		$this->writeHosts();
@@ -138,6 +138,7 @@ class wordfenceURLHoover {
 		if ($this->useDB) {
 			$sql = "INSERT INTO " . $this->table . " (owner, host, path, hostKey) VALUES ";
 			while ($elem = $this->hostsToAdd->shift()) {
+				$this->_foundSome++;
 				//This may be an issue for hyperDB or other abstraction layers, but leaving it for now.
 				$sql .= sprintf("('%s', '%s', '%s', '%s'),", 
 						$this->db->realEscape($elem['owner']),
@@ -152,6 +153,7 @@ class wordfenceURLHoover {
 		}
 		else {
 			while ($elem = $this->hostsToAdd->shift()) {
+				$this->_foundSome++;
 				$keys = str_split($elem['hostKey'], 4);
 				foreach ($keys as $k) {
 					$this->hostKeys[] = $k;
@@ -165,8 +167,6 @@ class wordfenceURLHoover {
 			}
 			$this->hostsToAdd->collectGarbage();
 		}
-		
-		$this->_foundSome = true;
 	}
 	public function getBaddies() {
 		wordfence::status(4, 'info', "Gathering host keys.");
@@ -597,4 +597,3 @@ class wordfenceURLHoover {
 		return $array[count($array) - 1];
 	}
 }
-?>

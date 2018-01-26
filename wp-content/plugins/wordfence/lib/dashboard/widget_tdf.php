@@ -1,3 +1,4 @@
+<?php if (!defined('WORDFENCE_VERSION')) { exit; } ?>
 <div class="wf-row">
 	<div class="wf-col-xs-12">
 		<div class="wf-dashboard-item active">
