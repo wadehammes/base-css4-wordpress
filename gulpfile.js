@@ -68,6 +68,7 @@ gulp.task("stylesheets", function() {
         require("postcss-url")(),
         require("postcss-utilities")(),
         require("postcss-mixins")(),
+        require("precss")(),
         require("postcss-cssnext")({
             features: {
                 customProperties: {
