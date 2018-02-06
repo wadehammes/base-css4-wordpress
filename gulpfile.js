@@ -164,7 +164,7 @@ gulp.task("img-opt", function() {
 })
 
 // Browser Sync
-gulp.task("serve", ["stylesheets", "scripts", "svgs"], functiofn() {
+gulp.task("serve", ["stylesheets", "scripts", "svgs"], function() {
     var files = [stylePathWatch, scriptsPathWatch, phpPath]
 
     browserSync.init(files, {
