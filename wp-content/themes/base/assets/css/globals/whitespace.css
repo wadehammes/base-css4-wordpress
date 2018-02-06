@@ -1,43 +1,41 @@
-$base: 1em;
-
 @define-mixin padding $degree {
-  padding: calc($degree * $base);
+  padding: calc($degree * var(--base));
 }
 
 @define-mixin padding-top $degree {
-  padding-top: calc($degree * $base)
+  padding-top: calc($degree * var(--base));
 }
 
 @define-mixin padding-right $degree {
-  padding-right: calc($degree * $base)
+  padding-right: calc($degree * var(--base));
 }
 
 @define-mixin padding-bottom $degree {
-  padding-bottom: calc($degree * $base)
+  padding-bottom: calc($degree * var(--base));
 }
 
 @define-mixin padding-left $degree {
-  padding-left: calc($degree * $base)
+  padding-left: calc($degree * var(--base));
 }
 
 @define-mixin margin $degree {
-  margin: calc($degree * $base)
+  margin: calc($degree * var(--base));
 }
 
 @define-mixin margin-top $degree {
-  margin-top: calc($degree * $base)
+  margin-top: calc($degree * var(--base));
 }
 
 @define-mixin margin-right $degree {
-  margin-right: calc($degree * $base)
+  margin-right: calc($degree * var(--base));
 }
 
 @define-mixin margin-bottom $degree {
-  margin-bottom: calc($degree * $base)
+  margin-bottom: calc($degree * var(--base));
 }
 
 @define-mixin margin-left $degree {
-  margin-left: calc($degree * $base)
+  margin-left: calc($degree * var(--base));
 }
 
 @for $index from 5 through 8 {
@@ -102,4 +100,10 @@ $base: 1em;
   }
 }
 
-.mauto { margin: auto; }
+.mauto {
+  margin: auto;
+}
+
+:root {
+  --base: 1em;
+}

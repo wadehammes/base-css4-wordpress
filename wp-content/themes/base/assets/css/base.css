@@ -1,39 +1,6 @@
 @import "globals/reboot";
 
-/* Basscss Modules */
-@import "basscss-layout";
-@import "basscss-align";
-@import "basscss-margin";
-@import "basscss-padding";
 @import "globals/whitespace";
-@import "basscss-grid";
-@import "basscss-flexbox";
-@import "basscss-position";
-@import "basscss-hide";
-
-/* Optional Modules (not included in Basscss by default) */
-/*
-@import "basscss-type-scale";
-@import "basscss-typography";
-@import "basscss-border";
-@import "basscss-addons/modules/responsive-margin";
-@import "basscss-addons/modules/responsive-padding";
-@import "basscss-addons/modules/media-object";
-@import "basscss-addons/modules/all";
-@import "basscss-addons/modules/forms";
-@import "basscss-addons/modules/input-range";
-@import "basscss-addons/modules/progress";
-@import "basscss-addons/modules/btn";
-@import "basscss-addons/modules/btn-primary";
-@import "basscss-addons/modules/btn-outline";
-@import "basscss-addons/modules/btn-sizes";
-@import "basscss-addons/modules/colors";
-@import "basscss-addons/modules/background-colors";
-@import "basscss-addons/modules/border-colors";
-@import "basscss-addons/modules/darken";
-@import "basscss-addons/modules/lighten";
-@import "basscss-addons/modules/background-images";
-*/
 
 /* Theme */
 @import "globals/colors";
@@ -62,7 +29,9 @@
 
 /* Custom properties */
 :root {
-  --global-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  --global-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol";
   --line-height: 1.5;
   --heading-font-family: var(--global-font-family);
   --heading-font-weight: bold;
@@ -96,16 +65,16 @@
 
   --container-width: 70em;
 
-  --black:  #111;
-  --gray:   #AAA;
+  --black: #111;
+  --gray: #AAA;
   --silver: #DDD;
-  --white:  #FFF;
-  --blue:   blue;
+  --white: #FFF;
+  --blue: blue;
 
-  --darken-1: rgba(0,0,0,0.0625);
-  --darken-2: rgba(0,0,0,0.125);
-  --darken-3: rgba(0,0,0,0.25);
-  --darken-4: rgba(0,0,0,0.5);
+  --darken-1: rgba(0, 0, 0, 0.0625);
+  --darken-2: rgba(0, 0, 0, 0.125);
+  --darken-3: rgba(0, 0, 0, 0.25);
+  --darken-4: rgba(0, 0, 0, 0.5);
 
   --border-width: 1px;
   --border-radius: 5px;

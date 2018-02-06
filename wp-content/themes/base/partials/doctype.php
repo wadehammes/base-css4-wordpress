@@ -54,4 +54,4 @@
 <body <?php body_class(); ?>>
 
     <!-- SITE -->
-    <div class="bs-site p4">
+    <div class="bs-site p5">

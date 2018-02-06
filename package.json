@@ -14,16 +14,10 @@
         "update": "npm update",
         "start": "gulp"
     },
-    "dependencies": {
-        "basscss": "^8.0.3",
-        "basscss-addons": "^1.0.0-beta4",
-        "basscss-basic": "^1.0.0",
-        "npm": "^4.1.1"
-    },
     "devDependencies": {
         "babel-preset-env": "^1.6.1",
-        "browser-sync": "^2.18.13",
-        "css-mqpacker": "^6.0.1",
+        "browser-sync": "^2.23.6",
+        "css-mqpacker": "^6.0.2",
         "cssnano": "^3.10.0",
         "es6-promise": "^4.1.1",
         "gulp": "^3.9.1",
@@ -31,7 +25,7 @@
         "gulp-concat": "^2.6.1",
         "gulp-imagemin": "^3.3.0",
         "gulp-plumber": "^1.1.0",
-        "gulp-postcss": "^7.0.0",
+        "gulp-postcss": "^7.0.1",
         "gulp-rename": "^1.2.2",
         "gulp-shell": "^0.6.3",
         "gulp-sourcemaps": "^2.6.1",
@@ -41,15 +35,14 @@
         "gulp-util": "^3.0.8",
         "gulp-watch": "^4.3.11",
         "merge-stream": "^1.0.1",
-        "postcss": "6.0.14",
-        "postcss-cssnext": "^3.0.2",
+        "postcss": "6.0.17",
+        "postcss-cssnext": "^3.1.0",
         "postcss-import": "^11.0.0",
         "postcss-mixins": "^6.2.0",
         "postcss-namespace": "^1.1.1",
         "postcss-reporter": "^5.0.0",
         "postcss-url": "^7.1.2",
-        "postcss-utilities": "^0.7.0",
-        "precss": "^2.0.0",
+        "postcss-utilities": "^0.8.0",
         "streamqueue": "^1.1.1"
     }
 }
