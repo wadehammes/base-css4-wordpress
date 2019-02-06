@@ -19,8 +19,6 @@ var gulp = require("gulp"),
   babel = require("gulp-babel"),
   browserSync = require("browser-sync").create();
 
-console.log(noop);
-
 // Read our Settings Configuration
 var settings = JSON.parse(fs.readFileSync("./settings.json"));
 
