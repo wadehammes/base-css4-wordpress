@@ -1,26 +1,23 @@
 <?php
 require_once('wfDB.php');
 class wfSchema {
-	private $deprecatedTables = array(
+	const TABLE_CASE_OPTION = 'wordfence_case'; //false is camel case, true is lower
+	
+	private static $_usingLowercase = null;
+	private static $deprecatedTables = array(
 		'wfBlocks',
 		'wfBlocksAdv',
 		'wfLockedOut',
-		'wfThrottleLog',	
+		'wfThrottleLog',
+		'wfNet404s',
+		'wfBlockedCommentLog',
+		'wfVulnScanners',
+		'wfBadLeechers',
+		'wfLeechers',
+		'wfScanners',
 	);
 	
-	private $tables = array(
-"wfBadLeechers" => "(
-  `eMin` int(10) unsigned NOT NULL,
-  `IP` binary(16) NOT NULL DEFAULT '\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0',
-  `hits` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`eMin`,`IP`)
-) DEFAULT CHARSET=utf8",
-"wfVulnScanners" => "(
-  `IP` binary(16) NOT NULL DEFAULT '\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0',
-  `ctime` int(10) unsigned NOT NULL,
-  `hits` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`IP`)
-) DEFAULT CHARSET=utf8",
+	private static $tables = array(
 "wfBlocks7" => "(
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `type` int(10) unsigned NOT NULL DEFAULT '0',
@@ -113,11 +110,12 @@ class wfSchema {
   KEY `ignoreP` (`ignoreP`),
   KEY `ignoreC` (`ignoreC`)
 ) DEFAULT CHARSET=utf8",
-"wfLeechers" => "(
+"wfTrafficRates" => "(
   `eMin` int(10) unsigned NOT NULL,
   `IP` binary(16) NOT NULL DEFAULT '\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0',
+  `hitType` enum('hit','404') NOT NULL DEFAULT 'hit',
   `hits` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`eMin`,`IP`)
+  PRIMARY KEY (`eMin`,`IP`,`hitType`)
 ) DEFAULT CHARSET=utf8",
 "wfLocs" => "(
   `IP` binary(16) NOT NULL DEFAULT '\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0',
@@ -151,12 +149,6 @@ class wfSchema {
   `lastUpdate` int(10) unsigned NOT NULL,
   PRIMARY KEY (`IP`)
 ) DEFAULT CHARSET=utf8",
-"wfScanners" => "(
-  `eMin` int(10) unsigned NOT NULL,
-  `IP` binary(16) NOT NULL DEFAULT '\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0',
-  `hits` smallint(5) unsigned NOT NULL,
-  PRIMARY KEY (`eMin`,`IP`)
-) DEFAULT CHARSET=utf8",
 "wfStatus" => "(
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `ctime` double(17,6) unsigned NOT NULL,
@@ -166,13 +158,6 @@ class wfSchema {
   PRIMARY KEY (`id`),
   KEY `k1` (`ctime`),
   KEY `k2` (`type`)
-) DEFAULT CHARSET=utf8",
-'wfNet404s' => "(
-  `sig` binary(16) NOT NULL,
-  `ctime` int(10) unsigned NOT NULL,
-  `URI` varchar(1000) NOT NULL,
-  PRIMARY KEY (`sig`),
-  KEY `k1` (`ctime`)
 ) DEFAULT CHARSET=utf8",
 'wfHoover' => "(
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -203,14 +188,6 @@ class wfSchema {
   `blockType` varchar(50) NOT NULL DEFAULT 'generic',
   PRIMARY KEY (`IP`,`unixday`,`blockType`)
 ) DEFAULT CHARSET=utf8",
-'wfBlockedCommentLog' => "(
-  `IP` binary(16) NOT NULL DEFAULT '\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0',
-  `countryCode` varchar(2) NOT NULL,
-  `blockCount` int(10) unsigned NOT NULL DEFAULT '0',
-  `unixday` int(10) unsigned NOT NULL,
-  `blockType` varchar(50) NOT NULL DEFAULT 'gsb',
-  PRIMARY KEY (`IP`,`unixday`,`blockType`)
-) DEFAULT CHARSET=utf8",
 'wfSNIPCache' => "(
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `IP` varchar(45) NOT NULL DEFAULT '',
@@ -237,7 +214,14 @@ class wfSchema {
   `html` text NOT NULL,
   `links` text NOT NULL,
   PRIMARY KEY (`id`)
-) DEFAULT CHARSET=utf8;"
+) DEFAULT CHARSET=utf8;",
+'wfLiveTrafficHuman' => "(
+  `IP` binary(16) NOT NULL DEFAULT '\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0',
+  `identifier` binary(32) NOT NULL DEFAULT '\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0',
+  `expiration` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`IP`,`identifier`),
+  KEY `expiration` (`expiration`)
+) DEFAULT CHARSET=utf8;",
 /*
 'wfPerfLog' => "(
 	id int UNSIGNED NOT NULL auto_increment PRIMARY KEY,
@@ -261,36 +245,72 @@ class wfSchema {
 */
 );
 	private $db = false;
-	private $prefix = 'wp_';
 	public function __construct($dbhost = false, $dbuser = false, $dbpassword = false, $dbname = false){
-		/*
-		if($dbhost){ //for testing
-			$this->db = new wfDB(false, $dbhost, $dbuser, $dbpassword, $dbname);
-			$this->prefix = 'wp_';
-		} else {
-		*/
-		global $wpdb;
 		$this->db = new wfDB();
-		$this->prefix = $wpdb->base_prefix;
 	}
 	public function dropAll(){
-		foreach($this->tables as $table => $def){
-			$this->db->queryWrite("drop table if exists " . $this->prefix . $table);
+		foreach(self::$tables as $table => $def) {
+			$originalTable = wfDB::networkPrefix() . $table;
+			$convertedTable = wfDB::networkPrefix() . strtolower($table);
+			
+			$this->db->queryWrite("DROP TABLE IF EXISTS {$convertedTable}");
+			$this->db->queryWrite("DROP TABLE IF EXISTS {$originalTable}");
 		}
 		
-		foreach ($this->deprecatedTables as $table) {
-			$this->db->queryWrite("drop table if exists " . $this->prefix . $table);
+		foreach (self::$deprecatedTables as $table) {
+			$originalTable = wfDB::networkTable($table, false);
+			$convertedTable = wfDB::networkTable($table);
+			
+			$this->db->queryWrite("DROP TABLE IF EXISTS {$convertedTable}");
+			if ($originalTable !== $convertedTable) {
+				$this->db->queryWrite("DROP TABLE IF EXISTS {$originalTable}");
+			}
 		}
 	}
-	public function createAll(){
-		foreach($this->tables as $table => $def){
-			$this->db->queryWrite("create table IF NOT EXISTS " . $this->prefix . $table . " " . $def);
+	public function createAll() {
+		foreach(self::$tables as $table => $def){
+			$this->db->queryWrite("CREATE TABLE IF NOT EXISTS " . wfDB::networkTable($table) . " " . $def);
 		}
 	}
-	public function create($table){
-		$this->db->queryWrite("create table IF NOT EXISTS " . $this->prefix . $table . " " . $this->tables[$table]);
+	public function create($table) {
+		$this->db->queryWrite("CREATE TABLE IF NOT EXISTS " . wfDB::networkTable($table) . " " . self::$tables[$table]);
 	}
-	public function drop($table){
-		$this->db->queryWrite("drop table if exists " . $this->prefix . $table);
+	public function drop($table) {
+		$originalTable = wfDB::networkTable($table, false);
+		$convertedTable = wfDB::networkTable($table);
+		
+		$this->db->queryWrite("DROP TABLE IF EXISTS {$convertedTable}");
+		if ($originalTable !== $convertedTable) {
+			$this->db->queryWrite("DROP TABLE IF EXISTS {$originalTable}");
+		}
+	}
+	
+	public static function tableList() {
+		return array_keys(self::$tables);
+	}
+	
+	public static function updateTableCase() {
+		global $wpdb;
+		$hasCamelCaseTable = !!$wpdb->get_var($wpdb->prepare('SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=%s', wfDB::networkTable('wfConfig', false)));
+		if (is_multisite() && function_exists('update_network_option')) {
+			update_network_option(null, self::TABLE_CASE_OPTION, !$hasCamelCaseTable);
+			self::$_usingLowercase = !$hasCamelCaseTable;
+		}
+		else {
+			update_option(self::TABLE_CASE_OPTION, !$hasCamelCaseTable);
+			self::$_usingLowercase = !$hasCamelCaseTable;
+		}
+	}
+	
+	public static function usingLowercase() {
+		if (self::$_usingLowercase === null) {
+			if (is_multisite() && function_exists('update_network_option')) {
+				self::$_usingLowercase = !!get_network_option(null, self::TABLE_CASE_OPTION);
+			}
+			else {
+				self::$_usingLowercase = !!get_option(self::TABLE_CASE_OPTION);
+			}
+		}
+		return self::$_usingLowercase;
 	}
 }

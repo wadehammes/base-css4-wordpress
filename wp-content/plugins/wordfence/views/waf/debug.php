@@ -1,5 +1,7 @@
 <?php
 
+if (!defined('WORDFENCE_VERSION')) { exit; }
+
 /** @var wfRequestModel $hit */
 /** @var stdClass $hitData */
 
@@ -102,7 +104,7 @@ try {
 <head>
 	<meta charset="UTF-8">
 	<title><?php echo esc_html($title) ?></title>
-	<link rel="stylesheet" href="<?php echo wfUtils::getBaseURL() . 'css/main.css' ?>">
+	<link rel="stylesheet" href="<?php echo wfUtils::getBaseURL() . wfUtils::versionedAsset('css/main.css'); ?>">
 	<style>
 		html {
 			font-family: "Open Sans", Helvetica, Arial, sans-serif;

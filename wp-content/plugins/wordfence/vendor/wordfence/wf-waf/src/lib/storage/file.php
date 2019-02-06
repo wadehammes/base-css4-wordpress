@@ -1,4 +1,5 @@
 <?php
+if (defined('WFWAF_VERSION') && !defined('WFWAF_RUN_COMPLETE')) {
 
 class wfWAFStorageFile implements wfWAFStorageInterface {
 
@@ -38,7 +39,7 @@ class wfWAFStorageFile implements wfWAFStorageInterface {
 		fflush($tmpHandle);
 		self::lock($tmpHandle, LOCK_UN);
 		fclose($tmpHandle);
-		chmod($tmpFile, 0660); 
+		chmod($tmpFile, self::permissions()); 
 
 		// Attempt to verify file has finished writing (sometimes the disk will lie for better benchmarks)
 		$tmpContents = file_get_contents($tmpFile);
@@ -75,6 +76,33 @@ class wfWAFStorageFile implements wfWAFStorageInterface {
 		}
 		return $locked;
 	}
+	
+	public static function permissions() {
+		if (defined('WFWAF_LOG_FILE_MODE')) {
+			return WFWAF_LOG_FILE_MODE;
+		}
+		
+		static $_cachedPermissions = null;
+		if ($_cachedPermissions === null) {
+			if (defined('WFWAF_LOG_PATH')) {
+				$template = rtrim(WFWAF_LOG_PATH, '/') . '/template.php';
+				if (file_exists($template)) {
+					$stat = @stat($template);
+					if ($stat !== false) {
+						$mode = $stat[2];
+						$updatedMode = 0600;
+						if (($mode & 0020) == 0020) {
+							$updatedMode = $updatedMode | 0060;
+						}
+						$_cachedPermissions = $updatedMode;
+						return $updatedMode;
+					}
+				}
+			}
+			return 0660;
+		}
+		return $_cachedPermissions;
+	}
 
 	/**
 	 * @var resource
@@ -96,12 +124,12 @@ class wfWAFStorageFile implements wfWAFStorageInterface {
 	private $ipCacheFile;
 	private $configFile;
 	private $rulesDSLCacheFile;
-	private $dataChanged = false;
-	private $data = false;
+	private $dataChanged = array();
+	private $data = array();
 	/**
-	 * @var resource
+	 * @var resource[]
 	 */
-	private $configFileHandle;
+	private $configFileHandles = array();
 	private $uninstalled;
 	private $attackDataRows;
 	private $attackDataNewerThan;
@@ -348,56 +376,107 @@ class wfWAFStorageFile implements wfWAFStorageInterface {
 		self::lock($this->ipCacheFileHandle, LOCK_UN);
 		return false;
 	}
+	
+	public function pathForConfig($category = '') {
+		$category = strtolower(preg_replace('/[^a-z0-9]/i', '', $category));
+		$path = $this->_normalizeSlashes($this->getConfigFile());
+		$components = explode('/', $path);
+		$last = $components[count($components) - 1];
+		if (preg_match('/^([^.]+)(\..+$|$)/', $last, $matches) && !empty($category)) {
+			$last = $matches[1] . '-' . $category . $matches[2];
+		}
+		$components[count($components) - 1] = $last;
+		$path = implode('/', $components);
+		return $path;
+	}
 
 	/**
 	 * @return bool
 	 */
-	public function isOpened() {
-		return is_resource($this->configFileHandle);
+	public function isOpened($category = '') {
+		return isset($this->configFileHandles[$category]) && is_resource($this->configFileHandles[$category]);
 	}
 
 	/**
 	 * @throws wfWAFStorageFileException
 	 */
-	public function open() {
-		if ($this->isOpened()) {
+	public function open($category = '') {
+		if ($this->isOpened($category)) {
 			return;
 		}
 		if ($this->uninstalled) {
 			throw new wfWAFStorageFileException('Unable to open WAF file storage, WAF has been uninstalled.');
 		}
+		
+		if (!empty($category)) { //A non-empty category only opens that config file rather than including the rest of the WAF files.
+			$this->_open($this->pathForConfig($category), $this->configFileHandles, $category, self::LOG_FILE_HEADER . self::LOG_INFO_HEADER . serialize($this->getDefaultConfiguration($category)), true);
+			return;
+		}
 
 		$files = array(
-			array($this->getIPCacheFile(), 'ipCacheFileHandle', self::LOG_FILE_HEADER),
-			array($this->getConfigFile(), 'configFileHandle', self::LOG_FILE_HEADER . self::LOG_INFO_HEADER . serialize($this->getDefaultConfiguration())),
+			array($this->getIPCacheFile(), 'ipCacheFileHandle', false, self::LOG_FILE_HEADER, true),
+			array($this->pathForConfig($category), 'configFileHandles', $category, self::LOG_FILE_HEADER . self::LOG_INFO_HEADER . serialize($this->getDefaultConfiguration($category)), false),
 		);
 		foreach ($files as $file) {
-			list($filePath, $fileHandle, $defaultContents) = $file;
-			if (!file_exists($filePath)) {
-				@file_put_contents($filePath, $defaultContents, LOCK_EX);
-			}
-			@chmod($filePath, 0660);
-			$this->$fileHandle = @fopen($filePath, 'r+');
-			if (!$this->$fileHandle) {
-				throw new wfWAFStorageFileException('Unable to open ' . $filePath . ' for reading and writing.');
-			}
+			list($filePath, $fileHandle, $arrayKey, $defaultContents, $remakeIfCorrupt) = $file;
+			$this->_open($filePath, $this->$fileHandle, $arrayKey, $defaultContents, $remakeIfCorrupt);
 		}
 
 		$this->setAttackDataEngine(new wfWAFAttackDataStorageFileEngine($this->getAttackDataFile()));
 		$this->getAttackDataEngine()->open();
 	}
+	
+	private function _open($filePath, &$fileHandle, $arrayKey, $defaultContents, $remakeIfCorrupt = false) {
+		if (!file_exists($filePath)) {
+			@file_put_contents($filePath, $defaultContents, LOCK_EX);
+		}
+		if (wfWAFStorageFile::allowFileWriting()) {
+			@chmod($filePath, self::permissions());
+		}
+		if ($arrayKey !== false) {
+			$fileHandle[$arrayKey] = @fopen($filePath, 'r+');
+			$handle = $fileHandle[$arrayKey];
+		}
+		else {
+			$fileHandle = @fopen($filePath, 'r+');
+			$handle = $fileHandle;
+		}
+		
+		if (!$handle && $remakeIfCorrupt && wfWAFStorageFile::allowFileWriting()) {
+			@file_put_contents($filePath, $defaultContents, LOCK_EX);
+			@chmod($filePath, self::permissions());
+			if ($arrayKey !== false) {
+				$fileHandle[$arrayKey] = @fopen($filePath, 'r+');
+				$handle = $fileHandle[$arrayKey];
+			}
+			else {
+				$fileHandle = @fopen($filePath, 'r+');
+				$handle = $fileHandle;
+			}
+		}
+		
+		if (!$handle) {
+			throw new wfWAFStorageFileException('Unable to open ' . $filePath . ' for reading and writing.');
+		}
+	}
 
 	/**
 	 *
 	 */
-	public function close() {
-		if (!$this->isOpened()) {
+	public function close($category = '') {
+		if (!$this->isOpened($category)) {
 			return;
 		}
+		
+		fclose($this->configFileHandles[$category]);
+		unset($this->configFileHandles[$category]);
+		
+		if (!empty($category)) { //A non-empty category only closes that config file rather than including the rest of the WAF files.
+			return;
+		}
+		
 		fclose($this->ipCacheFileHandle);
-		fclose($this->configFileHandle);
 		$this->ipCacheFileHandle = null;
-		$this->configFileHandle = null;
 		$this->getAttackDataEngine()->close();
 	}
 
@@ -470,89 +549,93 @@ class wfWAFStorageFile implements wfWAFStorageInterface {
 	 * @param mixed $default
 	 * @return mixed
 	 */
-	public function getConfig($key, $default = null) {
-		if (!$this->data)
+	public function getConfig($key, $default = null, $category = '') {
+		if (!isset($this->data[$category]) || $this->data[$category] === false)
 		{
-			$this->fetchConfigData();
+			$this->fetchConfigData($category);
 		}
-		return array_key_exists($key, $this->data) ? $this->data[$key] : $default;
+		return (is_array($this->data[$category]) && array_key_exists($key, $this->data[$category])) ? $this->data[$category][$key] : $default;
 	}
 
 	/**
 	 * @param string $key
 	 * @param mixed $value
 	 */
-	public function setConfig($key, $value) {
-		if (!$this->data)
-		{
-			$this->fetchConfigData();
+	public function setConfig($key, $value, $category = '') {
+		if (!isset($this->data[$category]) || $this->data[$category] === false) {
+			$this->fetchConfigData($category);
 		}
-		if (!$this->dataChanged && (
-				(array_key_exists($key, $this->data) && $this->data[$key] !== $value) ||
-				!array_key_exists($key, $this->data)
-			)
-		)
-		{
-			$this->dataChanged = array($key, true);
-			register_shutdown_function(array($this, 'saveConfig'));
+		
+		if (is_array($this->data[$category])) {
+			if (!isset($this->dataChanged[$category]) && (
+					(array_key_exists($key, $this->data[$category]) && $this->data[$category][$key] !== $value) ||
+					!array_key_exists($key, $this->data[$category])
+				)
+			) {
+				$this->dataChanged[$category] = array($key, true);
+				register_shutdown_function(array($this, 'saveConfig'), $category);
+			}
+			$this->data[$category][$key] = $value;
 		}
-		$this->data[$key] = $value;
 	}
 
 	/**
 	 * @param string $key
 	 */
-	public function unsetConfig($key) {
-		if (!$this->data)
-		{
-			$this->fetchConfigData();
+	public function unsetConfig($key, $category = '') {
+		if (!isset($this->data[$category]) || $this->data[$category] === false) {
+			$this->fetchConfigData($category);
 		}
-		if (!$this->dataChanged && array_key_exists($key, $this->data))
-		{
-			$this->dataChanged = array($key, true);
-			register_shutdown_function(array($this, 'saveConfig'));
+		if (!isset($this->dataChanged[$category]) && is_array($this->data[$category]) && array_key_exists($key, $this->data[$category])) {
+			$this->dataChanged[$category] = array($key, true);
+			register_shutdown_function(array($this, 'saveConfig'), $category);
 		}
-		unset($this->data[$key]);
+		unset($this->data[$category][$key]);
 	}
 
 	/**
 	 * @throws wfWAFStorageFileException
 	 */
-	public function fetchConfigData() {
-		$this->configFileHandle = null;
-		$this->open();
-		self::lock($this->configFileHandle, LOCK_SH);
+	public function fetchConfigData($category = '', $redoing = false) {
+		unset($this->configFileHandles[$category]);
+		$this->open($category);
+		self::lock($this->configFileHandles[$category], LOCK_SH);
 		$i = 0;
 		// Attempt to read contents of the config file. This could be in the middle of a write, so we account for it and
 		// wait for the operation to complete.
-		fseek($this->configFileHandle, wfWAFUtils::strlen(self::LOG_FILE_HEADER), SEEK_SET);
+		fseek($this->configFileHandles[$category], wfWAFUtils::strlen(self::LOG_FILE_HEADER), SEEK_SET);
 		$serializedData = '';
-		while (!feof($this->configFileHandle)) {
-			$serializedData .= fread($this->configFileHandle, 1024);
+		while (!feof($this->configFileHandles[$category])) {
+			$serializedData .= fread($this->configFileHandles[$category], 1024);
 		}
 		if (wfWAFUtils::substr($serializedData, 0, 1) == '*') {
 			$serializedData = wfWAFUtils::substr($serializedData, wfWAFUtils::strlen(self::LOG_INFO_HEADER));
 		}
-		$this->data = @unserialize($serializedData);
+		$this->data[$category] = @unserialize($serializedData);
 
-		if ($this->data === false) {
-			throw new wfWAFStorageFileConfigException('Error reading Wordfence Firewall config data, configuration file could be corrupted or inaccessible. Path: ' . $this->getConfigFile());
+		if ($this->data[$category] === false) {
+			if (!empty($category) && !$redoing) {
+				$this->regenerateConfigFile($category);
+				$this->fetchConfigData($category, true);
+				return;
+			}
+			throw new wfWAFStorageFileConfigException('Error reading Wordfence Firewall config data, configuration file could be corrupted or inaccessible. Path: ' . $this->pathForConfig($category));
 		}
 
-		self::lock($this->configFileHandle, LOCK_UN);
+		self::lock($this->configFileHandles[$category], LOCK_UN);
 	}
 
 	/**
 	 * @throws wfWAFStorageFileException
 	 */
-	public function saveConfig() {
+	public function saveConfig($category = '') {
 		if (!wfWAFStorageFile::allowFileWriting()) { return false; }
 		
 		if (WFWAF_DEBUG) {
-			error_log('Saving WAF config for change in key ' . $this->dataChanged[0] . ', value: ' .
-				((is_object($this->data[$this->dataChanged[0]]) || $this->dataChanged[0] === 'cron') ?
-					gettype($this->data[$this->dataChanged[0]]) :
-					var_export($this->data[$this->dataChanged[0]], true)));
+			error_log('Saving WAF config for change in key ' . $this->dataChanged[$category][0] . ', value: ' .
+				((is_object($this->data[$category][$this->dataChanged[$category][0]]) || $this->dataChanged[$category][0] === 'cron') ?
+					gettype($this->data[$category][$this->dataChanged[$category][0]]) :
+					var_export($this->data[$category][$this->dataChanged[$category][0]], true)));
 		}
 
 		if ($this->uninstalled) {
@@ -560,15 +643,15 @@ class wfWAFStorageFile implements wfWAFStorageInterface {
 		}
 
 		if (WFWAF_IS_WINDOWS) {
-			self::lock($this->configFileHandle, LOCK_UN);
-			fclose($this->configFileHandle);
-			file_put_contents($this->getConfigFile(), self::LOG_FILE_HEADER . self::LOG_INFO_HEADER . serialize($this->data), LOCK_EX);
+			self::lock($this->configFileHandles[$category], LOCK_UN);
+			fclose($this->configFileHandles[$category]);
+			file_put_contents($this->pathForConfig($category), self::LOG_FILE_HEADER . self::LOG_INFO_HEADER . serialize($this->data[$category]), LOCK_EX);
 		} else {
-			wfWAFStorageFile::atomicFilePutContents($this->getConfigFile(), self::LOG_FILE_HEADER . self::LOG_INFO_HEADER . serialize($this->data));
+			wfWAFStorageFile::atomicFilePutContents($this->pathForConfig($category), self::LOG_FILE_HEADER . self::LOG_INFO_HEADER . serialize($this->data[$category]));
 		}
 
 		if (WFWAF_IS_WINDOWS) {
-			$this->configFileHandle = fopen($this->getConfigFile(), 'r+');
+			$this->configFileHandles[$category] = fopen($this->pathForConfig($category), 'r+');
 		}
 	}
 
@@ -578,10 +661,79 @@ class wfWAFStorageFile implements wfWAFStorageInterface {
 	public function uninstall() {
 		$this->uninstalled = true;
 		$this->close();
-		@unlink($this->getConfigFile());
+		foreach ($this->configFileHandles as $key => $handle) {
+			$this->close($key);
+		}
+		$this->removeConfigFiles();
 		@unlink($this->getAttackDataFile());
 		@unlink($this->getIPCacheFile());
 		@unlink($this->getRulesDSLCacheFile());
+	}
+	
+	public function fileList() {
+		$fileList = array();
+		$fileList[] = $this->getAttackDataFile();
+		$fileList[] = $this->getIPCacheFile();
+		if (defined('WFWAF_DEBUG') && WFWAF_DEBUG) {
+			$fileList[] = $this->getRulesDSLCacheFile();
+		}
+		$fileList[] = $this->getConfigFile();
+		$configDir = dirname($this->getConfigFile());
+		$dir = opendir($configDir);
+		if ($dir) {
+			$escapedPath = preg_quote($this->_normalizeSlashes($this->getConfigFile()), '/');
+			$components = explode('\\/', $escapedPath);
+			$pattern = $components[count($components) - 1];
+			if (preg_match('/^(.+?)(\\\..+$|$)/i', $pattern, $matches)) {
+				$pattern = $matches[1] . '\\-[a-z0-9]+' . $matches[2]; //Results in a pattern like config\-[a-z0-9]\.php
+			}
+			
+			while ($path = readdir($dir)) {
+				if ($path == '.' || $path == '..') { continue; }
+				if (is_dir($configDir . '/' . $path)) { continue; }
+				if (preg_match('/^' . $pattern . '$/i', $path)) {
+					$fileList[] = $configDir . '/' . $path;
+				}
+			}
+			closedir($dir);
+		}
+		return $fileList;
+	}
+	
+	public function removeConfigFiles() {
+		@unlink($this->getConfigFile());
+		$configDir = dirname($this->getConfigFile());
+		$dir = opendir($configDir);
+		if ($dir) {
+			$escapedPath = preg_quote($this->_normalizeSlashes($this->getConfigFile()), '/');
+			$components = explode('\\/', $escapedPath);
+			$pattern = $components[count($components) - 1];
+			if (preg_match('/^(.+?)(\\\..+$|$)/i', $pattern, $matches)) {
+				$pattern = $matches[1] . '\\-[a-z0-9]+' . $matches[2]; //Results in a pattern like config\-[a-z0-9]\.php
+			}
+			
+			while ($path = readdir($dir)) {
+				if ($path == '.' || $path == '..') { continue; }
+				if (is_dir($configDir . '/' . $path)) { continue; }
+				if (preg_match('/^' . $pattern . '$/i', $path)) {
+					@unlink($configDir . '/' . $path);
+				}
+			}
+			closedir($dir);
+		}
+	}
+	
+	public function regenerateConfigFile($category = '') {
+		$path = $this->pathForConfig($category);
+		if (file_exists($path)) {
+			@unlink($path);
+		}
+		
+		$this->_open($path, $this->configFileHandles, $category, self::LOG_FILE_HEADER . self::LOG_INFO_HEADER . serialize($this->getDefaultConfiguration($category)), false);
+	}
+	
+	protected function _normalizeSlashes($path) {
+		return str_replace('\\', '/', $path); //The same sanitation performed by WordPress -- PHP can handle both, but it simplifies path processing
 	}
 
 	/**
@@ -592,11 +744,6 @@ class wfWAFStorageFile implements wfWAFStorageInterface {
 			if ($this->getConfig('learningModeGracePeriodEnabled', false)) {
 				if ($this->getConfig('learningModeGracePeriod', 0) > time()) {
 					return true;
-				} else {
-					// Reached the end of the grace period, activate the WAF.
-					$this->setConfig('wafStatus', 'enabled');
-					$this->setConfig('learningModeGracePeriodEnabled', 0);
-					$this->unsetConfig('learningModeGracePeriod');
 				}
 			} else {
 				return true;
@@ -612,13 +759,16 @@ class wfWAFStorageFile implements wfWAFStorageInterface {
 	/**
 	 * @return array
 	 */
-	public function getDefaultConfiguration() {
-		return array(
-			'wafStatus'                      => 'learning-mode',
-			'learningModeGracePeriodEnabled' => 1,
-			'learningModeGracePeriod'        => time() + (86400 * 7),
-			'authKey'                        => wfWAFUtils::getRandomString(64),
-		);
+	public function getDefaultConfiguration($category = '') {
+		if (empty($category)) {
+			return array(
+				'wafStatus'                      => 'learning-mode',
+				'learningModeGracePeriodEnabled' => 1,
+				'learningModeGracePeriod'        => time() + (86400 * 7),
+				'authKey'                        => wfWAFUtils::getRandomString(64),
+			);
+		}
+		return array();
 	}
 
 	/**
@@ -848,7 +998,9 @@ class wfWAFAttackDataStorageFileEngine {
 		if (!file_exists($this->file)) {
 			@file_put_contents($this->file, $this->getDefaultHeader(), LOCK_EX);
 		}
-		@chmod($this->file, 0660);
+		if (wfWAFStorageFile::allowFileWriting()) {
+			@chmod($this->file, wfWAFStorageFile::permissions());
+		}
 		$this->fileHandle = @fopen($this->file, 'r+');
 		if (!$this->fileHandle) {
 			throw new wfWAFStorageFileException('Unable to open ' . $this->file . ' for reading and writing.');
@@ -1419,4 +1571,4 @@ class wfWAFStorageFileException extends wfWAFException {
 class wfWAFStorageFileConfigException extends wfWAFStorageFileException {
 
 }
-
+}

@@ -20,12 +20,15 @@ class Cdn_Util {
 				'ftp',
 				'google_drive',
 				'highwinds',
+				'limelight',
 				'maxcdn',
 				'mirror',
 				'rscf',
 				'rackspace_cdn',
 				's3',
 				's3_compatible',
+				'stackpath',
+				'stackpath2',
 			) );
 	}
 
@@ -38,7 +41,8 @@ class Cdn_Util {
 	static public function is_engine_mirror( $engine ) {
 		return in_array( $engine, array(
 				'mirror', 'maxcdn', 'cotendo', 'cf2', 'akamai',
-				'edgecast', 'att', 'highwinds', 'rackspace_cdn' ) );
+				'edgecast', 'att', 'highwinds', 'limelight', 'rackspace_cdn',
+				'stackpath', 'stackpath2' ) );
 	}
 
 	static public function is_engine_push( $engine ) {
@@ -57,7 +61,10 @@ class Cdn_Util {
 				'cotendo',
 				'edgecast',
 				'highwinds',
+				'limelight',
 				'maxcdn',
+				'stackpath',
+				'stackpath2',
 			) );
 	}
 
@@ -78,10 +85,13 @@ class Cdn_Util {
 				'edgecast',
 				'ftp',
 				'highwinds',
+				'limelight',
 				'maxcdn',
 				'rscf',
 				's3',
 				's3_compatible',
+				'stackpath',
+				'stackpath2',
 			) );
 	}
 

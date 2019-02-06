@@ -16,6 +16,22 @@ class wfFirewall
 	const BLACKLIST_MODE_ENABLED = 'enabled';
 	
 	/**
+	 * Tests the WAF configuration and returns true if successful.
+	 * 
+	 * @return bool
+	 */
+	public function testConfig() {
+		try {
+			wfWAF::getInstance()->getStorageEngine()->isDisabled();
+		}
+		catch (Exception $e) {
+			return false;
+		}
+		
+		return true;
+	}
+	
+	/**
 	 * Returns a normalized percentage (i.e., in the range [0, 1]) to the corresponding display percentage
 	 * based on license type.
 	 * 
@@ -173,6 +189,10 @@ class wfFirewall
 		}
 		catch (Exception $e) {
 			//Ignore, return 0%
+		}
+		
+		if (!WFWAF_OPERATIONAL) {
+			return array(array('percentage' => 1.0, 'title' => __('Repair the Wordfence Firewall configuration.', 'wordfence')));
 		}
 
 		return array();
@@ -335,12 +355,19 @@ class wfFirewall
 	 * @return float
 	 */
 	public function blacklistStatus() {
-		$wafEnabled = !(!WFWAF_ENABLED || wfWAF::getInstance()->getStorageEngine()->isDisabled());
-		if (!$wafEnabled) {
-			return 0.0;
+		try {
+			$wafEnabled = !(!WFWAF_ENABLED || wfWAF::getInstance()->getStorageEngine()->isDisabled());
+			if (!$wafEnabled) {
+				return 0.0;
+			}
+			
+			return $this->blacklistMode() == self::BLACKLIST_MODE_ENABLED ? 1.0 : 0.0;
+		}
+		catch (Exception $e) {
+			//Ignore, return 0%
 		}
 		
-		return $this->blacklistMode() == self::BLACKLIST_MODE_ENABLED ? 1.0 : 0.0;
+		return 0.0;
 	}
 	
 	/**
@@ -349,17 +376,27 @@ class wfFirewall
 	 * @return array
 	 */
 	public function blacklistStatusDescription() {
-		$wafEnabled = !(!WFWAF_ENABLED || wfWAF::getInstance()->getStorageEngine()->isDisabled());
-		if (!$wafEnabled) {
+		try {
+			$wafEnabled = !(!WFWAF_ENABLED || wfWAF::getInstance()->getStorageEngine()->isDisabled());
+			if (!$wafEnabled) {
+				return array(
+					'percentage' => 1.0,
+					'title'      => __('Enable Firewall.', 'wordfence'),
+				);
+			}
+			
+			if ($this->blacklistMode() == self::BLACKLIST_MODE_ENABLED) {
+				return array();
+			}
 			return array(
 				'percentage' => 1.0,
-				'title'      => __('Enable Firewall.', 'wordfence'),
+				'title'      => __('Enable Real-Time IP Blacklist.', 'wordfence'),
 			);
 		}
-
-		if ($this->blacklistMode() == self::BLACKLIST_MODE_ENABLED) {
-			return array();
+		catch (Exception $e) {
+			//Ignore, return 0%
 		}
+			
 		return array(
 			'percentage' => 1.0,
 			'title'      => __('Enable Real-Time IP Blacklist.', 'wordfence'),
@@ -461,7 +498,7 @@ class wfFirewall
 			if (!$networkBruteForceEnabled) {
 				$status[] = array(
 					'percentage' => 0.5,
-					'title' => __('Enable Real-Time WordPress Security Network.', 'wordfence'),
+					'title' => __('Enable Real-Time Wordfence Security Network.', 'wordfence'),
 				);
 			}
 			if (!wfConfig::get('loginSec_strongPasswds_enabled')) {

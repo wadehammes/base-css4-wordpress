@@ -4,7 +4,7 @@
 /// <reference path="../../js/lodash-3.10.d.ts" />
 /// <reference path="../../modules/actor-selector/actor-selector.ts" />
 /// <reference path="../../ajax-wrapper/ajax-action-wrapper.d.ts" />
-var AmePluginVisibilityModule = (function () {
+var AmePluginVisibilityModule = /** @class */ (function () {
     function AmePluginVisibilityModule(scriptData) {
         var _this = this;
         var _ = AmePluginVisibilityModule._;
@@ -159,7 +159,7 @@ var AmePluginVisibilityModule = (function () {
     AmePluginVisibilityModule._ = wsAmeLodash;
     return AmePluginVisibilityModule;
 }());
-var AmePlugin = (function () {
+var AmePlugin = /** @class */ (function () {
     function AmePlugin(details, settings, module) {
         var _this = this;
         var _ = AmePluginVisibilityModule._;

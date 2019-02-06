@@ -17,6 +17,10 @@ jQuery(function($) {
 			if ($1) {
 				//Decode percent-encoded query parameters.
 				if (o.q.name === 'queryKey') {
+					//A space can be encoded either as "%20" or "+". decodeUriComponent doesn't decode plus signs,
+					//so we need to do that first.
+					$2 = $2.replace('+', ' ');
+
 					$1 = decodeURIComponent($1);
 					$2 = decodeURIComponent($2);
 				}
@@ -73,7 +77,7 @@ jQuery(function($) {
 
 		//Skip links that have no href or contain nothing but an "#anchor". Both AME and some
 		//other plugins (e.g. S2Member 120703) use them as separators.
-		if ( !$link.is('[href]') || ($link.attr('href').substring(0, 1) == '#') ) {
+		if ( !$link.is('[href]') || ($link.attr('href').substring(0, 1) === '#') ) {
 			return;
 		}
 
@@ -91,7 +95,7 @@ jQuery(function($) {
 		var components = ['protocol', 'host', 'port', 'user', 'password', 'path'];
 		var isCloseMatch = true;
 		for (var i = 0; (i < components.length) && isCloseMatch; i++) {
-			isCloseMatch = isCloseMatch && (uri[components[i]] == currentUri[components[i]]);
+			isCloseMatch = isCloseMatch && (uri[components[i]] === currentUri[components[i]]);
 		}
 
 		if (!isCloseMatch) {
@@ -104,7 +108,7 @@ jQuery(function($) {
 			if (uri.queryKey.hasOwnProperty(param)) {
 				if (currentUri.queryKey.hasOwnProperty(param)) {
                     //All parameters that are present in *both* URLs must have the same exact values.
-                    if (uri.queryKey[param] == currentUri.queryKey[param]) {
+                    if (uri.queryKey[param] === currentUri.queryKey[param]) {
                         matchingParams++;
                     } else {
                         return; //Skip to the next link.
@@ -120,7 +124,7 @@ jQuery(function($) {
 			}
 		}
 
-		var isAnchorMatch = uri.anchor == currentUri.anchor;
+		var isAnchorMatch = uri.anchor === currentUri.anchor;
 		var isTopMenu = $link.hasClass('menu-top');
         var isHighlighted = $link.is('.current, .wp-has-current-submenu');
 
@@ -129,29 +133,32 @@ jQuery(function($) {
 		var comparisons = [
 			{
 				better : (matchingParams > bestMatch.matchingParams),
-				equal  : (matchingParams == bestMatch.matchingParams)
+				equal  : (matchingParams === bestMatch.matchingParams)
 			},
 			{
 				better : (differentParams < bestMatch.differentParams),
-				equal  : (differentParams == bestMatch.differentParams)
+				equal  : (differentParams === bestMatch.differentParams)
 			},
 			{
 				better : (isAnchorMatch && (!bestMatch.isAnchorMatch)),
-				equal  : (isAnchorMatch == bestMatch.isAnchorMatch)
+				equal  : (isAnchorMatch === bestMatch.isAnchorMatch)
+			},
+
+			//When a menu has multiple submenus, the first submenu usually has the same URL
+			//as the parent menu. We want to highlight this item and not just the parent.
+			{
+				better : (!isTopMenu && bestMatch.isTopMenu
+					//Is this link a child of the current best match?
+					&& (!bestMatch.link || ($link.closest(bestMatch.link.closest('li')).length > 0))
+				),
+				equal : (isTopMenu === bestMatch.isTopMenu)
 			},
 
             //All else being equal, the item highlighted by WP is probably a better match.
             {
                 better : (isHighlighted && !bestMatch.isHighlighted),
-                equal  : (isHighlighted == bestMatch.isHighlighted)
-            },
-
-            //When a menu has multiple submenus, the first submenu usually has the same URL
-            //as the parent menu. We want to highlight this item and not just the parent.
-			{
-				better : (!isTopMenu && bestMatch.isTopMenu),
-				equal  : (isTopMenu == bestMatch.isTopMenu)
-			}
+                equal  : (isHighlighted === bestMatch.isHighlighted)
+            }
 		];
 
 		var isBetterMatch = false,
@@ -213,6 +220,18 @@ jQuery(function($) {
 			//that's not scrollable (due to being stuck with `position: fixed`).
 			if ((typeof window['stickyMenu'] === 'object') && (typeof window['stickyMenu']['update'] === 'function')) {
 				window.stickyMenu.update();
+			} else {
+				//As of WP core revision 29599 (2014-10-05) the `stickyMenu` object no longer exists
+				//and the replacement (`setPinMenu` in common.js) is not accessible from an outside scope.
+				//We'll resort to faking a resize event to make WP update the menu height and state.
+				$(document).trigger('wp-window-resized');
+			}
+
+			//Workaround: Prevent the current submenu from "jumping around" when you click an item. This glitch is
+			//caused by a `focusin` event handler in common.js. WP adds this handler to all top level menus that
+			//are not the current menu. Since we're changing the current menu, we need to also remove this handler.
+			if (typeof parentMenu['off'] === 'function') {
+				parentMenu.off('focusin.adminmenu');
 			}
 		}
 

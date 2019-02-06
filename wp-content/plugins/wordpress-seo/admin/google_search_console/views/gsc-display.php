@@ -1,6 +1,8 @@
 <?php
 /**
- * @package WPSEO\Admin|Google_Search_Console
+ * WPSEO plugin file.
+ *
+ * @package WPSEO\Admin\Google_Search_Console
  */
 
 // Admin header.
@@ -59,7 +61,7 @@ switch ( $platform_tabs->current_tab() ) {
 			echo "</form>\n";
 		}
 		else {
-			$reset_button = '<a class="button" href="' . esc_url( add_query_arg( 'gsc_reset', 1 ) ) . '">' . esc_html__( 'Reauthenticate with Google ', 'wordpress-seo' ) . '</a>';
+			$reset_button = '<a class="button" href="' . esc_url( add_query_arg( 'gsc_reset', 1 ) ) . '">' . esc_html__( 'Reauthenticate with Google', 'wordpress-seo' ) . '</a>';
 			echo '<h3>', esc_html__( 'Current profile', 'wordpress-seo' ), '</h3>';
 			$profile = WPSEO_GSC_Settings::get_profile();
 			if ( $profile !== '' ) {
@@ -105,12 +107,13 @@ switch ( $platform_tabs->current_tab() ) {
 	default:
 		$form_action_url = add_query_arg( 'page', esc_attr( filter_input( INPUT_GET, 'page' ) ) );
 
-		get_current_screen()->set_screen_reader_content( array(
+		$screen_reader_content = array(
 			// There are no views links in this screen, so no need for the views heading.
 			'heading_views'      => null,
 			'heading_pagination' => __( 'Crawl issues list navigation', 'wordpress-seo' ),
 			'heading_list'       => __( 'Crawl issues list', 'wordpress-seo' ),
-		) );
+		);
+		get_current_screen()->set_screen_reader_content( $screen_reader_content );
 
 		// Open <form>.
 		echo "<form id='wpseo-crawl-issues-table-form' action='" . esc_url( $form_action_url ) . "' method='post'>\n";
@@ -138,7 +141,7 @@ switch ( $platform_tabs->current_tab() ) {
 	);
 
 	echo '</p>';
-?>
+	?>
 
 	<br class="clear" />
 <?php

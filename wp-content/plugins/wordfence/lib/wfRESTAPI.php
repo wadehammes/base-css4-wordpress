@@ -1,5 +1,5 @@
 <?php
-
+if (defined('ABSPATH')) {
 class wfWP_REST_Users_Controller extends WP_REST_Users_Controller
 {
 	public static function wfGetURLBase() {
@@ -10,4 +10,5 @@ class wfWP_REST_Users_Controller extends WP_REST_Users_Controller
 	public function _wfGetURLBase() {
 		return rtrim($this->namespace, '/' . $this->rest_base, '/');
 	}
+}
 }

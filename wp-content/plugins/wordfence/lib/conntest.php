@@ -67,7 +67,7 @@ function doCurlTest($protocol){
 	curl_setopt ($curl, CURLOPT_WRITEFUNCTION, 'curlWrite');
 	curl_exec($curl);
 	$httpStatus = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-	if(strpos($curlContent, 'Your site did not send an API key') !== false){
+	if(strpos($curlContent, 'Your site did not send a license key') !== false){
 		echo "Curl connectivity test passed.<br /><br />\n";
 	} else {
 		$curlErrorNo = curl_errno($curl);

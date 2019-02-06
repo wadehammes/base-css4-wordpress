@@ -1,4 +1,5 @@
 <?php
+if (defined('WFWAF_VERSION') && !defined('WFWAF_RUN_COMPLETE')) {
 
 class wfWAFView {
 
@@ -54,6 +55,7 @@ class wfWAFView {
 
 		extract($this->data, EXTR_SKIP);
 
+		if (!defined('WFWAF_VIEW_RENDERING')) { define('WFWAF_VIEW_RENDERING', true); }
 		ob_start();
 		/** @noinspection PhpIncludeInspection */
 		include $viewPath;
@@ -124,4 +126,5 @@ class wfWAFView {
 }
 
 class wfWAFViewNotFoundException extends Exception {
+}
 }

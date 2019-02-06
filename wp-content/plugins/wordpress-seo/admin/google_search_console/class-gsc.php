@@ -1,6 +1,8 @@
 <?php
 /**
- * @package WPSEO\admin|google_search_console
+ * WPSEO plugin file.
+ *
+ * @package WPSEO\admin\google_search_console
  */
 
 /**
@@ -142,11 +144,13 @@ class WPSEO_GSC {
 		$asset_manager = new WPSEO_Admin_Asset_Manager();
 		$asset_manager->enqueue_script( 'admin-gsc' );
 		$asset_manager->enqueue_style( 'metabox-css' );
-		add_screen_option( 'per_page', array(
+
+		$screen_options = array(
 			'label'   => __( 'Crawl errors per page', 'wordpress-seo' ),
 			'default' => 50,
 			'option'  => 'errors_per_page',
-		) );
+		);
+		add_screen_option( 'per_page', $screen_options );
 	}
 
 	/**
@@ -233,7 +237,6 @@ class WPSEO_GSC {
 		// Do the redirect.
 		wp_redirect( $url );
 		exit;
-
 	}
 
 	/**

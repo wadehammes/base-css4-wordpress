@@ -4,7 +4,7 @@
 <head>
 <title>Files found that don't belong to WordPress Core or known Themes and Plugins</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<link rel='stylesheet' id='wordfence-main-style-css'  href='<?php echo wfUtils::getBaseURL(); ?>/css/diff.css?ver=<?php echo WORDFENCE_VERSION; ?>' type='text/css' media='all' />
+<link rel='stylesheet' id='wordfence-main-style-css'  href='<?php echo wfUtils::getBaseURL() . wfUtils::versionedAsset('css/diff.css'); ?>?ver=<?php echo WORDFENCE_VERSION; ?>' type='text/css' media='all' />
 <body>
 <h1>Wordfence: Files found that don't belong to WordPress Core or known Themes and Plugins.</h1>
 <?php 

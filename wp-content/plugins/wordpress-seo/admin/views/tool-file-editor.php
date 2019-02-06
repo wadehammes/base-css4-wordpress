@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO plugin file.
+ *
  * @package WPSEO\Admin
  */
 
@@ -9,6 +11,7 @@ if ( ! defined( 'WPSEO_VERSION' ) ) {
 	exit();
 }
 
+$yform          = Yoast_Form::get_instance();
 $robots_file    = get_home_path() . 'robots.txt';
 $ht_access_file = get_home_path() . '.htaccess';
 
@@ -82,20 +85,23 @@ if ( isset( $_POST['submithtaccess'] ) ) {
 	}
 }
 
-if ( isset( $msg ) && ! empty( $msg ) ) {
-	echo '<div id="message" class="updated fade"><p>', esc_html( $msg ), '</p></div>';
-}
-
 if ( is_multisite() ) {
 	$action_url = network_admin_url( 'admin.php?page=wpseo_files' );
+	$yform->admin_header( false, 'wpseo_ms' );
 }
 else {
 	$action_url = admin_url( 'admin.php?page=wpseo_tools&tool=file-editor' );
 }
 
-echo '<br><br>';
-$helpcenter_tab = new WPSEO_Option_Tab( 'bulk-editor', __( 'Bulk editor', 'wordpress-seo' ),
-	array( 'video_url' => WPSEO_Shortlinker::get( 'https://yoa.st/screencast-tools-file-editor' ) ) );
+if ( isset( $msg ) && ! empty( $msg ) ) {
+	echo '<div id="message" class="notice notice-success"><p>', esc_html( $msg ), '</p></div>';
+}
+
+$helpcenter_tab = new WPSEO_Option_Tab(
+	'bulk-editor',
+	__( 'Bulk editor', 'wordpress-seo' ),
+	array( 'video_url' => WPSEO_Shortlinker::get( 'https://yoa.st/screencast-tools-file-editor' ) )
+);
 
 $helpcenter = new WPSEO_Help_Center( 'bulk-editor', $helpcenter_tab, WPSEO_Utils::is_yoast_seo_premium() );
 $helpcenter->localize_data();
@@ -236,4 +242,8 @@ if ( ( isset( $_SERVER['SERVER_SOFTWARE'] ) && stristr( $_SERVER['SERVER_SOFTWAR
 		);
 		echo '</p>';
 	}
+}
+
+if ( is_multisite() ) {
+	$yform->admin_footer( false );
 }

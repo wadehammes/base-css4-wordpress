@@ -15,8 +15,8 @@ class wfNotification {
 	
 	public static function notifications($since = 0) {
 		global $wpdb;
-		$prefix = wfDB::networkPrefix();
-		$rawNotifications = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$prefix}wfNotifications WHERE `new` = 1 AND `ctime` > %d ORDER BY `priority` ASC, `ctime` DESC", $since), ARRAY_A); 
+		$table_wfNotifications = wfDB::networkTable('wfNotifications');
+		$rawNotifications = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$table_wfNotifications} WHERE `new` = 1 AND `ctime` > %d ORDER BY `priority` ASC, `ctime` DESC", $since), ARRAY_A);
 		$notifications = array();
 		foreach ($rawNotifications as $raw) {
 			$notifications[] = new wfNotification($raw['id'], $raw['priority'], $raw['html'], $raw['category'], $raw['ctime'], json_decode($raw['links'], true), true);
@@ -26,8 +26,8 @@ class wfNotification {
 	
 	public static function getNotificationForID($id) {
 		global $wpdb;
-		$prefix = wfDB::networkPrefix();
-		$rawNotifications = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$prefix}wfNotifications WHERE `id` = %s ORDER BY `priority` ASC, `ctime` DESC", $id), ARRAY_A);
+		$table_wfNotifications = wfDB::networkTable('wfNotifications');
+		$rawNotifications = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$table_wfNotifications} WHERE `id` = %s ORDER BY `priority` ASC, `ctime` DESC", $id), ARRAY_A);
 		if (count($rawNotifications) == 1) {
 			$raw = $rawNotifications[0];
 			return new wfNotification($raw['id'], $raw['priority'], $raw['html'], $raw['category'], $raw['ctime'], json_decode($raw['links'], true), true);
@@ -37,8 +37,8 @@ class wfNotification {
 	
 	public static function getNotificationForCategory($category, $requireNew = true) {
 		global $wpdb;
-		$prefix = wfDB::networkPrefix();
-		$rawNotifications = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$prefix}wfNotifications WHERE " . ($requireNew ? '`new` = 1 AND ' : '') . "`category` = %s ORDER BY `priority` ASC, `ctime` DESC LIMIT 1", $category), ARRAY_A);
+		$table_wfNotifications = wfDB::networkTable('wfNotifications');
+		$rawNotifications = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$table_wfNotifications} WHERE " . ($requireNew ? '`new` = 1 AND ' : '') . "`category` = %s ORDER BY `priority` ASC, `ctime` DESC LIMIT 1", $category), ARRAY_A);
 		if (count($rawNotifications) == 1) {
 			$raw = $rawNotifications[0];
 			return new wfNotification($raw['id'], $raw['priority'], $raw['html'], $raw['category'], $raw['ctime'], json_decode($raw['links'], true), true);
@@ -131,15 +131,16 @@ class wfNotification {
 					break;
 			}
 			
+			$table_wfNotifications = wfDB::networkTable('wfNotifications');
 			if (!empty($category)) {
 				$existing = self::getNotificationForCategory($category);
 				if ($existing) {
-					$wpdb->query($wpdb->prepare("UPDATE {$wpdb->prefix}wfNotifications SET priority = %d, ctime = %d, html = %s, links = %s WHERE id = %s", $priority, $ctime, $html, $linksJSON, $existing->id));
+					$wpdb->query($wpdb->prepare("UPDATE {$table_wfNotifications} SET priority = %d, ctime = %d, html = %s, links = %s WHERE id = %s", $priority, $ctime, $html, $linksJSON, $existing->id));
 					return;
 				}
 			}
 			
-			$wpdb->query($wpdb->prepare("INSERT IGNORE INTO {$wpdb->prefix}wfNotifications (id, category, priority, ctime, html, links) VALUES (%s, %s, %d, %d, %s, %s)", $id, $category, $priority, $ctime, $html, $linksJSON));
+			$wpdb->query($wpdb->prepare("INSERT IGNORE INTO {$table_wfNotifications} (id, category, priority, ctime, html, links) VALUES (%s, %s, %d, %d, %s, %s)", $id, $category, $priority, $ctime, $html, $linksJSON));
 		}
 	}
 	
@@ -155,6 +156,7 @@ class wfNotification {
 	
 	public function markAsRead() {
 		global $wpdb;
-		$wpdb->query($wpdb->prepare("UPDATE {$wpdb->prefix}wfNotifications SET `new` = 0 WHERE `id` = %s", $this->_id));
+		$table_wfNotifications = wfDB::networkTable('wfNotifications');
+		$wpdb->query($wpdb->prepare("UPDATE {$table_wfNotifications} SET `new` = 0 WHERE `id` = %s", $this->_id));
 	}
 }

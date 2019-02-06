@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO plugin file.
+ *
  * @package WPSEO\Admin\Links
  */
 
@@ -69,7 +71,8 @@ class WPSEO_Meta_Table_Accessible {
 		global $wpdb;
 
 		$storage = new WPSEO_Meta_Storage();
-		if ( $wpdb->get_var( 'SHOW TABLES LIKE "' . $storage->get_table_name() . '"' ) !== $storage->get_table_name() ) {
+		$query   = $wpdb->prepare( 'SHOW TABLES LIKE %s', $storage->get_table_name() );
+		if ( $wpdb->get_var( $query ) !== $storage->get_table_name() ) {
 			self::set_inaccessible();
 			return false;
 		}
@@ -87,10 +90,13 @@ class WPSEO_Meta_Table_Accessible {
 		return 'wpseo_meta_table_inaccessible';
 	}
 
+	/* ********************* DEPRECATED METHODS ********************* */
+
 	/**
 	 * Checks if the table exists if not, set the transient to indicate the inaccessible table.
 	 *
 	 * @deprecated 6.0
+	 * @codeCoverageIgnore
 	 *
 	 * @return bool True if table is accessible.
 	 */

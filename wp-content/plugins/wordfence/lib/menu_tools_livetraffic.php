@@ -24,128 +24,36 @@ $w = new wfConfig();
 	</div>
 <?php endif ?>
 
-<p><?php _e("Wordfence Live Traffic shows you what is happening on your site in real-time. This includes a lot of data that javascript based analytics packages like Google analytics do not show you. The reason they can't show you this data is because Wordfence logs your traffic at the server level. So for example, we will show you visits from Google's crawlers, Bing's crawlers, hack attempts and other visits that don't execute javascript. Whereas Google analytics and other analytics packages will only show you visits from web browsers that are usually operated by a human.", 'wordfence') ?></p>
+<p><?php _e("Wordfence Live Traffic shows you what is happening on your site in real-time, including user logins, hack attempts, and requests that were blocked by the Wordfence Firewall. You can choose to log security-related traffic only or all traffic. Traffic is logged directly on the server, which means it includes visits that don't execute JavaScript. Google and other JavaScript-based analytics packages typically only show visits from browsers that are operated by a human, while Live Traffic can show visits from crawlers like Google and Bing.", 'wordfence') ?></p>
 
 <div class="wordfenceModeElem" id="wordfenceMode_liveTraffic"></div>
 
-<div id="wf-live-traffic-options" class="wf-row">
-	<div class="wf-col-xs-12">
-		<div class="wf-block<?php echo(wfPersistenceController::shared()->isActive('live-traffic-options') ? ' wf-active' : '') ?>" data-persistence-key="live-traffic-options">
-			<div class="wf-block-header">
-				<div class="wf-block-header-content">
-					<div class="wf-block-title">
-						<strong><?php _e('Live Traffic Options', 'wordfence'); ?></strong>
-					</div>
-					<div class="wf-block-header-action">
-						<div class="wf-block-header-action-disclosure"></div>
-					</div>
-				</div>
-			</div>
-			<div class="wf-block-content wf-clearfix">
+<?php
+echo wfView::create('tools/options-group-live-traffic', array(
+	'stateKey' => 'live-traffic-options',
+	'showControls' => true,
+))->render();
+?>
 
-				<p>
-					<?php _e('These options let you ignore certain types of visitors, based on their level of access, usernames, IP address or browser type. If you run a very high traffic website where it is not feasible to see your visitors in real-time, simply un-check the live traffic option and nothing will be written to the Wordfence tracking tables.', 'wordfence') ?>
-				</p>
-
-				<div class="wf-row">
-					<div class="wf-col-xs-12">
-						<?php
-						echo wfView::create('options/block-controls', array(
-							'suppressLogo' => true,
-							'restoreDefaultsSection' => wfConfig::OPTIONS_TYPE_LIVE_TRAFFIC,
-							'restoreDefaultsMessage' => __('Are you sure you want to restore the default Live Traffic settings? This will undo any custom changes you have made to the options on this page.', 'wordfence'),
-						))->render();
-						?>
-					</div>
-				</div>
-
-				<ul class="wf-block-list">
-					<li>
-						<?php
-						echo wfView::create('options/option-toggled', array(
-							'optionName'    => 'liveTrafficEnabled',
-							'enabledValue'  => 1,
-							'disabledValue' => 0,
-							'value'         => wfConfig::get('liveTrafficEnabled') ? 1 : 0,
-							'title'         => __('This option enables live traffic logging.', 'wordfence'),
-							'helpLink'      => wfSupportController::supportURL(wfSupportController::ITEM_TOOLS_LIVE_TRAFFIC_OPTION_ENABLE),
-						))->render();
-						?>
-					</li>
-					<li>
-						<?php
-						echo wfView::create('options/option-toggled', array(
-							'optionName'    => 'liveTraf_ignorePublishers',
-							'enabledValue'  => 1,
-							'disabledValue' => 0,
-							'value'         => wfConfig::get('liveTraf_ignorePublishers') ? 1 : 0,
-							'title'         => __("Don't log signed-in users with publishing access.", 'wordfence'),
-						))->render();
-						?>
-					</li>
-					<li>
-						<?php
-						echo wfView::create('options/option-toggled', array(
-							'optionName'    => 'liveTraf_displayExpandedRecords',
-							'enabledValue'  => 1,
-							'disabledValue' => 0,
-							'value'         => wfConfig::get('liveTraf_displayExpandedRecords') ? 1 : 0,
-							'title'         => __("Always display expanded Live Traffic records.", 'wordfence'),
-						))->render();
-						?>
-					</li>
-					<li>
-						<?php
-						echo wfView::create('options/option-text', array(
-							'textOptionName' => 'liveTraf_ignoreUsers',
-							'textValue'      => wfConfig::get('liveTraf_ignoreUsers'),
-							'title'          => __('List of comma separated usernames to ignore.', 'wordfence'),
-						))->render();
-						?>
-					</li>
-					<li>
-						<?php
-						echo wfView::create('options/option-text', array(
-							'textOptionName' => 'liveTraf_ignoreIPs',
-							'textValue'      => wfConfig::get('liveTraf_ignoreIPs'),
-							'title'          => __('List of comma separated IP addresses to ignore.', 'wordfence'),
-						))->render();
-						?>
-					</li>
-					<li>
-						<?php
-						echo wfView::create('options/option-text', array(
-							'textOptionName' => 'liveTraf_ignoreUA',
-							'textValue'      => wfConfig::get('liveTraf_ignoreUA'),
-							'title'          => __('Browser user-agent to ignore.', 'wordfence'),
-						))->render();
-						?>
-					</li>
-					<li>
-						<?php
-						echo wfView::create('options/option-text', array(
-							'textOptionName' => 'liveTraf_maxRows',
-							'textValue'      => wfConfig::get('liveTraf_maxRows'),
-							'title'          => __('Amount of Live Traffic data to store (number of rows).', 'wordfence'),
-						))->render();
-						?>
-					</li>
-					<li>
-						<?php
-						echo wfView::create('options/option-toggled', array(
-							'optionName' => 'displayTopLevelLiveTraffic',
-							'enabledValue' => 1,
-							'disabledValue' => 0,
-							'value' => wfConfig::get('displayTopLevelLiveTraffic') ? 1 : 0,
-							'title' => __('Display top level Live Traffic menu option', 'wordfence'),
-						))->render();
-						?>
-					</li>
-				</ul>
-			</div>
-		</div>
+<?php
+$overridden = false;
+if (!wfConfig::liveTrafficEnabled($overridden)):
+	?>
+	<div id="wordfenceLiveActivitySecurityOnly"><p>
+			<strong><?php _e('Traffic logging mode: Security-related traffic only', 'wordfence') ?><?php
+				if ($overridden) {
+					printf(__(' (host setting <a href="%s" class="wfhelp" target="_blank" rel="noopener noreferrer"></a>)', 'wordfence'), wfSupportController::supportURL(wfSupportController::ITEM_TOOLS_LIVE_TRAFFIC_OPTION_ENABLE));
+				} ?>.</strong> <?php _e('Login and firewall activity will appear below.', 'wordfence') ?></p>
 	</div>
-</div>
+<?php else: ?>
+	<div id="wordfenceLiveActivityAll"><p>
+			<strong><?php _e('Traffic logging mode: All traffic', 'wordfence') ?><?php
+				if ($overridden) {
+					printf(__(' (host setting <a href="%s" class="wfhelp" target="_blank" rel="noopener noreferrer"></a>)', 'wordfence'), wfSupportController::supportURL(wfSupportController::ITEM_TOOLS_LIVE_TRAFFIC_OPTION_ENABLE));
+				} ?>.</strong> <?php _e('Regular traffic and security-related traffic will appear below.', 'wordfence') ?></p>
+	</div>
+<?php endif; ?>
+
 <div id="wf-live-traffic" class="wf-row<?php echo wfConfig::get('liveTraf_displayExpandedRecords') ? ' wf-live-traffic-display-expanded' : '' ?>">
 	<div class="wf-col-xs-12">
 		<div class="wf-block wf-active">
@@ -157,43 +65,37 @@ $w = new wfConfig();
 						// echo $rightRail;
 						?>
 						<div class="<?php echo wfStyle::contentClasses(); ?>">
-							<?php
-							$overridden = false;
-							if (!wfConfig::liveTrafficEnabled($overridden)):
-								?>
-								<div id="wordfenceLiveActivityDisabled"><p>
-										<strong><?php _e('Live activity is disabled', 'wordfence') ?><?php
-											if ($overridden) {
-												_e(' by the host', 'wordfence');
-											} ?>.</strong> <?php _e('Login and firewall activity will still appear below.', 'wordfence') ?></p>
-								</div>
-							<?php endif ?>
+							<div id="wf-live-traffic-legend">
+								<ul>
+									<li class="wfHuman"><?php _e('Human', 'wordfence') ?></li>
+									<li class="wfBot"><?php _e('Bot', 'wordfence') ?></li>
+									<li class="wfNotice"><?php _e('Warning', 'wordfence') ?></li>
+									<li class="wfBlocked"><?php _e('Blocked', 'wordfence') ?></li>
+								</ul>
+							</div>
 							<div class="wf-row wf-add-bottom-small">
 								<div class="wf-col-xs-12" id="wf-live-traffic-legend-wrapper">
 
 									<form data-bind="submit: reloadListings">
 
-										<div class="wf-clearfix">
-											<div id="wf-live-traffic-legend-placeholder"></div>
-											<div id="wf-live-traffic-legend">
-												<ul>
-													<li class="wfHuman"><?php _e('Human', 'wordfence') ?></li>
-													<li class="wfBot"><?php _e('Bot', 'wordfence') ?></li>
-													<li class="wfNotice"><?php _e('Warning', 'wordfence') ?></li>
-													<li class="wfBlocked"><?php _e('Blocked', 'wordfence') ?></li>
-												</ul>
-											</div>
-
-											<div class="wfActEvent wf-live-traffic-filter">
-												<select id="wf-lt-preset-filters" data-bind="options: presetFiltersOptions, optionsText: presetFiltersOptionsText, value: selectedPresetFilter">
-												</select>
+										<ul class="wf-live-traffic-controls">
+											<li class="wf-live-traffic-filter">
+												<div class="wf-padding-no-left"><select id="wf-lt-preset-filters" data-bind="options: presetFiltersOptions, optionsText: presetFiltersOptionsText, value: selectedPresetFilter"></select></div>
 												&nbsp;&nbsp;
 												<input id="wf-live-traffic-filter-show-advanced" class="wf-option-checkbox" data-bind="checked: showAdvancedFilters" type="checkbox">
 												<label for="wf-live-traffic-filter-show-advanced">
 													<?php _e('Show Advanced Filters', 'wordfence') ?>
 												</label>
-											</div>
-										</div>
+											</li>
+											<li class="wf-live-traffic-show-expanded">
+												<ul class="wf-option wf-option-toggled-boolean-switch wf-option-no-spacing" data-option="liveTraf_displayExpandedRecords" data-enabled-value="1" data-disabled-value="0" data-original-value="<?php echo wfConfig::get('liveTraf_displayExpandedRecords') ? 1 : 0; ?>">
+													<li class="wf-boolean-switch<?php echo wfConfig::get('liveTraf_displayExpandedRecords') ? ' wf-active' : ''; ?>"><a href="#" class="wf-boolean-switch-handle"></a></li>
+													<li class="wf-option-title wf-padding-add-left wf-no-right wf-padding-no-right">
+														<?php echo __('Expand All Results', 'wordfence'); ?>
+													</li>
+												</ul>
+											</li>
+										</ul>
 
 										<div data-bind="visible: showAdvancedFilters" id="wf-lt-advanced-filters">
 											<div class="wf-live-traffic-filter-detail">
@@ -271,9 +173,7 @@ $w = new wfConfig();
 												<div class="wf-flex-row-1">
 													<!-- ko if: $root.groupBy().param() == 'ip' -->
 													<div data-bind="if: loc()">
-														<img data-bind="attr: { src: '<?php echo wfUtils::getBaseURL() . 'images/flags/'; ?>' + loc().countryCode.toLowerCase() + '.png',
-																	alt: loc().countryName, title: loc().countryName }" width="16" height="11"
-																class="wfFlag"/>
+														<span data-bind="attr: { class: 'wf-flag wf-flag-' + loc().countryCode.toLowerCase(), title: loc().countryName }"></span>
 														<a data-bind="text: (loc().city ? loc().city + ', ' : '') + loc().countryName,
 																	attr: { href: 'http://maps.google.com/maps?q=' + loc().lat + ',' + loc().lon + '&z=6' }"
 																target="_blank" rel="noopener noreferrer"></a>
@@ -286,15 +186,6 @@ $w = new wfConfig();
 													<div>
 														<strong>IP:</strong>
 														<span data-bind="text: IP" target="_blank" rel="noopener noreferrer"></span>
-														<span data-bind="if: blocked()">
-														[<a data-bind="click: $root.unblockIP">unblock</a>]
-													</span>
-														<span data-bind="if: rangeBlocked()">
-														[<a data-bind="click: $root.unblockNetwork">unblock this range</a>]
-													</span>
-														<span data-bind="if: !blocked() && !rangeBlocked()">
-														[<a data-bind="click: $root.blockIP">block</a>]
-													</span>
 													</div>
 													<div>
 														<span class="wfReverseLookup"><span data-bind="text: IP" style="display:none;"></span></span>
@@ -336,6 +227,19 @@ $w = new wfConfig();
 																data-bind="attr: { 'data-timestamp': ctime, text: 'Last hit was ' + ctime() + ' ago.' }"
 																class="wfTimeAgo wfTimeAgo-timestamp"></span>
 													</div>
+													<!-- ko if: $root.groupBy().param() == 'ip' -->
+													<div class="wf-add-top-small">
+														<span data-bind="if: blocked()">
+															<a class="wf-btn wf-btn-default wf-btn-sm" data-bind="click: unblockIP">Unblock IP</a>
+														</span>
+														<span data-bind="if: rangeBlocked()">
+															<a class="wf-btn wf-btn-default wf-btn-sm" data-bind="click: unblockNetwork">Unblock range</a>
+														</span>
+														<span data-bind="if: !blocked() && !rangeBlocked()">
+															<a class="wf-btn wf-btn-default wf-btn-sm" data-bind="click: blockIP">Block IP</a>
+														</span>
+													</div>
+													<!-- /ko -->
 												</div>
 												<div class="wf-flex-row-0 wf-padding-add-left">
 													<span class="wf-filtered-traffic-hits" data-bind="text: hitCount"></span> hits
@@ -365,15 +269,12 @@ $w = new wfConfig();
 													<span data-bind="attr: { 'class': cssClasses }"></span>
 												</td>
 												<td>
-													<span data-bind="if: loc()">
-														<img data-bind="attr: { src: '<?php echo wfUtils::getBaseURL() . 'images/flags/'; ?>' + loc().countryCode.toLowerCase() + '.png',
-															alt: loc().countryName, title: loc().countryName }" width="16"
-																height="11"
-																class="wfFlag"/>
-														<span data-bind="text: (loc().city ? loc().city + ', ' : '') + loc().countryName"></span>
+													<span class="wf-flex-horizontal" data-bind="if: loc()">
+														<span data-bind="attr: { class: 'wf-flag wf-flag-' + loc().countryCode.toLowerCase(), title: loc().countryName }"></span>
+														<span class="wf-padding-add-left-small" data-bind="text: (loc().city ? loc().city + ', ' : '') + loc().countryName"></span>
 													</span>
-													<span data-bind="if: !loc()">
-														<img src="<?php echo wfUtils::getBaseURL(); ?>images/flags/country-missing.svg" width="16" height="16" alt="" class="wfFlag"> Unspecified
+													<span class="wf-flex-horizontal" data-bind="if: !loc()">
+														<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 64.22 64.37" class="wf-flag wf-flag-unspecified"><path d="M64,28.21a30.32,30.32,0,0,0-5.8-14.73A31.6,31.6,0,0,0,37.43.56C35.7.26,33.94.18,32.2,0h-.35C30.22.18,28.58.3,27,.55A32.14,32.14,0,0,0,.2,35.61,31.4,31.4,0,0,0,10.4,55.87a31.24,31.24,0,0,0,25,8.33,30.5,30.5,0,0,0,18.94-8.79C62,47.94,65.15,38.8,64,28.21ZM57.21,44.68a23.94,23.94,0,0,1-2.3-5.08c-.66-2.45-2.27-.08-2.4,1.52s-1.2,2.8-3.33.4-2.54-1.87-3.2-1.87-1.87,1.6-1.6,9.07c.19,5.33,2.29,6.18,3.67,6.56a27.16,27.16,0,0,1-8.78,4A27.55,27.55,0,0,1,7.85,45.13C2.27,34.4,5,22.26,10.67,15.57c.15,1.21.3,2.29.43,3.37a27.63,27.63,0,0,1-.52,8.79,4.39,4.39,0,0,0,.08,1.94,1.3,1.3,0,0,0,.94.76c.27,0,.75-.41.86-.73a8.27,8.27,0,0,0,.27-1.86c0-.44,0-.89.07-1.58a10.67,10.67,0,0,1,1.06.86c.7.7,1.4,1.4,2,2.15a2.11,2.11,0,0,1,.56,1.21,3.44,3.44,0,0,0,.83,2.13,12.21,12.21,0,0,1,1.07,2.57c.14.37.17.78.33,1.13a2,2,0,0,0,1.8,1.32c1,.07,1.32.44,1.46,1.43l-.74.08c-1.17.11-1.75.65-1.71,1.83a8.43,8.43,0,0,0,2.69,6c.48.45,1,.87,1.46,1.33a3.35,3.35,0,0,1,.92,3.75,12.18,12.18,0,0,0-.69,2.09,6,6,0,0,0,.06,2.23c.18.75.1,2.37.86,2.24,1.36-.24,2.14,0,2.25-1.49a1.22,1.22,0,0,0-.08-.6c-.4-1.42,1.42-5.47,2.52-6.2a27.11,27.11,0,0,0,2.73-2,3.6,3.6,0,0,0,1.26-4,3.22,3.22,0,0,1,1.14-3.59,4.54,4.54,0,0,0,1.71-3.65c-.08-1.53-1.07-2.63-2.37-2.47a9.21,9.21,0,0,0-1.87.59,20.62,20.62,0,0,1-2.72.9c-1.31.23-2.11-.62-2.69-1.66-.47-.83-.63-.9-1.44-.38s-1.37.89-2.08,1.28S22,35.58,21.45,35a5.79,5.79,0,0,0-1.24-.88c-.31-.19-.73-.24-1-.48s-.8-.8-.75-1.15a1.69,1.69,0,0,1,.95-1.1,14.36,14.36,0,0,1,2.29-.51,7.33,7.33,0,0,0,1.22-.33c.52-.21.5-.56.1-.89a3.26,3.26,0,0,0-.69-.37l-3.52-1.39a4.74,4.74,0,0,1-.84-.43c-.74-.49-.83-1-.16-1.61,2.64-2.33,5.72-3,8.45.08.84,1,1.42,2.16,2.22,3.16a12.5,12.5,0,0,0,2.15,2.15,1.62,1.62,0,0,0,1.44.09,1.15,1.15,0,0,0,.29-1.56,8.43,8.43,0,0,0-.86-1.41,5.16,5.16,0,0,1,1.59-7.52,4.38,4.38,0,0,0,2.53-2.58c-.58.16-1,.26-1.42.39-2.3.71-.7-1,.36-1.31.65-.18-.58-.67-.58-.67s.82-.28,1.69-.65a6.85,6.85,0,0,0,1.7-.94,3.79,3.79,0,0,0,.66-1.17l-.16-.18-1.83.24c-1,.11-1.27-.09-1.37-1.14a1,1,0,0,0-1.48-.73c-.45.25-.85.61-1.29.9-1,.66-1.78.39-2.19-.75-.23-.68-.57-.81-1.19-.42-.31.18-.58.47-.89.64a11.53,11.53,0,0,1-1.62.79c-.55.19-1.21.33-1.58-.27a1.25,1.25,0,0,1,.46-1.68A14.78,14.78,0,0,1,27,10c1-.56,2.07-1,3-1.65a1.78,1.78,0,0,0,.79-2.07.88.88,0,0,0-1.37-.65c-.56.28-1.06.72-1.63,1a2.81,2.81,0,0,1-1.41.08c-.17,0-.35-.49-.35-.76s.31-.43.51-.46c1.4-.22,2.81-.41,4.22-.57a.76.76,0,0,1,.58.25,6.84,6.84,0,0,0,3.6,2.15c1.15.34,1.31.18,1.47-1,1.48-.34,3-1,4.46-.09A14.4,14.4,0,0,1,43.14,8c.18.17.07.7,0,1s-.36.87-.48,1.33a1.2,1.2,0,0,0,1.26,1.56c.29,0,.57-.07.86-.08.85,0,1.14.28,1.07,1.13-.11,1.21.09,1.35,1.31,1.15a2.07,2.07,0,0,1,1.67.64c1.14.86,2,.54,2.33-.86,0-.16,0-.32.06-.47.14-.63.49-.79.92-.35.9,1,1.74,2,2.66,3a3,3,0,0,0-.8,3.07,5.19,5.19,0,0,1-.55,3.27A24.63,24.63,0,0,0,52.2,25.5c-.45,1.57.06,2.3,1.66,2.65s1.78.64,1.84,2.14a4.85,4.85,0,0,0,2.92,4.35c.4.19.82.34,1.23.51a25.22,25.22,0,0,1-2.64,9.53Z"/></svg> <span class="wf-padding-add-left-small">Unspecified</span>
 													</span>
 												</td>
 												<td>
@@ -410,16 +311,13 @@ $w = new wfConfig();
 															<h2>Activity Detail</h2>
 															<div>
 																<span data-bind="if: action() != 'loginOK' && action() != 'loginFailValidUsername' && action() != 'loginFailInvalidUsername' && user()">
-																	<span data-bind="html: user.avatar" class="wfAvatar"></span>
-																	<a data-bind="attr: { href: user.editLink }, text: user().display_name"
+																	<span data-bind="attr: {'data-userid': user().ID}" class="wfAvatar"></span>
+																	<a data-bind="attr: { href: user().editLink }, text: user().display_name"
 																			target="_blank" rel="noopener noreferrer"></a>
 																</span>
 																<span data-bind="if: loc()">
 																	<span data-bind="if: action() != 'loginOK' && action() != 'loginFailValidUsername' && action() != 'loginFailInvalidUsername' && user()"> in</span>
-																	<img data-bind="attr: { src: '<?php echo wfUtils::getBaseURL() . 'images/flags/'; ?>' + loc().countryCode.toLowerCase() + '.png',
-																		alt: loc().countryName, title: loc().countryName }" width="16"
-																			height="11"
-																			class="wfFlag"/>
+																	<span data-bind="attr: { class: 'wf-flag wf-flag-' + loc().countryCode.toLowerCase(), title: loc().countryName }"></span>
 																	<a data-bind="text: (loc().city ? loc().city + ', ' : '') + loc().countryName,
 																		attr: { href: 'http://maps.google.com/maps?q=' + loc().lat + ',' + loc().lon + '&z=6' }"
 																			target="_blank" rel="noopener noreferrer"></a>
@@ -448,7 +346,13 @@ $w = new wfConfig();
 																<span data-bind="if: statusCode() == 200 && !action()">
 																	visited
 																</span>
-																<span data-bind="if: statusCode() == 403 || statusCode() == 503">
+																<span data-bind="if: (statusCode() == 301 || statusCode() == 302) && !action()">
+																	was redirected when visiting
+																</span>
+																<span data-bind="if: (statusCode() == 301 || statusCode() == 302) && action()">
+																	was <span data-bind="text: firewallAction"></span> at
+																</span>
+																<span data-bind="if: ((statusCode() == 403 || statusCode() == 503) && action() != 'loginFailValidUsername' && action() != 'loginFailInvalidUsername')">
 																	was <span data-bind="text: firewallAction" style="color: #F00;"></span> at
 																</span>
 
@@ -462,10 +366,10 @@ $w = new wfConfig();
 																	requested a password reset.
 																</span>
 																<span data-bind="if: action() == 'loginFailValidUsername'">
-																	attempted a failed login as "<strong data-bind="text: username"></strong>".
+																	attempted a <span style="color: #F00;">failed login</span> as "<strong data-bind="text: username"></strong>".
 																</span>
 																<span data-bind="if: action() == 'loginFailInvalidUsername'">
-																	attempted a failed login using an invalid username "<strong
+																	attempted a <span style="color: #F00;">failed login</span> using an invalid username "<strong
 																			data-bind="text: username"></strong>".
 																</span>
 																<span data-bind="if: action() == 'user:passwordReset'">
@@ -485,13 +389,13 @@ $w = new wfConfig();
 																	<span data-bind="text: IP" style="display:none;"></span>
 																</span>
 																<span data-bind="if: blocked()">
-																	<a href="#" class="wf-btn wf-btn-default wf-btn-sm wf-block-ip-btn"
+																	<a class="wf-btn wf-btn-default wf-btn-sm wf-block-ip-btn"
 																			data-bind="click: unblockIP">
 																		Unblock IP
 																	</a>
 																</span>
 																<span data-bind="if: rangeBlocked()">
-																	<a href="#" class="wf-btn wf-btn-default wf-btn-sm wf-block-ip-btn"
+																	<a class="wf-btn wf-btn-default wf-btn-sm wf-block-ip-btn"
 																			data-bind="click: unblockNetwork">Unblock range
 																	</a>
 																</span>
@@ -502,7 +406,7 @@ $w = new wfConfig();
 																	</a>
 																</span>
 															</div>
-															<div data-bind="visible: (jQuery.inArray(parseInt(statusCode(), 10), [403, 503, 404]) !== -1)">
+															<div data-bind="visible: (jQuery.inArray(parseInt(statusCode(), 10), [403, 503, 404]) !== -1 || action() == 'loginFailValidUsername' || action() == 'loginFailInvalidUsername')">
 																<strong>Human/Bot:</strong> <span data-bind="text: (jsRun() === '1' ? 'Human' : 'Bot')"></span>
 															</div>
 															<div data-bind="if: browser() && browser().browser != 'Default Browser'">
@@ -512,40 +416,39 @@ $w = new wfConfig();
 																(browser().platform  && browser().platform != 'unknown' ? ' running on ' + browser().platform : '')
 																"></span>
 															</div>
-															<div data-bind="text: UA"></div>
+															<div class="wf-split-word" data-bind="text: UA"></div> 
 															<div class="wf-live-traffic-actions">
 																<span data-bind="if: blocked()">
-																	<a href="#" class="wf-btn wf-btn-default wf-btn-sm"
+																	<a class="wf-btn wf-btn-default wf-btn-sm"
 																			data-bind="click: unblockIP">
 																		Unblock IP
 																	</a>
 																</span>
 																<span data-bind="if: rangeBlocked()">
-																	<a href="#" class="wf-btn wf-btn-default wf-btn-sm"
+																	<a class="wf-btn wf-btn-default wf-btn-sm"
 																			data-bind="click: unblockNetwork">Unblock range
 																	</a>
 																</span>
 																<span data-bind="if: !blocked() && !rangeBlocked()">
-																	<a href="#" class="wf-btn wf-btn-default wf-btn-sm"
+																	<a class="wf-btn wf-btn-default wf-btn-sm"
 																			data-bind="click: blockIP">
 																		Block IP
 																	</a>
 																</span>
-																<a class="wf-btn wf-btn-default wf-btn-sm" data-bind="click: showWhoisOverlay,
-																attr: { href: 'admin.php?page=WordfenceTools&whoisval=' + IP() + '#top#whois' }"
+																<a class="wf-btn wf-btn-default wf-btn-sm" data-bind="click: showWhoisOverlay"
 																		target="_blank" rel="noopener noreferrer">Run Whois</a>
 																<a class="wf-btn wf-btn-default wf-btn-sm"
-																		data-bind="click: showRecentTraffic, attr: { href: WFAD.makeIPTrafLink(IP()) }" target="_blank" rel="noopener noreferrer">
+																		data-bind="click: showRecentTraffic" target="_blank" rel="noopener noreferrer">
 																	<span class="wf-hidden-xs"><?php _e('See recent traffic', 'wordfence'); ?></span><span class="wf-visible-xs"><?php _e('Recent', 'wordfence'); ?></span>
 																</a>
 																<span data-bind="if: action() == 'blocked:waf'">
-																	<a href="#" class="wf-btn wf-btn-default wf-btn-sm"
+																	<a class="wf-btn wf-btn-default wf-btn-sm"
 																			data-bind="click: function () { $root.whitelistWAFParamKey(actionData().path, actionData().paramKey, actionData().failedRules) }"
 																			title="If this is a false positive, you can exclude this parameter from being filtered by the firewall">
 																		Whitelist param from Firewall
 																	</a>
 																	<?php if (WFWAF_DEBUG): ?>
-																		<a href="#" class="wf-btn wf-btn-default wf-btn-sm"
+																		<a class="wf-btn wf-btn-default wf-btn-sm"
 																				data-bind="attr: { href: '<?php echo esc_js(home_url()) ?>?_wfsf=debugWAF&nonce=' + WFAD.nonce + '&hitid=' + id() }" target="_blank" rel="noopener noreferrer">
 																			Debug this Request
 																		</a>
@@ -572,6 +475,20 @@ $w = new wfConfig();
 	</div>
 </div>
 
+<script type="application/javascript">
+	(function($) {
+		$(function() {
+			$('.wf-option.wf-option-toggled-boolean-switch[data-option="liveTraf_displayExpandedRecords"]').on('change', function() {
+				delete WFAD.pendingChanges['liveTraf_displayExpandedRecords'];
+				var isOn = $(this).find('.wf-boolean-switch').hasClass('wf-active');
+				WFAD.setOption($(this).data('option'), (isOn ? $(this).data('enabledValue') : $(this).data('disabledValue')), function() {
+					$('#wf-live-traffic').toggleClass('wf-live-traffic-display-expanded', isOn);
+				});
+			});
+		});
+	})(jQuery);
+</script>
+
 <div id="wf-live-traffic-util-overlay-wrapper" style="display: none">
 	<div class="wf-live-traffic-util-overlay">
 		<div class="wf-live-traffic-util-overlay-header"></div>
@@ -585,3 +502,65 @@ $w = new wfConfig();
 <script type="text/x-jquery-template" id="wf-live-traffic-hostname-template">
 	<span title="${ip}">${(ip && ip.length > 22) ? '...' + ip.substring(ip.length - 22) : ip}</span>
 </script>
+
+<?php if (wfOnboardingController::willShowNewTour(wfOnboardingController::TOUR_LIVE_TRAFFIC)): ?>
+	<script type="application/javascript">
+		(function($) {
+			$(function() {
+				WFAD.tour1 = function() {
+					WFAD.tour('wfNewTour1', 'wf-live-traffic', 'bottom', 'bottom', null, WFAD.tourComplete);
+				};
+				WFAD.tourComplete = function() { WFAD.tourFinish('<?php echo esc_attr(wfOnboardingController::TOUR_LIVE_TRAFFIC); ?>'); };
+				
+				<?php if (wfOnboardingController::shouldShowNewTour(wfOnboardingController::TOUR_LIVE_TRAFFIC)): ?>
+				if (!WFAD.isSmallScreen) { WFAD.tour1(); }
+				<?php endif; ?>
+			});
+		})(jQuery);
+	</script>
+
+	<script type="text/x-jquery-template" id="wfNewTour1">
+		<div>
+			<h3><?php _e('Live Traffic', 'wordfence'); ?></h3>
+			<p><?php _e('Live traffic defaults to a summary view of all security-related traffic. Details are viewable by clicking anywhere within the summary record. To switch to the expanded view, click the <strong>Expand All Records</strong> switch.', 'wordfence'); ?></p>
+			<div class="wf-pointer-footer">
+				<ul class="wf-tour-pagination">
+					<li class="wf-active">&bullet;</li>
+				</ul>
+				<div id="wf-tour-continue"><a href="#" class="wf-onboarding-btn wf-onboarding-btn-primary"><?php _e('Got it', 'wordfence'); ?></a></div>
+			</div>
+			<div id="wf-tour-close"><a href="#"><i class="wf-fa wf-fa-times-circle" aria-hidden="true"></i></a></div>
+		</div>
+	</script>
+<?php endif; ?>
+
+<?php if (wfOnboardingController::willShowUpgradeTour(wfOnboardingController::TOUR_LIVE_TRAFFIC)): ?>
+	<script type="application/javascript">
+		(function($) {
+			$(function() {
+				WFAD.tour1 = function() {
+					WFAD.tour('wfUpgradeTour1', 'wf-live-traffic', 'bottom', 'bottom', null, WFAD.tourComplete);
+				};
+				WFAD.tourComplete = function() { WFAD.tourFinish('<?php echo esc_attr(wfOnboardingController::TOUR_LIVE_TRAFFIC); ?>'); };
+				
+				<?php if (wfOnboardingController::shouldShowUpgradeTour(wfOnboardingController::TOUR_LIVE_TRAFFIC)): ?>
+				if (!WFAD.isSmallScreen) { WFAD.tour1(); }
+				<?php endif; ?>
+			});
+		})(jQuery);
+	</script>
+
+	<script type="text/x-jquery-template" id="wfUpgradeTour1">
+		<div>
+			<h3><?php _e('Live Traffic', 'wordfence'); ?></h3>
+			<p><?php _e('Live traffic now defaults to a summary view. Details are viewable by clicking anywhere within the summary record. To switch to the expanded view, click the <strong>Expand All Records</strong> switch. New installations will only log security-related traffic by default, though your previous setting has been preserved.', 'wordfence'); ?></p>
+			<div class="wf-pointer-footer">
+				<ul class="wf-tour-pagination">
+					<li class="wf-active">&bullet;</li>
+				</ul>
+				<div id="wf-tour-continue"><a href="#" class="wf-onboarding-btn wf-onboarding-btn-primary"><?php _e('Got it', 'wordfence'); ?></a></div>
+			</div>
+			<div id="wf-tour-close"><a href="#"><i class="wf-fa wf-fa-times-circle" aria-hidden="true"></i></a></div>
+		</div>
+	</script>
+<?php endif; ?>

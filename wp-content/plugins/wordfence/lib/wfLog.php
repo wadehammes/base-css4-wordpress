@@ -4,6 +4,7 @@ require_once('wfUtils.php');
 require_once('wfBrowscap.php');
 class wfLog {
 	public $canLogHit = true;
+	private $effectiveUserID = 0;
 	private $hitsTable = '';
 	private $apiKey = '';
 	private $wp_version = '';
@@ -23,22 +24,85 @@ class wfLog {
 		}
 		return $_shared;
 	}
+	
+	/**
+	 * Returns whether or not we have a cached record identifying the visitor as human. This is used both by certain
+	 * rate limiting features and by Live Traffic.
+	 * 
+	 * @param bool|string $IP
+	 * @param bool|string $UA
+	 * @return bool
+	 */
+	public static function isHumanRequest($IP = false, $UA = false) {
+		global $wpdb;
+		
+		if ($IP === false) {
+			$IP = wfUtils::getIP();
+		}
+		
+		if ($UA === false) {
+			$UA = (isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '');
+		}
+		
+		$table = wfDB::networkTable('wfLiveTrafficHuman');
+		if ($wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$table} WHERE IP = %s AND identifier = %s AND expiration >= UNIX_TIMESTAMP()", wfUtils::inet_pton($IP), hash('sha256', $UA, true)))) {
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * Creates a cache record for the requester to tag it as human.
+	 * 
+	 * @param bool|string $IP
+	 * @param bool|string $UA
+	 * @return bool
+	 */
+	public static function cacheHumanRequester($IP = false, $UA = false) {
+		global $wpdb;
+		
+		if ($IP === false) {
+			$IP = wfUtils::getIP();
+		}
+		
+		if ($UA === false) {
+			$UA = (isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '');
+		}
+		
+		$table = wfDB::networkTable('wfLiveTrafficHuman');
+		if ($wpdb->get_var($wpdb->prepare("INSERT IGNORE INTO {$table} (IP, identifier, expiration) VALUES (%s, %s, UNIX_TIMESTAMP() + 86400)", wfUtils::inet_pton($IP), hash('sha256', $UA, true)))) {
+			return true;
+		}
+	}
+	
+	/**
+	 * Prunes any expired records from the human cache.
+	 */
+	public static function trimHumanCache() {
+		global $wpdb;
+		$table = wfDB::networkTable('wfLiveTrafficHuman');
+		$wpdb->query("DELETE FROM {$table} WHERE `expiration` < UNIX_TIMESTAMP()");
+	}
 
 	public function __construct($apiKey, $wp_version){
 		$this->apiKey = $apiKey;
 		$this->wp_version = $wp_version;
-		global $wpdb;
-		$this->hitsTable = $wpdb->base_prefix . 'wfHits';
-		$this->loginsTable = $wpdb->base_prefix . 'wfLogins';
+		$this->hitsTable = wfDB::networkTable('wfHits');
+		$this->loginsTable = wfDB::networkTable('wfLogins');
 		$this->blocksTable = wfBlock::blocksTable();
-		$this->lockOutTable = $wpdb->base_prefix . 'wfLockedOut';
-		$this->leechTable = $wpdb->base_prefix . 'wfLeechers';
-		$this->badLeechersTable = $wpdb->base_prefix . 'wfBadLeechers';
-		$this->scanTable = $wpdb->base_prefix . 'wfScanners';
-		$this->throttleTable = $wpdb->base_prefix . 'wfThrottleLog';
-		$this->statusTable = $wpdb->base_prefix . 'wfStatus';
-		$this->ipRangesTable = $wpdb->base_prefix . 'wfBlocksAdv';
-		$this->perfTable = $wpdb->base_prefix . 'wfPerfLog';
+		$this->lockOutTable = wfDB::networkTable('wfLockedOut');
+		$this->throttleTable = wfDB::networkTable('wfThrottleLog');
+		$this->statusTable = wfDB::networkTable('wfStatus');
+		$this->ipRangesTable = wfDB::networkTable('wfBlocksAdv');
+		$this->perfTable = wfDB::networkTable('wfPerfLog');
+		
+		add_filter('determine_current_user', array($this, '_userIDDetermined'), 99, 1);
+	}
+	
+	public function _userIDDetermined($userID) {
+		//Needed because the REST API will clear the authenticated user if it fails a nonce check on the request
+		$this->effectiveUserID = (int) $userID;
+		return $userID;
 	}
 
 	public function initLogRequest() {
@@ -50,18 +114,12 @@ class wfLog {
 			$this->currentRequest->isGoogle = (wfCrawl::isGoogleCrawler() ? 1 : 0);
 			$this->currentRequest->IP = wfUtils::inet_pton(wfUtils::getIP());
 			$this->currentRequest->userID = $this->getCurrentUserID();
-			$this->currentRequest->newVisit = (wordfence::$newVisit ? 1 : 0);
 			$this->currentRequest->URL = wfUtils::getRequestedURL();
 			$this->currentRequest->referer = (isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '');
 			$this->currentRequest->UA = (isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '');
 			$this->currentRequest->jsRun = 0;
 			
-			if (!function_exists('wp_verify_nonce')) {
-				add_action('plugins_loaded', array($this, 'actionSetRequestJSEnabled'));
-			} else {
-				$this->actionSetRequestJSEnabled();
-			}
-
+			add_action('wp_loaded', array($this, 'actionSetRequestJSEnabled'));
 			add_action('init', array($this, 'actionSetRequestOnInit'), 9999);
 
 			if (function_exists('register_shutdown_function')) {
@@ -71,11 +129,14 @@ class wfLog {
 	}
 
 	public function actionSetRequestJSEnabled() {
-		$UA = $this->currentRequest->UA;
+		if (get_current_user_id() > 0) {
+			$this->currentRequest->jsRun = true;
+			return;
+		}
+		
 		$IP = wfUtils::getIP();
-		$jsRun = (int) (isset($_COOKIE['wordfence_verifiedHuman']) &&
-			$this->validateVerifiedHumanCookie($_COOKIE['wordfence_verifiedHuman'], $UA, $IP));
-		$this->currentRequest->jsRun = $jsRun;
+		$UA = $this->currentRequest->UA;
+		$this->currentRequest->jsRun = wfLog::isHumanRequest($IP, $UA);
 	}
 
 	/**
@@ -84,43 +145,6 @@ class wfLog {
 	public function actionSetRequestOnInit() {
 		$this->currentRequest->IP = wfUtils::inet_pton(wfUtils::getIP());
 		$this->currentRequest->userID = $this->getCurrentUserID();
-	}
-
-	/**
-	 * @param string $cookieVal
-	 * @param string $ua
-	 * @param string $ip
-	 * @return string
-	 */
-	public function validateVerifiedHumanCookie($cookieVal, $ua = null, $ip = null) {
-		if ($ua === null) {
-			$ua = !empty($this->currentRequest) ? $this->currentRequest->UA : '';
-		}
-		if ($ip === null) {
-			$ip = wfUtils::getIP();
-		}
-		if (!function_exists('hash_equals')) {
-			require_once ABSPATH . WPINC . '/compat.php';
-		}
-		return hash_equals($cookieVal, $this->getVerifiedHumanCookieValue($ua, $ip));
-	}
-
-	/**
-	 * @param string $ua
-	 * @param string $ip
-	 * @return string
-	 */
-	public function getVerifiedHumanCookieValue($ua = null, $ip = null) {
-		if ($ua === null) {
-			$ua = !empty($this->currentRequest) ? $this->currentRequest->UA : '';
-		}
-		if ($ip === null) {
-			$ip = wfUtils::getIP();
-		}
-		if (!function_exists('wp_hash')) {
-			require_once ABSPATH . WPINC . '/pluggable.php';
-		}
-		return wp_hash('wordfence_verifiedHuman' . $ua . $ip, 'nonce');
 	}
 
 	/**
@@ -202,92 +226,27 @@ class wfLog {
 		$id = get_current_user_id();
 		return $id ? $id : 0;
 	}
-	public function logLeechAndBlock($type){ //404 or hit
-		if(wfConfig::get('firewallEnabled')){
-			//Moved the following block into the "is fw enabled section" for optimization. 
-			$IP = wfUtils::getIP();
-			$IPnum = wfUtils::inet_pton($IP);
-			if (wfBlock::isWhitelisted($IP)) {
-				return;
-			}
-			if (wfConfig::get('neverBlockBG') == 'neverBlockUA' && wfCrawl::isGoogleCrawler()) {
-				return;
-			}
-			if (wfConfig::get('neverBlockBG') == 'neverBlockVerified' && wfCrawl::isVerifiedGoogleCrawler()) {
-				return;
-			}
-
-			if ($type == '404') {
-				$allowed404s = wfConfig::get('allowed404s');
-				if (is_string($allowed404s)) {
-					$allowed404s = array_filter(preg_split("/[\r\n]+/", $allowed404s));
-					$allowed404sPattern = '';
-					foreach ($allowed404s as $allowed404) {
-						$allowed404sPattern .= preg_replace('/\\\\\*/', '.*?', preg_quote($allowed404, '/')) . '|';
-					}
-					$uri = $_SERVER['REQUEST_URI'];
-					if (($index = strpos($uri, '?')) !== false) {
-						$uri = substr($uri, 0, $index);
-					}
-					if ($allowed404sPattern && preg_match('/^' . substr($allowed404sPattern, 0, -1) . '$/i', $uri)) {
-						return;
-					}
-				}
-			}
-
-
-			if($type == '404'){
-				$table = $this->scanTable;
-			} else if($type == 'hit'){
-				$table = $this->leechTable;
-			} else {
-				wordfence::status(1, 'error', "Invalid type to logLeechAndBlock(): $type");
-				return;
-			}
-			$this->getDB()->queryWrite("insert into $table (eMin, IP, hits) values (floor(unix_timestamp() / 60), %s, 1) ON DUPLICATE KEY update hits = IF(@wfcurrenthits := hits + 1, hits + 1, hits + 1)", wfUtils::inet_pton($IP));
-			$hitsPerMinute = $this->getDB()->querySingle("select @wfcurrenthits");
-			//end block moved into "is fw enabled" section
-
-			//Range blocking was here. Moved to wordfenceClass::veryFirstAction
-
-			if(wfConfig::get('maxGlobalRequests') != 'DISABLED' && $hitsPerMinute > wfConfig::getInt('maxGlobalRequests')){ //Applies to 404 or pageview
-				$this->takeBlockingAction('maxGlobalRequests', "Exceeded the maximum global requests per minute for crawlers or humans.");
-			}
-			if($type == '404'){
-				global $wpdb; $p = $wpdb->base_prefix;
-				if(wfConfig::get('other_WFNet')){
-					$this->getDB()->queryWrite("insert IGNORE into $p"."wfNet404s (sig, ctime, URI) values (UNHEX(MD5('%s')), unix_timestamp(), '%s')", $_SERVER['REQUEST_URI'], $_SERVER['REQUEST_URI']);
-				}
-				$pat = wfConfig::get('vulnRegex');
-				if($pat){
-					$URL = wfUtils::getRequestedURL();
-					if(preg_match($pat, $URL)){
-						$this->getDB()->queryWrite("insert IGNORE into $p"."wfVulnScanners (IP, ctime, hits) values (%s, unix_timestamp(), 1) ON DUPLICATE KEY UPDATE ctime = unix_timestamp(), hits = hits + 1", wfUtils::inet_pton($IP));
-						if(wfConfig::get('maxScanHits') != 'DISABLED'){
-							if( empty($_SERVER['HTTP_REFERER'] )){
-								$this->getDB()->queryWrite("insert into " . $this->badLeechersTable . " (eMin, IP, hits) values (floor(unix_timestamp() / 60), %s, 1) ON DUPLICATE KEY update hits = IF(@wfblcurrenthits := hits + 1, hits + 1, hits + 1)", $IPnum); 
-								$BL_hitsPerMinute = $this->getDB()->querySingle("select @wfblcurrenthits");
-								if($BL_hitsPerMinute > wfConfig::getInt('maxScanHits')){
-									$this->takeBlockingAction('maxScanHits', "Exceeded the maximum number of 404 requests per minute for a known security vulnerability.");
-								}
-							}
-						}
-					}
-				}
-			}
-			if(isset($_SERVER['HTTP_USER_AGENT']) && wfCrawl::isCrawler($_SERVER['HTTP_USER_AGENT'])){
-				if($type == 'hit' && wfConfig::get('maxRequestsCrawlers') != 'DISABLED' && $hitsPerMinute > wfConfig::getInt('maxRequestsCrawlers')){
-					$this->takeBlockingAction('maxRequestsCrawlers', "Exceeded the maximum number of requests per minute for crawlers."); //may not exit
-				} else if($type == '404' && wfConfig::get('max404Crawlers') != 'DISABLED' && $hitsPerMinute > wfConfig::getInt('max404Crawlers')){
-					$this->takeBlockingAction('max404Crawlers', "Exceeded the maximum number of page not found errors per minute for a crawler.");
-				}
-			} else {
-				if($type == 'hit' && wfConfig::get('maxRequestsHumans') != 'DISABLED' && $hitsPerMinute > wfConfig::getInt('maxRequestsHumans')){
-					$this->takeBlockingAction('maxRequestsHumans', "Exceeded the maximum number of page requests per minute for humans.");
-				} else if($type == '404' && wfConfig::get('max404Humans') != 'DISABLED' && $hitsPerMinute > wfConfig::getInt('max404Humans')){
-					$this->takeBlockingAction('max404Humans', "Exceeded the maximum number of page not found errors per minute for humans.");
-				}
-			}
+	public function logLeechAndBlock($type) { //404 or hit
+		if (!wfRateLimit::mightRateLimit($type)) {
+			return;
+		}
+		
+		wfRateLimit::countHit($type, wfUtils::getIP());
+		
+		if (wfRateLimit::globalRateLimit()->shouldEnforce($type)) {
+			$this->takeBlockingAction('maxGlobalRequests', "Exceeded the maximum global requests per minute for crawlers or humans.");
+		}
+		else if (wfRateLimit::crawlerViewsRateLimit()->shouldEnforce($type)) {
+			$this->takeBlockingAction('maxRequestsCrawlers', "Exceeded the maximum number of requests per minute for crawlers."); //may not exit
+		}
+		else if (wfRateLimit::crawler404sRateLimit()->shouldEnforce($type)) {
+			$this->takeBlockingAction('max404Crawlers', "Exceeded the maximum number of page not found errors per minute for a crawler.");
+		}
+		else if (wfRateLimit::humanViewsRateLimit()->shouldEnforce($type)) {
+			$this->takeBlockingAction('maxRequestsHumans', "Exceeded the maximum number of page requests per minute for humans.");
+		}
+		else if (wfRateLimit::human404sRateLimit()->shouldEnforce($type)) {
+			$this->takeBlockingAction('max404Humans', "Exceeded the maximum number of page not found errors per minute for humans.");
 		}
 	}
 	
@@ -301,7 +260,7 @@ class wfLog {
 	
 	public function tagRequestForLockout($reason) {
 		if ($this->currentRequest !== null) {
-			$this->currentRequest->statusCode = 403;
+			$this->currentRequest->statusCode = 503;
 			$this->currentRequest->action = 'lockedOut';
 			$this->currentRequest->actionDescription = $reason;
 		}
@@ -351,7 +310,7 @@ class wfLog {
 				else {
 					$IP = wfUtils::getIP();
 					$res['browser'] = array(
-						'isCrawler' => !(isset($_COOKIE['wordfence_verifiedHuman']) && $this->validateVerifiedHumanCookie($_COOKIE['wordfence_verifiedHuman'], $res['UA'], $IP))
+						'isCrawler' => !wfLog::isHumanRequest($IP, $res['UA'])
 					);
 				}
 			}
@@ -363,7 +322,6 @@ class wfLog {
 						'display_name' => $ud->display_name,
 						'ID' => $res['userID']
 						);
-					$res['user']['avatar'] = get_avatar($res['userID'], 16);
 				}
 			} else {
 				$res['user'] = false;
@@ -512,7 +470,7 @@ class wfLog {
 				else {
 					$IP = wfUtils::getIP();
 					$res['browser'] = array(
-						'isCrawler' => !(isset($_COOKIE['wordfence_verifiedHuman']) && $this->validateVerifiedHumanCookie($_COOKIE['wordfence_verifiedHuman'], $res['UA'], $IP)) ? 'true' : ''
+						'isCrawler' => !wfLog::isHumanRequest($IP, $res['UA']) ? 'true' : ''
 					);
 				}
 			}
@@ -526,7 +484,6 @@ class wfLog {
 						'display_name' => $res['display_name'],
 						'ID' => $res['userID']
 					);
-					$res['user']['avatar'] = get_avatar($res['userID'], 16);
 				}
 			} else {
 				$res['user'] = false;
@@ -557,17 +514,25 @@ class wfLog {
 		if (!$this->canLogHit) {
 			return false;
 		}
-		if(is_admin()){ return false; } //Don't log admin pageviews
-		if(isset($_SERVER['HTTP_USER_AGENT'])){
-			if(preg_match('/WordPress\/' . $this->wp_version . '/i', $_SERVER['HTTP_USER_AGENT'])){ return false; } //Ignore requests generated by WP UA.
+		if (is_admin()) { return false; } //Don't log admin pageviews
+		if (isset($_SERVER['HTTP_USER_AGENT'])) {
+			if (preg_match('/WordPress\/' . $this->wp_version . '/i', $_SERVER['HTTP_USER_AGENT'])) { return false; } //Ignore regular requests generated by WP UA.
 		}
-		if($userID = get_current_user_id()){
-			if(wfConfig::get('liveTraf_ignorePublishers') && (current_user_can('publish_posts') || current_user_can('publish_pages')) ){ return false; } //User is logged in and can publish, so we don't log them. 
-			$user = get_userdata($userID);
-			if($user){
-				if(wfConfig::get('liveTraf_ignoreUsers')){
-					foreach(explode(',', wfConfig::get('liveTraf_ignoreUsers')) as $ignoreLogin){
-						if($user->user_login == $ignoreLogin){
+		$userID = get_current_user_id();
+		if (!$userID) {
+			$userID = $this->effectiveUserID;
+		}
+		if ($userID) {
+			$user = new WP_User($userID);
+			if ($user && $user->exists()) {
+				if (wfConfig::get('liveTraf_ignorePublishers') && ($user->has_cap('publish_posts') || $user->has_cap('publish_pages'))) {
+					return false;
+				}
+				
+				if (wfConfig::get('liveTraf_ignoreUsers')) {
+					$ignored = explode(',', wfConfig::get('liveTraf_ignoreUsers'));
+					foreach ($ignored as $entry) {
+						if($user->user_login == $entry){
 							return false;
 						}
 					}
@@ -622,6 +587,13 @@ class wfLog {
 			$match = $b->matchRequest($IP, false, false);
 			if ($match === wfBlock::MATCH_COUNTRY_REDIR_BYPASS) {
 				$bypassRedirDest = wfConfig::get('cbl_bypassRedirDest', '');
+				
+				$this->initLogRequest();
+				$this->getCurrentRequest()->actionDescription = __('redirected to bypass URL', 'wordfence');
+				$this->getCurrentRequest()->statusCode = 302;
+				$this->currentRequest->action = 'cbl:redirect';
+				$this->logHit();
+				
 				wfUtils::doNotCache();
 				wp_redirect($bypassRedirDest, 302);
 				exit();
@@ -686,16 +658,21 @@ class wfLog {
 				$this->tagRequestForBlock($reason);
 				
 				if (wfConfig::get('alertOn_block')) {
-					wordfence::alert("Blocking IP {$IP}", "Wordfence has blocked IP address {$IP}.\nThe reason is: \"{$reason}\".", $IP);
+					$message = sprintf(__('Wordfence has blocked IP address %s.', 'wordfence'), $IP) . "\n";
+					$message .= sprintf(__('The reason is: "%s".', 'wordfence'), $reason);
+					if ($secsToGo > 0) {
+						$message .= "\n" . sprintf(__('The duration of the block is %s.', 'wordfence'), wfUtils::makeDuration($secsToGo, true));
+					}
+					wordfence::alert(sprintf(__('Blocking IP %s', 'wordfence'), $IP), $message, $IP);
 				}
-				wordfence::status(2, 'info', "Blocking IP {$IP}. {$reason}");
+				wordfence::status(2, 'info', sprintf(__('Blocking IP %s. %s', 'wordfence'), $IP, $reason));
 			}
 			else if ($action == 'throttle') { //Rate limited - throttle
 				$secsToGo = wfBlock::rateLimitThrottleDuration();
 				wfBlock::createRateThrottle($reason, $IP, $secsToGo);
 				wfActivityReport::logBlockedIP($IP, null, 'throttle');
 				
-				wordfence::status(2, 'info', "Throttling IP {$IP}. {$reason}");
+				wordfence::status(2, 'info', sprintf(__('Throttling IP %s. %s', 'wordfence'), $IP, $reason));
 				wfConfig::inc('totalIPsThrottled');
 			}
 			$this->do503($secsToGo, $reason);
@@ -735,6 +712,7 @@ class wfLog {
 		if($secsToGo){
 			header('Retry-After: ' . $secsToGo);
 		}
+		$customText = wpautop(wp_strip_all_tags(wfConfig::get('blockCustomText', '')));
 		require_once('wf503.php');
 		exit();
 	}
@@ -1253,7 +1231,22 @@ class wfAdminUserMonitor {
 }
 
 /**
- *
+ * Represents a request record
+ * 
+ * @property int $id
+ * @property float $attackLogTime
+ * @property float $ctime
+ * @property string $IP
+ * @property bool $jsRun
+ * @property int $statusCode
+ * @property bool $isGoogle
+ * @property int $userID
+ * @property string $URL
+ * @property string $referer
+ * @property string $UA
+ * @property string $action
+ * @property string $actionDescription
+ * @property string $actionData
  */
 class wfRequestModel extends wfModel {
 
@@ -1303,7 +1296,6 @@ class wfRequestModel extends wfModel {
 		'statusCode',
 		'isGoogle',
 		'userID',
-		'newVisit',
 		'URL',
 		'referer',
 		'UA',
@@ -1317,11 +1309,20 @@ class wfRequestModel extends wfModel {
 	}
 
 	public function getTable() {
-		return $this->getDB()->base_prefix . 'wfHits';
+		return wfDB::networkTable('wfHits');
 	}
 
 	public function hasColumn($column) {
 		return in_array($column, $this->columns);
+	}
+	
+	public function save() {
+		$sapi = @php_sapi_name();
+		if ($sapi == "cli") {
+			return false;
+		}
+		
+		return parent::save();
 	}
 }
 
@@ -1336,7 +1337,6 @@ class wfLiveTrafficQuery {
 		'statuscode' => 'h.statuscode',
 		'isgoogle' => 'h.isgoogle',
 		'userid' => 'h.userid',
-		'newvisit' => 'h.newvisit',
 		'url' => 'h.url',
 		'referer' => 'h.referer',
 		'ua' => 'h.ua',
@@ -1482,11 +1482,12 @@ class wfLiveTrafficQuery {
 			$limit = 20;
 		}
 		$limitSQL = $wpdb->prepare('LIMIT %d, %d', $offset, $limit);
-
+		
+		$table_wfLogins = wfDB::networkTable('wfLogins');
 		$sql = <<<SQL
 SELECT h.*, u.display_name{$select} FROM {$this->getTableName()} h
 LEFT JOIN {$wpdb->users} u on h.userID = u.ID
-LEFT JOIN {$wpdb->base_prefix}wfLogins l on h.id = l.hitID
+LEFT JOIN {$table_wfLogins} l on h.id = l.hitID
 $where
 $groupBySQL
 $orderBy
@@ -1605,8 +1606,7 @@ SQL;
 	 */
 	public function getTableName() {
 		if ($this->tableName === null) {
-			global $wpdb;
-			$this->tableName = $wpdb->base_prefix . 'wfHits';
+			$this->tableName = wfDB::networkTable('wfHits');
 		}
 		return $this->tableName;
 	}

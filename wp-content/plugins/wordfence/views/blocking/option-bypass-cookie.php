@@ -1,7 +1,7 @@
 <?php
 if (!defined('WORDFENCE_VERSION')) { exit; }
 ?>
-<ul class="wf-option wf-option-bypass-cookie">
+<ul id="wf-option-cbl-bypassViewURL" class="wf-option wf-option-bypass-cookie">
 	<li class="wf-option-spacer"></li>
 	<li class="wf-option-content">
 		<ul>
@@ -19,19 +19,21 @@ if (!defined('WORDFENCE_VERSION')) { exit; }
 				<script type="application/javascript">
 					(function($) {
 						$(function() {
-							$('#wf-bypass-view-url').on('keyup', function() {
-								var option = $(this).data('option');
-								var value = $(this).val();
-		
-								var originalValue = $(this).data('originalValue');
-								if (originalValue == value) {
-									delete WFAD.pendingChanges[option];
-								}
-								else {
-									WFAD.pendingChanges[option] = value;
-								}
-		
-								WFAD.updatePendingChanges();
+							$('#wf-bypass-view-url').on('change paste keyup', function() {
+								setTimeout(function() {
+									var option = $('#wf-bypass-view-url').data('option');
+									var value = $('#wf-bypass-view-url').val();
+			
+									var originalValue = $('#wf-bypass-view-url').data('originalValue');
+									if (originalValue == value) {
+										delete WFAD.pendingChanges[option];
+									}
+									else {
+										WFAD.pendingChanges[option] = value;
+									}
+			
+									WFAD.updatePendingChanges();
+								}, 4);
 							});
 		
 							$(window).on('wfOptionsReset', function() {

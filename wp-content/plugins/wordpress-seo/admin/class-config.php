@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO plugin file.
+ *
  * @package WPSEO\Admin
  */
 
@@ -36,26 +38,11 @@ class WPSEO_Admin_Pages {
 	public function init() {
 		if ( filter_input( INPUT_GET, 'wpseo_reset_defaults' ) && wp_verify_nonce( filter_input( INPUT_GET, 'nonce' ), 'wpseo_reset_defaults' ) && current_user_can( 'manage_options' ) ) {
 			WPSEO_Options::reset();
-			wp_redirect( admin_url( 'admin.php?page=' . WPSEO_Admin::PAGE_IDENTIFIER ) );
+			wp_redirect( admin_url( 'admin.php?page=' . WPSEO_Configuration_Page::PAGE_IDENTIFIER ) );
 		}
 
-		add_action( 'admin_init', array( $this, 'admin_init' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'config_page_scripts' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'config_page_styles' ) );
-	}
-
-	/**
-	 * Run admin-specific actions.
-	 */
-	public function admin_init() {
-
-		$page         = filter_input( INPUT_GET, 'page' );
-		$tool         = filter_input( INPUT_GET, 'tool' );
-		$export_nonce = filter_input( INPUT_POST, WPSEO_Export::NONCE_NAME );
-
-		if ( 'wpseo_tools' === $page && 'import-export' === $tool && $export_nonce !== null ) {
-			$this->do_yoast_export();
-		}
 	}
 
 	/**
@@ -78,14 +65,29 @@ class WPSEO_Admin_Pages {
 		$this->asset_manager->enqueue_script( 'admin-script' );
 		$this->asset_manager->enqueue_script( 'help-center' );
 
+		$page = filter_input( INPUT_GET, 'page' );
+
+		if ( $page === 'wpseo_titles' ) {
+			wp_localize_script( WPSEO_Admin_Asset_Manager::PREFIX . 'search-appearance', 'wpseoReplaceVarsL10n', $this->localize_replace_vars_script() );
+			wp_localize_script( WPSEO_Admin_Asset_Manager::PREFIX . 'search-appearance', 'wpseoSearchAppearance', array( 'isRtl' => is_rtl() ) );
+			$this->asset_manager->enqueue_script( 'search-appearance' );
+			$this->asset_manager->enqueue_style( 'search-appearance' );
+			/**
+			 * Remove the emoji script as it is incompatible with both React and any
+			 * contenteditable fields.
+			 */
+			remove_action( 'admin_print_scripts', 'print_emoji_detection_script' );
+
+			$yoast_components_l10n = new WPSEO_Admin_Asset_Yoast_Components_L10n();
+			$yoast_components_l10n->localize_script( 'search-appearance' );
+		}
+
 		wp_enqueue_script( 'dashboard' );
 		wp_enqueue_script( 'thickbox' );
 
-		$page = filter_input( INPUT_GET, 'page' );
+		wp_localize_script( WPSEO_Admin_Asset_Manager::PREFIX . 'admin-script', 'wpseoSelect2Locale', WPSEO_Language_Utils::get_language( WPSEO_Language_Utils::get_user_locale() ) );
 
-		wp_localize_script( WPSEO_Admin_Asset_Manager::PREFIX . 'admin-script', 'wpseoSelect2Locale', WPSEO_Utils::get_language( WPSEO_Utils::get_user_locale() ) );
-
-		if ( in_array( $page, array( 'wpseo_social', WPSEO_Admin::PAGE_IDENTIFIER ), true ) ) {
+		if ( in_array( $page, array( 'wpseo_social', WPSEO_Admin::PAGE_IDENTIFIER, 'wpseo_titles' ), true ) ) {
 			wp_enqueue_media();
 
 			$this->asset_manager->enqueue_script( 'admin-media' );
@@ -98,13 +100,32 @@ class WPSEO_Admin_Pages {
 	}
 
 	/**
-	 * Pass some variables to js for upload module.
+	 * Retrieves some variables that are needed for the upload module in JS.
 	 *
-	 * @return  array
+	 * @return array The upload module variables.
 	 */
 	public function localize_media_script() {
 		return array(
 			'choose_image' => __( 'Use Image', 'wordpress-seo' ),
+		);
+	}
+
+	/**
+	 * Retrieves some variables that are needed for replacing variables in JS.
+	 *
+	 * @return array The replacement and recommended replacement variables.
+	 */
+	public function localize_replace_vars_script() {
+		$replace_vars                 = new WPSEO_Replace_Vars();
+		$recommended_replace_vars     = new WPSEO_Admin_Recommended_Replace_Vars();
+		$editor_specific_replace_vars = new WPSEO_Admin_Editor_Specific_Replace_Vars();
+		$replace_vars_list            = $replace_vars->get_replacement_variables_list();
+
+		return array(
+			'replace_vars'                 => $replace_vars_list,
+			'recommended_replace_vars'     => $recommended_replace_vars->get_recommended_replacevars(),
+			'editor_specific_replace_vars' => $editor_specific_replace_vars->get(),
+			'shared_replace_vars'          => $editor_specific_replace_vars->get_generic( $replace_vars_list ),
 		);
 	}
 
@@ -122,313 +143,4 @@ class WPSEO_Admin_Pages {
 			$this->asset_manager->enqueue_script( 'bulk-editor' );
 		}
 	}
-
-	/**
-	 * Runs the yoast exporter class to possibly init the file download.
-	 */
-	private function do_yoast_export() {
-		check_admin_referer( WPSEO_Export::NONCE_ACTION, WPSEO_Export::NONCE_NAME );
-
-		if ( ! WPSEO_Capability_Utils::current_user_can( 'wpseo_manage_options' ) ) {
-			return;
-		}
-
-		$wpseo_post       = filter_input( INPUT_POST, 'wpseo' );
-		$include_taxonomy = ! empty( $wpseo_post['include_taxonomy'] );
-		$export           = new WPSEO_Export( $include_taxonomy );
-
-		if ( $export->has_error() ) {
-			add_action( 'admin_notices', array( $export, 'set_error_hook' ) );
-
-		}
-	}
-
-	/********************** DEPRECATED METHODS **********************/
-
-	// @codeCoverageIgnoreStart
-	/**
-	 * Exports the current site's Yoast SEO settings.
-	 *
-	 * @deprecated 2.0
-	 *
-	 * @param bool $include_taxonomy Whether to include the taxonomy metadata the plugin creates.
-	 *
-	 * @return bool|string $return False when failed, the URL to the export file when succeeded.
-	 */
-	public function export_settings( $include_taxonomy ) {
-		_deprecated_function( __METHOD__, 'WPSEO 2.0', 'This method is deprecated, please use the <code>WPSEO_Export</code> class.' );
-
-		$export = new WPSEO_Export( $include_taxonomy );
-		if ( $export->success ) {
-			return $export->export_zip_url;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Generates the header for admin pages
-	 *
-	 * @deprecated 2.0
-	 *
-	 * @param bool   $form             Whether or not the form start tag should be included.
-	 * @param mixed  $option_long_name The long name of the option to use for the current page.
-	 * @param string $option           The short name of the option to use for the current page.
-	 * @param bool   $contains_files   Whether the form should allow for file uploads.
-	 */
-	public function admin_header( $form = true, $option_long_name = false, $option = 'wpseo', $contains_files = false ) {
-		_deprecated_function( __METHOD__, 'WPSEO 2.0', 'This method is deprecated, please use the <code>Yoast_Form</code> class.' );
-
-		Yoast_Form::get_instance()->admin_header( $form, $option, $contains_files, $option_long_name );
-	}
-
-	/**
-	 * Generates the footer for admin pages
-	 *
-	 * @deprecated 2.0
-	 *
-	 * @param bool $submit       Whether or not a submit button and form end tag should be shown.
-	 * @param bool $show_sidebar Whether or not to show the banner sidebar - used by premium plugins to disable it.
-	 */
-	public function admin_footer( $submit = true, $show_sidebar = true ) {
-		_deprecated_function( __METHOD__, 'WPSEO 2.0', 'This method is deprecated, please use the <code>Yoast_Form</code> class.' );
-
-		Yoast_Form::get_instance()->admin_footer( $submit, $show_sidebar );
-	}
-
-	/**
-	 * Generates the sidebar for admin pages.
-	 *
-	 * @deprecated 2.0
-	 */
-	public function admin_sidebar() {
-		_deprecated_function( __METHOD__, 'WPSEO 2.0', 'This method is deprecated, please use the <code>Yoast_Form</code> class.' );
-
-		Yoast_Form::get_instance()->admin_sidebar();
-	}
-
-	/**
-	 * Create a Checkbox input field.
-	 *
-	 * @deprecated 2.0
-	 *
-	 * @param string $var        The variable within the option to create the checkbox for.
-	 * @param string $label      The label to show for the variable.
-	 * @param bool   $label_left Whether the label should be left (true) or right (false).
-	 * @param string $option     The option the variable belongs to.
-	 */
-	public function checkbox( $var, $label, $label_left = false, $option = '' ) {
-		_deprecated_function( __METHOD__, 'WPSEO 2.0', 'This method is deprecated, please use the <code>Yoast_Form</code> class.' );
-
-		if ( $option !== '' ) {
-			Yoast_Form::get_instance()->set_option( $option );
-		}
-
-		Yoast_Form::get_instance()->checkbox( $var, $label, $label_left );
-	}
-
-	/**
-	 * Create a Text input field.
-	 *
-	 * @deprecated 2.0
-	 *
-	 * @param string $var    The variable within the option to create the text input field for.
-	 * @param string $label  The label to show for the variable.
-	 * @param string $option The option the variable belongs to.
-	 */
-	public function textinput( $var, $label, $option = '' ) {
-		_deprecated_function( __METHOD__, 'WPSEO 2.0', 'This method is deprecated, please use the <code>Yoast_Form</code> class.' );
-
-		if ( $option !== '' ) {
-			Yoast_Form::get_instance()->set_option( $option );
-		}
-		Yoast_Form::get_instance()->textinput( $var, $label );
-	}
-
-	/**
-	 * Create a textarea.
-	 *
-	 * @deprecated 2.0
-	 *
-	 * @param string $var    The variable within the option to create the textarea for.
-	 * @param string $label  The label to show for the variable.
-	 * @param string $option The option the variable belongs to.
-	 * @param array  $attr   The CSS class to assign to the textarea.
-	 */
-	public function textarea( $var, $label, $option = '', $attr = array() ) {
-		_deprecated_function( __METHOD__, 'WPSEO 2.0', 'This method is deprecated, please use the <code>Yoast_Form</code> class.' );
-
-		if ( $option !== '' ) {
-			Yoast_Form::get_instance()->set_option( $option );
-		}
-
-		Yoast_Form::get_instance()->textarea( $var, $label, $attr );
-	}
-
-	/**
-	 * Create a hidden input field.
-	 *
-	 * @deprecated 2.0
-	 *
-	 * @param string $var    The variable within the option to create the hidden input for.
-	 * @param string $option The option the variable belongs to.
-	 */
-	public function hidden( $var, $option = '' ) {
-		_deprecated_function( __METHOD__, 'WPSEO 2.0', 'This method is deprecated, please use the <code>Yoast_Form</code> class.' );
-
-		if ( $option !== '' ) {
-			Yoast_Form::get_instance()->set_option( $option );
-		}
-
-		Yoast_Form::get_instance()->hidden( $var );
-	}
-
-	/**
-	 * Create a Select Box.
-	 *
-	 * @deprecated 2.0
-	 *
-	 * @param string $var    The variable within the option to create the select for.
-	 * @param string $label  The label to show for the variable.
-	 * @param array  $values The select options to choose from.
-	 * @param string $option The option the variable belongs to.
-	 */
-	public function select( $var, $label, $values, $option = '' ) {
-		_deprecated_function( __METHOD__, 'WPSEO 2.0', 'This method is deprecated, please use the <code>Yoast_Form</code> class.' );
-
-		if ( $option !== '' ) {
-			Yoast_Form::get_instance()->set_option( $option );
-		}
-
-		Yoast_Form::get_instance()->select( $var, $label, $values );
-	}
-
-	/**
-	 * Create a File upload field.
-	 *
-	 * @deprecated 2.0
-	 *
-	 * @param string $var    The variable within the option to create the file upload field for.
-	 * @param string $label  The label to show for the variable.
-	 * @param string $option The option the variable belongs to.
-	 */
-	public function file_upload( $var, $label, $option = '' ) {
-		_deprecated_function( __METHOD__, 'WPSEO 2.0', 'This method is deprecated, please use the <code>Yoast_Form</code> class.' );
-
-		if ( $option !== '' ) {
-			Yoast_Form::get_instance()->set_option( $option );
-		}
-
-		Yoast_Form::get_instance()->file_upload( $var, $label );
-	}
-
-	/**
-	 * Media input
-	 *
-	 * @deprecated 2.0
-	 *
-	 * @param string $var    Option name.
-	 * @param string $label  Label message.
-	 * @param string $option Optional option key.
-	 */
-	public function media_input( $var, $label, $option = '' ) {
-		_deprecated_function( __METHOD__, 'WPSEO 2.0', 'This method is deprecated, please use the <code>Yoast_Form</code> class.' );
-
-		if ( $option !== '' ) {
-			Yoast_Form::get_instance()->set_option( $option );
-		}
-
-		Yoast_Form::get_instance()->media_input( $var, $label );
-	}
-
-	/**
-	 * Create a Radio input field.
-	 *
-	 * @deprecated 2.0
-	 *
-	 * @param string $var    The variable within the option to create the file upload field for.
-	 * @param array  $values The radio options to choose from.
-	 * @param string $label  The label to show for the variable.
-	 * @param string $option The option the variable belongs to.
-	 */
-	public function radio( $var, $values, $label, $option = '' ) {
-		_deprecated_function( __METHOD__, 'WPSEO 2.0', 'This method is deprecated, please use the <code>Yoast_Form</code> class.' );
-
-		if ( $option !== '' ) {
-			Yoast_Form::get_instance()->set_option( $option );
-		}
-
-		Yoast_Form::get_instance()->radio( $var, $values, $label );
-	}
-
-	/**
-	 * Create a postbox widget.
-	 *
-	 * @deprecated 2.0
-	 *
-	 * @param string $id      ID of the postbox.
-	 * @param string $title   Title of the postbox.
-	 * @param string $content Content of the postbox.
-	 */
-	public function postbox( $id, $title, $content ) {
-		_deprecated_function( __METHOD__, 'WPSEO 2.0', 'This method is deprecated, please re-implement the admin pages.' );
-
-		?>
-			<div id="<?php echo esc_attr( $id ); ?>" class="yoastbox">
-				<h1><?php echo $title; ?></h1>
-				<?php echo $content; ?>
-			</div>
-		<?php
-	}
-
-	/**
-	 * Create a form table from an array of rows.
-	 *
-	 * @deprecated 2.0
-	 *
-	 * @param array $rows Rows to include in the table.
-	 *
-	 * @return string
-	 */
-	public function form_table( $rows ) {
-		_deprecated_function( __METHOD__, 'WPSEO 2.0', 'This method is deprecated, please re-implement the admin pages.' );
-
-		if ( ! is_array( $rows ) || $rows === array() ) {
-			return '';
-		}
-
-		$content = '<table class="form-table">';
-		foreach ( $rows as $row ) {
-			$content .= '<tr><th scope="row">';
-			if ( ! empty( $row['id'] ) ) {
-				$content .= '<label for="' . esc_attr( $row['id'] ) . '">' . esc_html( $row['label'] ) . ':</label>';
-			}
-			else {
-				$content .= esc_html( $row['label'] );
-			}
-			if ( ! empty( $row['desc'] ) ) {
-				$content .= '<br/><small>' . esc_html( $row['desc'] ) . '</small>';
-			}
-			$content .= '</th><td>';
-			$content .= $row['content'];
-			$content .= '</td></tr>';
-		}
-		$content .= '</table>';
-
-		return $content;
-	}
-
-	/**
-	 * Resets the site to the default Yoast SEO settings and runs a title test to check
-	 * whether force rewrite needs to be on.
-	 *
-	 * @deprecated 1.5.0
-	 * @deprecated use WPSEO_Options::reset()
-	 * @see        WPSEO_Options::reset()
-	 */
-	public function reset_defaults() {
-		_deprecated_function( __METHOD__, 'WPSEO 1.5.0', 'WPSEO_Options::reset()' );
-		WPSEO_Options::reset();
-	}
-	// @codeCoverageIgnoreEnd
 } /* End of class */

@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO plugin file.
+ *
  * @package WPSEO\Admin
  */
 
@@ -56,10 +58,6 @@ class WPSEO_Taxonomy_Fields_Presenter {
 		$help_button_text = isset( $field_configuration['options']['help-button'] ) ? $field_configuration['options']['help-button'] : '';
 		$help             = new WPSEO_Admin_Help_Panel( $field_name, $help_button_text, $help_content );
 
-		if ( in_array( $field_configuration['type'], array( 'focuskeyword', 'pageanalysis', 'snippetpreview' ), true ) ) {
-			return $this->parse_section_row( $field, $field_configuration['type'], $help );
-		}
-
 		return $this->parse_row( $label, $help, $field );
 	}
 
@@ -90,32 +88,6 @@ class WPSEO_Taxonomy_Fields_Presenter {
 				$field .= '<div id="' . $field_name . '"></div>';
 				break;
 
-			case 'snippetpreview':
-				$field .= '<div id="wpseosnippet" class="wpseosnippet"></div>';
-				break;
-			case 'pageanalysis':
-				$options = WPSEO_Options::get_option( 'wpseo' );
-
-				if ( $options['content_analysis_active'] === false && $options['keyword_analysis_active'] === false ) {
-					break;
-				}
-
-				$field .= '<div id="pageanalysis">';
-				$field .= '<section class="yoast-section" id="wpseo-pageanalysis-section">';
-				$field .= '<h3 class="yoast-section__heading yoast-section__heading-icon yoast-section__heading-icon-list">' . __( 'Analysis', 'wordpress-seo' ) . '</h3>';
-				$field .= '<div id="wpseo_analysis"></div>';
-				$field .= '</section>';
-				$field .= '</div>';
-				break;
-			case 'focuskeyword':
-				$field .= '<div id="wpseofocuskeyword">';
-				$field .= '<section class="yoast-section" id="wpseo-focuskeyword-section">';
-				$field .= '<h3 class="yoast-section__heading yoast-section__heading-icon yoast-section__heading-icon-key">' . __( 'Focus keyword', 'wordpress-seo' ) . '</h3>';
-				$field .= '<label for="' . $field_name . '" class="screen-reader-text">' . __( 'Enter a focus keyword', 'wordpress-seo' ) . '</label>';
-				$field .= '<input type="text" id="' . $field_name . '" autocomplete="off" name="' . $field_name . '" value="' . esc_attr( $field_value ) . '" class="large-text' . $class . '"/><br />';
-				$field .= '</section>';
-				$field .= '</div>';
-				break;
 			case 'text':
 				$field .= '<input name="' . $field_name . '" id="' . $field_name . '" ' . $class . ' type="text" value="' . esc_attr( $field_value ) . '" size="40"' . $aria_describedby . '/>';
 				break;
@@ -130,8 +102,28 @@ class WPSEO_Taxonomy_Fields_Presenter {
 				$field .= '<textarea class="large-text" rows="' . esc_attr( $rows ) . '" id="' . $field_name . '" name="' . $field_name . '"' . $aria_describedby . '>' . esc_textarea( $field_value ) . '</textarea>';
 				break;
 			case 'upload':
-				$field .= '<input id="' . $field_name . '" type="text" size="36" name="' . $field_name . '" value="' . esc_attr( $field_value ) . '"' . $aria_describedby . ' />';
-				$field .= '<input id="' . $field_name . '_button" class="wpseo_image_upload_button button" type="button" value="' . esc_attr__( 'Upload Image', 'wordpress-seo' ) . '" />';
+				$field .= '<input' .
+					' id="' . $field_name . '"' .
+					' type="text"' .
+					' size="36"' .
+					' name="' . $field_name . '"' .
+					' value="' . esc_attr( $field_value ) . '"' . $aria_describedby . '' .
+					' readonly="readonly"' .
+					' /> ';
+				$field .= '<input' .
+					' id="' . esc_attr( $field_name ) . '_button"' .
+					' class="wpseo_image_upload_button button"' .
+					' data-target="' . esc_attr( $field_name ) . '"' .
+					' data-target-id="hidden_' . esc_attr( $field_name ) . '-id"' .
+					' type="button"' .
+					' value="' . esc_attr__( 'Upload Image', 'wordpress-seo' ) . '"' .
+					' /> ';
+				$field .= '<input' .
+					' id="' . esc_attr( $field_name ) . '_button"' .
+					' class="wpseo_image_remove_button button"' .
+					' type="button"' .
+					' value="' . esc_attr__( 'Clear Image', 'wordpress-seo' ) . '"' .
+					' />';
 				break;
 			case 'select':
 				if ( is_array( $options ) && $options !== array() ) {
@@ -217,20 +209,5 @@ class WPSEO_Taxonomy_Fields_Presenter {
 		}
 
 		return $field;
-	}
-
-	/**
-	 * Creates a sections specific row.
-	 *
-	 * @param string                 $content      The content to show.
-	 * @param string                 $esc_form_key Escaped form key name.
-	 * @param WPSEO_Admin_Help_Panel $help         The help button.
-	 *
-	 * @return string
-	 */
-	private function parse_section_row( $content, $esc_form_key, WPSEO_Admin_Help_Panel $help ) {
-		$html  = $content;
-		$html .= '<div class="wpseo_hidden" id="help-yoast-' . $esc_form_key . '">' . $help->get_button_html() . $help->get_panel_html() . '</div>';
-		return $html;
 	}
 }

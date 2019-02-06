@@ -80,7 +80,7 @@ class wordfenceURLHoover {
 		}
 		global $wpdb;
 		if(isset($wpdb)){
-			$this->table = $wpdb->base_prefix . 'wfHoover';
+			$this->table = wfDB::networkTable('wfHoover');
 		} else {
 			$this->table = 'wp_wfHoover';
 		}
@@ -123,6 +123,8 @@ class wordfenceURLHoover {
 			return;
 		}
 		
+		$this->_foundSome++;
+		
 		$host = (isset($components['host']) ? $components['host'] : '');
 		$path = (isset($components['path']) && !empty($components['path']) ? $components['path'] : '/');
 		$hashes = $this->_generateHashes($url);
@@ -138,7 +140,6 @@ class wordfenceURLHoover {
 		if ($this->useDB) {
 			$sql = "INSERT INTO " . $this->table . " (owner, host, path, hostKey) VALUES ";
 			while ($elem = $this->hostsToAdd->shift()) {
-				$this->_foundSome++;
 				//This may be an issue for hyperDB or other abstraction layers, but leaving it for now.
 				$sql .= sprintf("('%s', '%s', '%s', '%s'),", 
 						$this->db->realEscape($elem['owner']),
@@ -153,7 +154,6 @@ class wordfenceURLHoover {
 		}
 		else {
 			while ($elem = $this->hostsToAdd->shift()) {
-				$this->_foundSome++;
 				$keys = str_split($elem['hostKey'], 4);
 				foreach ($keys as $k) {
 					$this->hostKeys[] = $k;
@@ -174,7 +174,7 @@ class wordfenceURLHoover {
 		if ($this->useDB) {
 			global $wpdb;
 			$dbh = $wpdb->dbh;
-			$useMySQLi = (is_object($dbh) && $wpdb->use_mysqli);
+			$useMySQLi = (is_object($dbh) && $wpdb->use_mysqli && wfConfig::get('allowMySQLi', true) && WORDFENCE_ALLOW_DIRECT_MYSQLI);
 			if ($useMySQLi) { //If direct-access MySQLi is available, we use it to minimize the memory footprint instead of letting it fetch everything into an array first
 				wordfence::status(4, 'info', "Using MySQLi directly.");
 				$result = $dbh->query("SELECT DISTINCT hostKey FROM {$this->table} ORDER BY hostKey ASC LIMIT 100000"); /* We limit to 100,000 prefixes since more than that cannot be reliably checked within the default max_execution_time */

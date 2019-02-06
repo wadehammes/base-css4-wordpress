@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO plugin file.
+ *
  * @package WPSEO\Admin
  */
 
@@ -25,11 +27,12 @@ class WPSEO_OnPage_Request {
 	 * @throws Exception The error message that can be used to show to the user.
 	 */
 	protected function get_remote( $target_url, $parameters = array() ) {
-		$parameters = array_merge( array(
+		$defaults   = array(
 			'url'          => $target_url,
 			'wp_version'   => $GLOBALS['wp_version'],
 			'yseo_version' => WPSEO_VERSION,
-		), $parameters );
+		);
+		$parameters = array_merge( $defaults, $parameters );
 
 		$url = add_query_arg( $parameters, $this->onpage_endpoint );
 
@@ -61,19 +64,5 @@ class WPSEO_OnPage_Request {
 		}
 
 		return $json_body;
-	}
-
-	/**
-	 * Returns the fetched response
-	 *
-	 * @deprecated 3.1.2
-	 * @codeCoverageIgnore
-	 *
-	 * @return array
-	 */
-	public function get_response() {
-		_deprecated_function( __METHOD__, 'WPSEO 3.1.2', 'WPSEO_OnPage_Request::do_request' );
-
-		return array();
 	}
 }

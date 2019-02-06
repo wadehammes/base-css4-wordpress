@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO plugin file.
+ *
  * @package WPSEO\Admin\Statistics
  */
 
@@ -27,7 +29,6 @@ class WPSEO_Statistics_Service {
 	 */
 	public function __construct( WPSEO_Statistics $statistics ) {
 		$this->statistics = $statistics;
-		$this->labels     = $this->labels();
 	}
 
 	/**
@@ -36,7 +37,11 @@ class WPSEO_Statistics_Service {
 	 * @return WP_REST_Response The response object.
 	 */
 	public function get_statistics() {
-		$statistics = $this->statistic_items();
+		// Switch to the user locale with fallback to the site locale.
+		switch_to_locale( WPSEO_Language_Utils::get_user_locale() );
+
+		$this->labels = $this->labels();
+		$statistics   = $this->statistic_items();
 
 		$data = array(
 			'header'     => $this->get_header_from_statistics( $statistics ),
@@ -192,15 +197,14 @@ class WPSEO_Statistics_Service {
 	private function labels() {
 		return array(
 			/* translators: %1$s expands to an opening strong tag, %2$s expands to a closing strong tag */
-			WPSEO_Rank::NO_FOCUS => sprintf( __( 'Posts %1$swithout%2$s a focus keyword', 'wordpress-seo' ), '<strong>', '</strong>' ),
+			WPSEO_Rank::NO_FOCUS => sprintf( __( 'Posts %1$swithout%2$s a focus keyphrase', 'wordpress-seo' ), '<strong>', '</strong>' ),
 			/* translators: %1$s expands to an opening strong tag, %2$s expands to a closing strong tag */
-			WPSEO_Rank::BAD      => sprintf( __( 'Posts with a %1$sneeds improvement%2$s SEO score', 'wordpress-seo' ), '<strong>', '</strong>' ),
+			WPSEO_Rank::BAD      => sprintf( __( 'Posts with the SEO score: %1$sneeds improvement%2$s', 'wordpress-seo' ), '<strong>', '</strong>' ),
 			/* translators: %1$s expands to an opening strong tag, %2$s expands to a closing strong tag */
-			WPSEO_Rank::OK       => sprintf( __( 'Posts with an %1$sOK%2$s SEO score', 'wordpress-seo' ), '<strong>', '</strong>' ),
+			WPSEO_Rank::OK       => sprintf( __( 'Posts with the SEO score: %1$sOK%2$s', 'wordpress-seo' ), '<strong>', '</strong>' ),
 			/* translators: %1$s expands to an opening strong tag, %2$s expands to a closing strong tag */
-			WPSEO_Rank::GOOD     => sprintf( __( 'Posts with a %1$sgood%2$s SEO score', 'wordpress-seo' ), '<strong>', '</strong>' ),
-			/* translators: %s expands to <span lang="en">noindex</span> */
-			WPSEO_Rank::NO_INDEX => sprintf( __( 'Posts that are set to &#8220;%s&#8221;', 'wordpress-seo' ), '<span lang="en">noindex</span>' ),
+			WPSEO_Rank::GOOD     => sprintf( __( 'Posts with the SEO score: %1$sgood%2$s', 'wordpress-seo' ), '<strong>', '</strong>' ),
+			WPSEO_Rank::NO_INDEX => __( 'Posts that should not show up in search results', 'wordpress-seo' ),
 		);
 	}
 

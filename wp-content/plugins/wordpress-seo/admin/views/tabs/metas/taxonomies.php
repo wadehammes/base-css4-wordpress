@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO plugin file.
+ *
  * @package WPSEO\Admin\Views
  */
 
@@ -9,49 +11,39 @@ if ( ! defined( 'WPSEO_VERSION' ) ) {
 	exit();
 }
 
-$taxonomies = get_taxonomies( array( 'public' => true ), 'objects' );
-if ( is_array( $taxonomies ) && $taxonomies !== array() ) {
-	foreach ( $taxonomies as $tax ) {
-		// Explicitly hide all the core taxonomies we never want to do stuff for.
-		if ( in_array( $tax->name, array( 'link_category', 'nav_menu' ), true ) ) {
-			continue;
-		}
+$wpseo_taxonomies = get_taxonomies( array( 'public' => true ), 'objects' );
+if ( is_array( $wpseo_taxonomies ) && $wpseo_taxonomies !== array() ) {
+	$view_utils                   = new Yoast_View_Utils();
+	$recommended_replace_vars     = new WPSEO_Admin_Recommended_Replace_Vars();
+	$editor_specific_replace_vars = new WPSEO_Admin_Editor_Specific_Replace_Vars();
 
-		echo '<h2>' . esc_html( ucfirst( $tax->labels->name ) ) . ' (<code>' . esc_html( $tax->name ) . '</code>)</h2>';
-		if ( $tax->name === 'post_format' ) {
-			$yform->light_switch(
-				'disable-post_format',
-				__( 'Format-based archives', 'wordpress-seo' ),
-				array( __( 'Enabled', 'wordpress-seo' ), __( 'Disabled', 'wordpress-seo' ) ),
-				false
-			);
-		}
-		echo "<div id='" . esc_attr( $tax->name ) . "-titles-metas'>";
-		$yform->textinput( 'title-tax-' . $tax->name, __( 'Title template', 'wordpress-seo' ), 'template taxonomy-template' );
-		$yform->textarea( 'metadesc-tax-' . $tax->name, __( 'Meta description template', 'wordpress-seo' ), array( 'class' => 'template taxonomy-template' ) );
-		if ( $options['usemetakeywords'] === true ) {
-			$yform->textinput( 'metakey-tax-' . $tax->name, __( 'Meta keywords template', 'wordpress-seo' ) );
-		}
-		$yform->toggle_switch( 'noindex-tax-' . $tax->name, $index_switch_values, __( 'Meta Robots', 'wordpress-seo' ) );
-		if ( $tax->name !== 'post_format' ) {
-			/* translators: %1$s expands to Yoast SEO */
-			$yform->toggle_switch( 'hideeditbox-tax-' . $tax->name,
-				array(
-					'off' => __( 'Show', 'wordpress-seo' ),
-					'on'  => __( 'Hide', 'wordpress-seo' ),
-					/* translators: %1$s expands to Yoast SEO */
-				), sprintf( __( '%1$s Meta Box', 'wordpress-seo' ), 'Yoast SEO' ) );
-		}
-		/**
-		 * Allow adding custom checkboxes to the admin meta page - Taxonomies tab
-		 *
-		 * @api  WPSEO_Admin_Pages  $yform  The WPSEO_Admin_Pages object
-		 * @api  Object             $tax    The taxonomy
-		 */
-		do_action( 'wpseo_admin_page_meta_taxonomies', $yform, $tax );
-		echo '<br/><br/>';
-		echo '</div>';
+	// Explicitly hide all the core taxonomies we never want to do stuff for.
+	$wpseo_taxonomies = array_diff_key( $wpseo_taxonomies, array_flip( array( 'link_category', 'nav_menu' ) ) );
+
+	foreach ( array_values( $wpseo_taxonomies ) as $wpseo_taxonomy_index => $wpseo_taxonomy ) {
+		$wpseo_taxonomy_presenter = new WPSEO_Paper_Presenter(
+			$wpseo_taxonomy->labels->name,
+			dirname( __FILE__ ) . '/paper-content/taxonomy-content.php',
+			array(
+				'collapsible' => true,
+				'expanded'    => ( $wpseo_taxonomy_index === 0 ),
+				'paper_id'    => $wpseo_taxonomy->name,
+				'view_data'   => array(
+					'wpseo_taxonomy'               => $wpseo_taxonomy,
+					'view_utils'                   => $view_utils,
+					'recommended_replace_vars'     => $recommended_replace_vars,
+					'editor_specific_replace_vars' => $editor_specific_replace_vars,
+				),
+				'title_after' => ' (<code>' . esc_html( $wpseo_taxonomy->name ) . '</code>)',
+			)
+		);
+		echo $wpseo_taxonomy_presenter->get_output();
 	}
-	unset( $tax );
+
+	unset( $wpseo_taxonomy_index, $wpseo_taxonomy_presenter, $view_utils, $recommended_replace_vars );
 }
-unset( $taxonomies );
+
+unset( $wpseo_taxonomies );
+
+printf( '<h2>%s</h2>', esc_html__( 'Category URLs', 'wordpress-seo' ) );
+require dirname( __FILE__ ) . '/taxonomies/category-url.php';

@@ -272,6 +272,19 @@
   height: 25px;
   min-height: 25px; }
 
+/*
+ * Group headings
+ */
+.ws_edit_field.ws_field_group_heading {
+  height: 1px;
+  min-height: 0;
+  padding-top: 0;
+  background: #ccc;
+  margin: 8px -4px 5px; }
+  .ws_edit_field.ws_field_group_heading span {
+    display: none;
+    font-weight: bold; }
+
 /* The reset-to-default button */
 .ws_reset_button {
   display: block;
@@ -422,7 +435,8 @@ to accommodate the drop-down button.
 
 /* unused items - those that are in the default menu but not in the custom one */
 .ws_unused_flag {
-  background-image: url("../images/plugin_add.png"); }
+  background-image: url("../images/new-menu-badge.png");
+  width: 31px; }
 
 /* hidden items */
 .ws_hidden_flag {
@@ -445,6 +459,15 @@ to accommodate the drop-down button.
 /* Hidden from everyone except the current user and Super Admin. */
 .ws_hidden_from_others_flag {
   background-image: url("../images/font-awesome/eye-slash.png"); }
+
+/* Item visibility can't be determined because it depends on a meta capability. */
+.ws_uncertain_meta_cap_flag::before {
+  font: 16px/1 'dashicons';
+  content: "\f348";
+  color: black;
+  filter: alpha(opacity=25);
+  /*IE 5-7*/
+  opacity: 0.25; }
 
 /* These classes could be used to apply different styles to items depending on their flags */
 /************************************
@@ -795,14 +818,19 @@ a#ws-ame-delete-color-preset:hover {
 /* Color scheme display in the editor widget. */
 .ws_color_scheme_display {
   display: inline-block;
-  height: 20px;
-  width: 186px;
+  box-sizing: border-box;
+  height: 26px;
+  width: 190px;
   margin-right: 5px;
-  padding: 2px 3px;
+  padding: 2px 4px;
   font-size: 12px;
   border: 1px solid #ddd;
   background: white;
-  cursor: pointer; }
+  cursor: pointer;
+  line-height: 20px; }
+
+.ws_open_color_editor {
+  width: 58px; }
 
 .ws_color_display_item {
   display: inline-block;
@@ -826,6 +854,8 @@ a#ws-ame-delete-color-preset:hover {
   position: fixed;
   left: 0;
   top: 0;
+  right: 0;
+  bottom: 0;
   opacity: 0.70;
   -moz-opacity: 0.70;
   filter: alpha(opacity=70);
@@ -945,7 +975,8 @@ a#ws-ame-delete-color-preset:hover {
   margin-right: 5px; }
 
 .ws_launch_access_editor {
-  min-width: 40px; }
+  min-width: 40px;
+  width: 58px; }
 
 #ws_menu_access_editor {
   width: 400px;
@@ -1320,6 +1351,8 @@ a#ws-ame-delete-color-preset:hover {
 
 .ws_ame_doc_box .hndle, .ws_ame_custom_postbox .hndle {
   cursor: default !important; }
+.ws_ame_doc_box .inside, .ws_ame_custom_postbox .inside {
+  margin-bottom: 0; }
 .ws_ame_doc_box ul, .ws_ame_custom_postbox ul {
   list-style: disc outside;
   margin-left: 1em; }
@@ -1343,6 +1376,19 @@ a#ws-ame-delete-color-preset:hover {
 .ws_basic_container .ws_ame_custom_postbox {
   margin-left: 2px;
   margin-right: 2px; }
+
+.ws_ame_custom_postbox .ame-tutorial-list {
+  margin: 0; }
+  .ws_ame_custom_postbox .ame-tutorial-list a {
+    text-decoration: none;
+    display: block;
+    padding: 4px; }
+  .ws_ame_custom_postbox .ame-tutorial-list ul {
+    margin-left: 1em; }
+  .ws_ame_custom_postbox .ame-tutorial-list li {
+    display: block;
+    margin: 0;
+    list-style: none; }
 
 /************************************
       Copy Permissions dialog
@@ -1382,6 +1428,22 @@ a#ws-ame-delete-color-preset:hover {
   margin-top: 0;
   margin-bottom: 1em; }
 
+.ame-available-add-ons tr:first-of-type td {
+  margin-top: 0;
+  padding-top: 0; }
+.ame-available-add-ons td {
+  padding-top: 10px;
+  padding-bottom: 10px; }
+.ame-available-add-ons .ame-add-on-heading {
+  padding-left: 0; }
+
+.ame-add-on-name {
+  font-weight: 600; }
+
+.ame-add-on-details-link::after {
+  /*content: " \f504";
+  font-family: dashicons, sans-serif;*/ }
+
 /*********************************************
       Miscellaneous
 **********************************************/
@@ -1414,5 +1476,107 @@ a#ws-ame-delete-color-preset:hover {
 
 .test-content {
   padding: 8px; }
+
+/*********************************************
+      "Test access" dialog
+**********************************************/
+#ws_ame_test_access_screen {
+  display: none;
+  background: #fcfcfc; }
+
+#ws_ame_test_inputs {
+  padding-bottom: 16px; }
+
+.ws_ame_test_input {
+  display: block;
+  float: left;
+  width: 100%;
+  margin: 2px 0;
+  box-sizing: content-box; }
+
+.ws_ame_test_input_name {
+  display: block;
+  float: left;
+  width: 35%;
+  margin-right: 4%;
+  text-align: right;
+  padding-top: 6px;
+  line-height: 16px; }
+
+.ws_ame_test_input_value {
+  display: block;
+  float: right;
+  width: 60%;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box; }
+
+#ws_ame_test_actions {
+  float: left;
+  width: 100%;
+  margin-top: 1em; }
+
+#ws_ame_test_button_container {
+  width: 35%;
+  margin-right: 4%;
+  float: left;
+  text-align: right; }
+
+#ws_ame_test_progress {
+  display: none;
+  width: 60%;
+  float: right; }
+  #ws_ame_test_progress .spinner {
+    float: none;
+    vertical-align: bottom;
+    margin-left: 0;
+    margin-right: 4px; }
+
+#ws_ame_test_access_body {
+  width: 100%;
+  position: relative;
+  border: 1px solid #ddd;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px; }
+
+#ws_ame_test_frame_container {
+  margin-right: 250px;
+  background: white;
+  min-height: 500px;
+  position: relative; }
+
+#ws_ame_test_access_frame {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+  border: none;
+  margin: 0;
+  padding: 0; }
+
+#ws_ame_test_access_sidebar {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 250px;
+  padding: 16px 24px;
+  background-color: #f3f3f3;
+  border-left: 1px solid #ddd; }
+  #ws_ame_test_access_sidebar h4:first-of-type {
+    margin-top: 0; }
+
+#ws_ame_test_frame_placeholder {
+  display: block;
+  padding: 16px 24px; }
+
+#ws_ame_test_output {
+  display: none; }
 
 /*# sourceMappingURL=menu-editor.css.map */

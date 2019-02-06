@@ -21,6 +21,19 @@ echo wfView::create('scanner/issue-base', array(
 	),
 	'detailControls' => array(
 		'<a href="#" class="wf-btn wf-btn-default wf-btn-callout-subtle wf-issue-control-mark-fixed">' . __('Mark as Fixed', 'wordfence') . '</a>',
-		'<a href="' . esc_url(network_admin_url('plugins.php')) . '" class="wf-btn wf-btn-default wf-btn-callout-subtle wf-issue-control-manage-plugins">' . __('Manage Plugins', 'wordfence') . '</a>',
-	)
+		'<a href="' . esc_url(wfUtils::wpAdminURL('plugins.php')) . '" class="wf-btn wf-btn-default wf-btn-callout-subtle wf-issue-control-manage-plugins">' . __('Manage Plugins', 'wordfence') . '</a>',
+	),
+	'textOutput' => (isset($textOutput) ? $textOutput : null),
+	'textOutputDetailPairs' => array(
+		__('Plugin Name', 'wordfence') => '$data.name',
+		__('Current Plugin Version', 'wordfence') => '$data.version',
+		__('Last Updated', 'wordfence') => '$data.dateUpdated',
+		null,
+		__('Details', 'wordfence') => '$longMsg',
+		__('Vulnerability Status', 'wordfence') => array('$data.vulnerable', __('Plugin has unpatched security issues.', 'wordfence')),
+		null,
+		__('Plugin URL', 'wordfence') => '$data.homepage',
+		__('Repository URL', 'wordfence') => '$data.wpURL',
+		__('Vulnerability Information', 'wordfence') => '$data.vulnerabilityLink',
+	),
 ))->render();

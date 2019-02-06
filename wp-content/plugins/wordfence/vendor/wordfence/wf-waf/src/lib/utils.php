@@ -1,4 +1,5 @@
 <?php
+if (defined('WFWAF_VERSION') && !defined('WFWAF_RUN_COMPLETE')) {
 
 class wfWAFUtils {
 
@@ -13,7 +14,7 @@ class wfWAFUtils {
 		if (wfWAFUtils::strlen($ip) == 16 && wfWAFUtils::substr($ip, 0, 12) == "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff") {
 			$ip = wfWAFUtils::substr($ip, 12, 4);
 		}
-		return self::hasIPv6Support() ? inet_ntop($ip) : self::_inet_ntop($ip);
+		return self::hasIPv6Support() ? @inet_ntop($ip) : self::_inet_ntop($ip);
 	}
 
 	/**
@@ -24,7 +25,7 @@ class wfWAFUtils {
 	 */
 	public static function inet_pton($ip) {
 		// convert the 4 char IPv4 to IPv6 mapped version.
-		$pton = str_pad(self::hasIPv6Support() ? inet_pton($ip) : self::_inet_pton($ip), 16,
+		$pton = str_pad(self::hasIPv6Support() ? @inet_pton($ip) : self::_inet_pton($ip), 16,
 			"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\x00\x00\x00\x00", STR_PAD_LEFT);
 		return $pton;
 	}
@@ -841,11 +842,25 @@ class wfWAFUtils {
 	public static function rawPOSTBody() {
 		global $HTTP_RAW_POST_DATA;
 		if (empty($HTTP_RAW_POST_DATA)) { //Defined if always_populate_raw_post_data is on, PHP < 7, and the encoding type is not multipart/form-data
-			$data = file_get_contents('php://input'); //Available if the encoding type is not multipart/form-data; it can only be read once prior to PHP 5.6 so we save it in $HTTP_RAW_POST_DATA for WP Core and others
+			$avoidPHPInput = false;
+			try {
+				$avoidPHPInput = wfWAF::getSharedStorageEngine() && wfWAF::getSharedStorageEngine()->getConfig('avoid_php_input', false);
+			}
+			catch (Exception $e) {
+				//Ignore
+			}
 			
-			//For our purposes, we don't currently need the raw POST body if it's multipart/form-data since the data will be in $_POST/$_FILES. If we did, we could reconstruct the body here.
-			
-			$HTTP_RAW_POST_DATA = $data;
+			if ($avoidPHPInput) { //Some custom PHP builds break reading from php://input
+				//Reconstruct the best possible approximation of it from $_POST if populated -- won't help JSON or other raw payloads
+				$data = http_build_query($_POST, '', '&');
+			}
+			else {
+				$data = file_get_contents('php://input'); //Available if the encoding type is not multipart/form-data; it can only be read once prior to PHP 5.6 so we save it in $HTTP_RAW_POST_DATA for WP Core and others
+				
+				//For our purposes, we don't currently need the raw POST body if it's multipart/form-data since the data will be in $_POST/$_FILES. If we did, we could reconstruct the body here.
+				
+				$HTTP_RAW_POST_DATA = $data;
+			}
 		}
 		else {
 			$data =& $HTTP_RAW_POST_DATA;
@@ -862,9 +877,9 @@ class wfWAFUtils {
 	public static function normalizedTime() {
 		$offset = 0;
 		try {
-			$offset = wfWAF::getInstance()->getStorageEngine()->getConfig('timeoffset_ntp', false);
+			$offset = wfWAF::getInstance()->getStorageEngine()->getConfig('timeoffset_ntp', false, 'synced');
 			if ($offset === false) {
-				$offset = wfWAF::getInstance()->getStorageEngine()->getConfig('timeoffset_wf', false);
+				$offset = wfWAF::getInstance()->getStorageEngine()->getConfig('timeoffset_wf', false, 'synced');
 				if ($offset === false) { $offset = 0; }
 			}
 		}
@@ -873,4 +888,5 @@ class wfWAFUtils {
 		}
 		return time() + $offset;
 	}
+}
 }

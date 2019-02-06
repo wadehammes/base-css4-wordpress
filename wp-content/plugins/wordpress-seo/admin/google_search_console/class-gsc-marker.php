@@ -1,6 +1,8 @@
 <?php
 /**
- * @package WPSEO\Admin|Google_Search_Console
+ * WPSEO plugin file.
+ *
+ * @package WPSEO\Admin\Google_Search_Console
  */
 
 /**
@@ -135,7 +137,7 @@ class WPSEO_GSC_Marker {
 		$total_issues = $counts->get_issue_count( $this->platform, $this->category );
 
 		// Lower the current count with 1.
-		$total_issues = ( $total_issues - 1 );
+		--$total_issues;
 
 		// And update the count.
 		$counts->update_issue_count( $this->platform, $this->category, $total_issues );

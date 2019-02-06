@@ -62,17 +62,24 @@ $wfBlockRange = filter_input(INPUT_GET, 'wfBlockRange', FILTER_DEFAULT, FILTER_R
 									else if (active == 'country') {
 										$('.wf-block-add-ip, .wf-block-add-pattern').hide(); 
 										$('.wf-block-add-country').show();
+
+										$('#wf-block-reason').val('<?php esc_attr_e('Country Blocking', 'wordfence'); ?>');
 										
 										if (!!$('#wf-blocks-wrapper').data('hasCountryBlock')) {
 											title = $('#wf-block-parameters-title').data('editTitle');
 											saveButton = $('#wf-block-type > li.wf-active a').data('editButton');
 											
-											var editValues = $('.wf-block-edit').first().data('editValues');
+											var editValues = $('#wf-blocks-wrapper').data('hasCountryBlock');
 											$('.wf-block-edit').first().closest('tr').addClass('wf-editing');
 											$('#wf-block-reason').val(editValues.reason);
 											$('#wf-block-country-login .wf-option-checkbox').toggleClass('wf-checked', !!editValues.blockLogin);
 											$('#wf-block-country-site .wf-option-checkbox').toggleClass('wf-checked', !!editValues.blockSite);
 											$('#wf-block-country-countries').val(editValues.countries).trigger('change');
+										}
+										else {
+											$('#wf-block-country-login .wf-option-checkbox').toggleClass('wf-checked', true);
+											$('#wf-block-country-site .wf-option-checkbox').toggleClass('wf-checked', true);
+											$('#wf-block-country-countries').val([]).trigger('change');
 										}
 									}
 									else if (active == 'custom-pattern') {
@@ -92,8 +99,10 @@ $wfBlockRange = filter_input(INPUT_GET, 'wfBlockRange', FILTER_DEFAULT, FILTER_R
 								$('#wf-block-ip-range').val('<?php echo esc_attr($wfBlockRange); ?>');
 								<?php endif; ?>
 								
-								$('#wf-block-reason, #wf-block-ip, #wf-block-ip-range, #wf-block-hostname, #wf-block-user-agent, #wf-block-referrer').on('keyup', function() {
-									WFAD.updateCreateBlockPattern();
+								$('#wf-block-reason, #wf-block-ip, #wf-block-ip-range, #wf-block-hostname, #wf-block-user-agent, #wf-block-referrer').on('change paste keyup', function() {
+									setTimeout(function() {
+										WFAD.updateCreateBlockPattern();
+									}, 4);
 								});
 							});
 						})(jQuery);
@@ -115,7 +124,7 @@ $wfBlockRange = filter_input(INPUT_GET, 'wfBlockRange', FILTER_DEFAULT, FILTER_R
 						echo $localizedDateJS;
 						?>
 					</script>
-					<script type="application/javascript" src="<?php echo esc_attr(wfUtils::getBaseURL() . 'js/date.js'); ?>"></script>
+					<?php if (false): ?><script type="application/javascript" src="<?php echo esc_attr(wfUtils::getBaseURL() . 'js/date.js'); ?>"></script><?php endif; ?>
 				</td>
 			</tr>
 		<?php if (wfConfig::get('isPaid')): ?>
@@ -132,6 +141,12 @@ $wfBlockRange = filter_input(INPUT_GET, 'wfBlockRange', FILTER_DEFAULT, FILTER_R
 							<li class="wf-option-title"><?php _e('<span class="wf-hidden-xs">Block access to the rest of the site</span><span class="wf-visible-xs">Rest of site</span>', 'wordfence'); ?></li>
 						</ul>
 					</div>
+				</td>
+			</tr>
+			<tr class="wf-block-add-country" style="display: none;">
+				<th class="wf-right wf-padding-add-right wf-padding-add-top-small"></th>
+				<td class="wf-padding-add-top-small wf-form-field">
+					<em><?php printf(__('If you use Google Adwords, blocking countries from accessing the entire site is not recommended. <a href="%s" target="_blank" rel="noopener noreferrer">Learn More</a>', 'wordfence'), wfSupportController::supportURL(wfSupportController::ITEM_FIREWALL_BLOCKING_FULL_SITE)); ?></em>
 				</td>
 			</tr>
 			<tr class="wf-block-add-country" style="display: none;">
@@ -186,14 +201,14 @@ $wfBlockRange = filter_input(INPUT_GET, 'wfBlockRange', FILTER_DEFAULT, FILTER_R
 				<th class="wf-right wf-padding-add-right wf-padding-add-top-small"><?php _e('Referrer', 'wordfence'); ?></th>
 				<td class="wf-option-text wf-padding-add-top-small"><input id="wf-block-referrer" type="text" placeholder="<?php esc_attr_e('e.g., *badwebsite.example.com*', 'wordfence'); ?>"></td>
 			</tr>
-			<tr class="<?php echo (wfConfig::get('isPaid') ? 'wf-block-add-common' : 'wf-block-add-ip wf-block-add-pattern'); ?>" style="display: none;">
+			<tr class="wf-block-add-ip wf-block-add-pattern" style="display: none;">
 				<th class="wf-right wf-padding-add-right wf-padding-add-top-small"><?php _e('<span class="wf-hidden-xs">Block </span>Reason', 'wordfence'); ?><span class="wf-red-dark">*</span></th> 
-				<td class="wf-option-text wf-padding-add-top-small"><input id="wf-block-reason" type="text" placeholder="<?php esc_attr_e('Enter a reason', 'wordfence'); ?>"></td>
+				<td class="wf-option-text wf-padding-add-top-small"><input id="wf-block-reason" type="text" placeholder="<?php esc_attr_e('Enter a reason', 'wordfence'); ?>" maxlength="50"></td>
 			</tr>
 		</table>
 	</li>
 	<li class="<?php echo (wfConfig::get('isPaid') ? 'wf-block-add-common' : 'wf-block-add-ip wf-block-add-pattern'); ?>" style="display: none;">
-		<div class="wf-right wf-padding-add-top-small wf-padding-add-bottom-small">
+		<div class="wf-right wf-padding-add-top wf-padding-add-bottom">
 			<a id="wf-block-add-cancel" class="wf-btn wf-btn-default wf-btn-callout-subtle" href="#"><?php esc_html_e('Cancel', 'wordfence'); ?></a>&nbsp;&nbsp;<a id="wf-block-add-save" class="wf-btn wf-btn-primary wf-btn-callout-subtle wf-disabled" href="#"><?php _e('Block<span class="wf-hidden-xs"> Visitors Matching this</span> Pattern', 'wordfence'); ?></a>
 			<script type="application/javascript">
 				(function($) {
@@ -208,7 +223,7 @@ $wfBlockRange = filter_input(INPUT_GET, 'wfBlockRange', FILTER_DEFAULT, FILTER_R
 							});
 						});
 						
-						$('#wf-block-country-countries').select2({
+						$('#wf-block-country-countries').wfselect2({
 							tags: true,
 							tokenSeparators: [',', ' '],
 							placeholder: "Hit enter to add",
@@ -220,7 +235,7 @@ $wfBlockRange = filter_input(INPUT_GET, 'wfBlockRange', FILTER_DEFAULT, FILTER_R
 								return null; //No custom tags
 							},
 							sorter: function(results) {
-								var term = $('#wf-block-country-countries').data('select2').$container.find('.select2-search__field').val();
+								var term = $('#wf-block-country-countries').data('wfselect2').$container.find('.wfselect2-search__field').val();
 								if (term) {
 									var escapedTerm = term.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 									var termRegex = new RegExp('^' + escapedTerm, 'i');
@@ -242,12 +257,12 @@ $wfBlockRange = filter_input(INPUT_GET, 'wfBlockRange', FILTER_DEFAULT, FILTER_R
 							selected.each(function(index, value) {
 								var li = $('<li class="wf-tag-selected' + (index > 4 && !container.data('expanded') ? ' wf-hidden' : '') + '"><a class="wf-destroy-tag-selected">×</a>' + $(value).text() + '</li>');
 								li.children('a.wf-destroy-tag-selected')
-									.off('click.select2-copy')
-									.on('click.select2-copy', function(e) {
-										var opt = $(this).data('select2-opt');
+									.off('click.wfselect2-copy')
+									.on('click.wfselect2-copy', function(e) {
+										var opt = $(this).data('wfselect2-opt');
 										opt.attr('selected', false);
 										opt.parents('select').trigger('change');
-									}).data('select2-opt', $(value));
+									}).data('wfselect2-opt', $(value));
 								list.append(li);
 							});
 							
@@ -277,26 +292,29 @@ $wfBlockRange = filter_input(INPUT_GET, 'wfBlockRange', FILTER_DEFAULT, FILTER_R
 						}).triggerHandler('change');
 
 						if ($('#wf-block-country-countries').length > 0) {
-							$('#wf-block-country-countries').data('select2').$container.addClass('wf-select2-placeholder-fix wf-select2-hide-tags');
+							$('#wf-block-country-countries').data('wfselect2').$container.addClass('wf-select2-placeholder-fix wf-select2-hide-tags');
 						}
 						
 						$('#wf-block-country-countries-popup').on('click', function(e) {
 							e.preventDefault();
 							e.stopPropagation();
 							
+							var content = $('#wfTmpl_countrySelector').tmpl();
+							$(content).find('#wf-country-selector-confirm').text($('#wf-block-add-save').text());
+
+							var modal = $(content);
+							var countries = {};
+							var currentSelection = $('#wf-block-country-countries').val() || [];
+							for (var i = 0; i < currentSelection.length; i++) {
+								countries[currentSelection[i]] = 1;
+								modal.find('li[data-country="' + currentSelection[i] + '"]').addClass('wf-active');
+							}
+							modal.data('countries', countries);
+							
 							$.wfDrawer({
 								width: WFAD.isSmallScreen ? '320px' : '800px',
-								content: $('#wfTmpl_countrySelector').tmpl(),
+								content: content,
 								onComplete: function() {
-									var modal = $('#wf-country-selector');
-									var countries = {};
-									var currentSelection = $('#wf-block-country-countries').val() || [];
-									for (var i = 0; i < currentSelection.length; i++) {
-										countries[currentSelection[i]] = 1;
-										modal.find('li[data-country="' + currentSelection[i] + '"]').addClass('wf-active');
-									}
-									modal.data('countries', countries);
-									
 									var updateCount = function() {
 										var count = $('.wf-blocked-countries li.wf-active').length;
 										$('#wf-country-selector-count').text(count + (count == 1 ? ' Country Selected' : ' Countries Selected'));	
@@ -367,18 +385,30 @@ $wfBlockRange = filter_input(INPUT_GET, 'wfBlockRange', FILTER_DEFAULT, FILTER_R
 	
 										var letter = $(this).find('a').data('letter');
 										var scrollTarget = $('.wf-blocked-countries[data-letter="' + letter + '"]');
-										$('.wf-country-selector-options').animate({
-											scrollTop: $('.wf-country-selector-options').scrollTop() + scrollTarget.offset().top - $('.wf-country-selector-options').offset().top
+										$('.wf-country-selector-inner-wrapper').animate({
+											scrollTop: $('.wf-country-selector-inner-wrapper').scrollTop() + scrollTarget.offset().top - $('.wf-country-selector-inner-wrapper').offset().top
 										}, 500);
 									});
+									
+									$('#wf-country-selector-cancel').on('click', function(e) { //Commits but doesn't save
+										e.preventDefault();
+										e.stopPropagation();
+
+										var modal = $('#wf-country-selector');
+										var countries = Object.keys(modal.data('countries')) || [];
+										$('#wf-block-country-countries').val(countries).trigger('change');
+
+										$.wfDrawer.close()
+									});
 	
-									$('#wf-country-selector-confirm').on('click', function(e) {
+									$('#wf-country-selector-confirm').on('click', function(e) { //Commits and saves
 										e.preventDefault();
 										e.stopPropagation();
 	
 										var modal = $('#wf-country-selector');
 										var countries = Object.keys(modal.data('countries')) || [];
 										$('#wf-block-country-countries').val(countries).trigger('change');
+										$('#wf-block-add-save').trigger('click');
 	
 										$.wfDrawer.close()
 									});
@@ -428,7 +458,7 @@ $wfBlockRange = filter_input(INPUT_GET, 'wfBlockRange', FILTER_DEFAULT, FILTER_R
 							}
 
 							WFAD.loadingBlocks = true;
-							WFAD.ajax('wordfence_createBlock', {payload: JSON.stringify(payload)}, function(res) {
+							WFAD.ajax('wordfence_createBlock', {payload: JSON.stringify(payload), sortColumn: WFAD.sortColumn, sortDirection: WFAD.sortDirection, blocksFilter: WFAD.blocksFilter}, function(res) {
 								WFAD.loadingBlocks = false;
 								if (res.success) {
 									$(window).trigger('wordfenceRefreshBlockList', [res, false]);
@@ -440,7 +470,7 @@ $wfBlockRange = filter_input(INPUT_GET, 'wfBlockRange', FILTER_DEFAULT, FILTER_R
 									$('#wf-block-duration, #wf-block-reason, #wf-block-ip, #wf-block-ip-range, #wf-block-hostname, #wf-block-user-agent, #wf-block-referrer').val('');
 								}
 								else {
-									WFAD.colorboxModal((WFAD.isSmallScreen ? '300px' : '400px'), 'Error Saving Block', res.error);
+									WFAD.colorboxModalHTML((WFAD.isSmallScreen ? '300px' : '400px'), 'Error Saving Block', res.error);
 								}
 							});
 						});

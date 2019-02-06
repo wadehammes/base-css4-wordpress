@@ -17,11 +17,13 @@ class Cdn_Plugin {
 	 * Config
 	 */
 	private $_config = null;
+	private $_debug = false;
 
-	private $_replaced_urls = array();
+	private $_attachments_action = array();
 
 	function __construct() {
 		$this->_config = Dispatcher::config();
+		$this->_debug = $this->_config->get_boolean( 'cdn.debug' );
 	}
 
 	/**
@@ -41,21 +43,6 @@ class Cdn_Plugin {
 			) );
 
 		if ( !Cdn_Util::is_engine_mirror( $cdn_engine ) ) {
-			add_action( 'delete_attachment', array(
-					$this,
-					'delete_attachment'
-				) );
-
-			add_filter( 'update_attached_file', array(
-					$this,
-					'update_attached_file'
-				) );
-
-			add_filter( 'wp_update_attachment_metadata', array(
-					$this,
-					'update_attachment_metadata'
-				) );
-
 			add_action( 'w3_cdn_cron_queue_process', array(
 					$this,
 					'cron_queue_process'
@@ -76,11 +63,26 @@ class Cdn_Plugin {
 					'update_feedback'
 				) );
 
-			add_filter( 'wp_prepare_attachment_for_js', array(
-					$this,
-					'wp_prepare_attachment_for_js'
-				), 0 );
 		}
+
+		$flush_on_actions = !$this->_config->get_boolean( 'cdn.flush_manually' );
+
+		if ( $flush_on_actions ) {
+			add_action( 'delete_attachment',
+				array( $this, 'delete_attachment' ) );
+
+			add_filter( 'wp_insert_attachment_data',
+				array( $this, 'check_inserting_new_attachment' ), 10, 2 );
+
+			add_filter( 'update_attached_file',
+				array( $this, 'update_attached_file' ) );
+
+			add_filter( 'wp_update_attachment_metadata',
+				array( $this, 'update_attachment_metadata' ) );
+		}
+
+		add_filter( 'w3tc_preflush_cdn_all',
+			array( $this, 'w3tc_preflush_cdn_all' ), 10, 2 );
 
 		add_filter( 'w3tc_admin_bar_menu',
 			array( $this, 'w3tc_admin_bar_menu' ) );
@@ -89,6 +91,11 @@ class Cdn_Plugin {
 			add_action( 'w3tc_config_ui_save-w3tc_cdn', array(
 					$this, 'change_canonical_header' ), 0, 0 );
 			add_filter( 'w3tc_module_is_running-cdn', array( $this, 'cdn_is_running' ) );
+		}
+
+		if ( !is_admin() || $this->_config->get_boolean( 'cdn.admin.media_library' ) ) {
+			add_filter( 'wp_prepare_attachment_for_js',
+				array( $this, 'wp_prepare_attachment_for_js' ), 0 );
 		}
 
 		/**
@@ -104,35 +111,9 @@ class Cdn_Plugin {
 					'media_row_actions'
 				), 0, 2 );
 		}
-	}
 
-	/**
-	 * run code for FSD CDN
-	 */
-	private function run_fsd() {
-		add_action( 'w3tc_flush_all', array(
-				'\W3TC\Cdnfsd_CacheFlush',
-				'w3tc_flush_all'
-			), 3000, 1 );
-		add_action( 'w3tc_flush_post', array(
-				'\W3TC\Cdnfsd_CacheFlush',
-				'w3tc_flush_post'
-			), 3000, 1 );
-		add_action( 'w3tc_flushable_posts', '__return_true', 3000 );
-		add_action( 'w3tc_flush_posts', array(
-				'\W3TC\Cdnfsd_CacheFlush',
-				'w3tc_flush_all'
-			), 3000 );
-		add_action( 'w3tc_flush_url', array(
-				'\W3TC\Cdnfsd_CacheFlush',
-				'w3tc_flush_url'
-			), 3000, 1 );
-		add_filter( 'w3tc_flush_execute_delayed_operations', array(
-				'\W3TC\Cdnfsd_CacheFlush',
-				'w3tc_flush_execute_delayed_operations'
-			), 3000 );
-
-		Util_AttachToActions::flush_posts_on_actions();
+		add_filter( 'w3tc_minify_http2_preload_url',
+			array( $this, 'w3tc_minify_http2_preload_url' ), 3000 );
 	}
 
 	/**
@@ -172,6 +153,22 @@ class Cdn_Plugin {
 		$common->upload( $upload, true, $results );
 	}
 
+	function check_inserting_new_attachment( $data, $postarr ) {
+		$this->_attachments_action[ $postarr['file'] ] = empty( $postarr['ID'] ) ? 'insert' : 'update';
+
+		return $data;
+	}
+
+	public function w3tc_preflush_cdn_all( $do_flush, $extras = array() ) {
+		if ( $this->_config->get_boolean( 'cdn.flush_manually' ) ) {
+			if ( !isset( $extras['ui_action'] ) ) {
+				$do_flush = false;
+			}
+		}
+
+		return $do_flush;
+	}
+
 	/**
 	 * Update attachment file
 	 *
@@ -187,7 +184,14 @@ class Cdn_Plugin {
 
 		$results = array();
 
-		$common->upload( $files, true, $results );
+		$cdn_engine = $this->_config->get_string( 'cdn.engine' );
+		if ( Cdn_Util::is_engine_mirror( $cdn_engine ) ) {
+			if ( ! array_key_exists( $attached_file, $this->_attachments_action ) || $this->_attachments_action[ $attached_file ] === 'update' ) {
+				$common->purge( $files, $results );
+			}
+		} else {
+			$common->upload( $files, true, $results );
+		}
 
 		return $attached_file;
 	}
@@ -206,7 +210,12 @@ class Cdn_Plugin {
 
 		$results = array();
 
-		$common->delete( $files, true, $results );
+		$cdn_engine = $this->_config->get_string( 'cdn.engine' );
+		if ( Cdn_Util::is_engine_mirror( $cdn_engine ) ) {
+			$common->purge( $files, $results );
+		} else {
+			$common->delete( $files, true, $results );
+		}
 	}
 
 	/**
@@ -224,7 +233,12 @@ class Cdn_Plugin {
 
 		$results = array();
 
-		$common->upload( $files, true, $results );
+		$cdn_engine = $this->_config->get_string( 'cdn.engine' );
+		if ( Cdn_Util::is_engine_mirror( $cdn_engine ) ) {
+			$common->purge( $files, $results );
+		} else {
+			$common->upload( $files, true, $results );
+		}
 
 		return $metadata;
 	}
@@ -297,7 +311,12 @@ class Cdn_Plugin {
 			if ( $this->can_cdn2( $buffer ) ) {
 				$srcset_helper = new _Cdn_Plugin_ContentFilter();
 				$buffer = $srcset_helper->replace_all_links( $buffer );
-				$this->_replaced_urls = $srcset_helper->get_replaced_urls();
+
+				if ( $this->_debug ) {
+					$replaced_urls = $srcset_helper->get_replaced_urls();
+					$buffer = $this->w3tc_footer_comment_after(
+						$buffer, $replaced_urls );
+				}
 			}
 		}
 
@@ -733,6 +752,34 @@ class Cdn_Plugin {
 		return $url;
 	}
 
+	/**
+	 * Mutate http/2 header links
+	 */
+	public function w3tc_minify_http2_preload_url( $data ) {
+		$url = $data['result_link'];
+
+		$url = trim( $url );
+		if ( empty( $url ) ) {
+			return $data;
+		}
+
+		$parsed = parse_url( $url );
+		$uri = ( isset( $parsed['path'] ) ? $parsed['path'] : '/' ) .
+				   ( isset( $parsed['query'] ) ? '?' . $parsed['query'] : '' );
+
+		$common = Dispatcher::component( 'Cdn_Core' );
+		$new_url = $common->url_to_cdn_url( $url, $uri );
+		if ( is_null( $new_url ) ) {
+			return $data;
+		}
+
+		$data['result_link'] = $new_url;
+		// url_to_cdn_url processed by browsercache internally
+		$data['browsercache_processed'] = '*';
+
+		return $data;
+	}
+
 	public function w3tc_admin_bar_menu( $menu_items ) {
 		$cdn_engine = $this->_config->get_string( 'cdn.engine' );
 
@@ -771,23 +818,34 @@ class Cdn_Plugin {
 			( empty( $this->cdn_reject_reason ) ? '' :
 				sprintf( ' (%s)', $this->cdn_reject_reason ) ) );
 
-		if ( $this->_config->get_boolean( 'cdn.debug' ) ) {
-			$strings[] = '';
-			$strings[] = 'CDN debug info:';
-
-			if ( count( $this->_replaced_urls ) ) {
-				$strings[] = "Replaced URLs:";
-
-				foreach ( $this->_footer_comment_postfix as $old_url => $new_url ) {
-					$strings[] = sprintf( "%s => %s",
-						Util_Content::escape_comment( $old_url ),
-						Util_Content::escape_comment( $new_url ) );
-				}
-			}
-			$strings[] = '';
+		if ( $this->_debug ) {
+			$strings[] = '{w3tc_cdn_debug_info}';
 		}
 
 		return $strings;
+	}
+
+
+
+	public function w3tc_footer_comment_after( $buffer, $replaced_urls ) {
+		$strings = array();
+
+		if ( is_array( $replaced_urls ) &&
+				count( $replaced_urls ) ) {
+			$strings[] = "Replaced URLs for CDN:";
+
+			foreach ( $replaced_urls as $old_url => $new_url ) {
+				$strings[] = sprintf( "%s => %s",
+					Util_Content::escape_comment( $old_url ),
+					Util_Content::escape_comment( $new_url ) );
+			}
+
+			$strings[] = '';
+		}
+
+		$buffer = str_replace( '{w3tc_cdn_debug_info}',
+			implode( "\n", $strings ), $buffer );
+		return $buffer;
 	}
 }
 
@@ -796,7 +854,8 @@ class _Cdn_Plugin_ContentFilter {
 	private $_regexps = array();
 	private $_placeholders = array();
 	private $_config;
-	private $_replaced_urls;
+	private $_replaced_urls = array();
+
 	/**
 	 * If background uploading already scheduled
 	 *
@@ -1116,8 +1175,8 @@ class _Cdn_Plugin_ContentFilter {
 		/**
 		 * Check if URL was already replaced
 		 */
-		if ( isset( $this->replaced_urls[$url] ) ) {
-			return $quote . $this->replaced_urls[$url];
+		if ( isset( $this->_replaced_urls[$url] ) ) {
+			return $quote . $this->_replaced_urls[$url];
 		}
 
 		/**
@@ -1175,7 +1234,7 @@ class _Cdn_Plugin_ContentFilter {
 		$common = Dispatcher::component( 'Cdn_Core' );
 		$new_url = $common->url_to_cdn_url( $url, $path );
 		if ( !is_null( $new_url ) ) {
-			$this->replaced_urls[$url] = $new_url;
+			$this->_replaced_urls[$url] = $new_url;
 			return $quote . $new_url;
 		}
 
@@ -1218,17 +1277,6 @@ class _Cdn_Plugin_ContentFilter {
 	}
 
 	function get_replaced_urls() {
-		$strings = array();
-		if ( count( $this->_replaced_urls ) ) {
-			$strings[] = "Replaced URLs:";
-
-			foreach ( $this->_replaced_urls as $old_url => $new_url ) {
-				$strings[] = sprintf( "%s => %s",
-					Util_Content::escape_comment( $old_url ),
-					Util_Content::escape_comment( $new_url ) );
-			}
-		}
-		return $strings;
+		return $this->_replaced_urls;
 	}
-
 }

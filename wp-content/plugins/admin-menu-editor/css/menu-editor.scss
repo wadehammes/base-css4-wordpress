@@ -393,6 +393,24 @@ $mainContainerBorderRadius: 0px;
 	min-height: 25px;
 }
 
+/*
+ * Group headings
+ */
+.ws_edit_field.ws_field_group_heading {
+	//display: none;
+	height: 1px;
+	min-height: 0;
+	padding-top: 0;
+
+	background: #ccc;
+	margin: 8px -4px 5px;
+
+	& span {
+		display: none;
+		font-weight: bold;
+	}
+}
+
 /* The reset-to-default button */
 .ws_reset_button {
 	display: block;
@@ -427,11 +445,12 @@ $mainContainerBorderRadius: 0px;
 }
 
 /* The input box in each field editor */
+$basicInputWidth: 254px;
 #ws_menu_editor .ws_editbox input[type="text"], 
 #ws_menu_editor .ws_editbox select {
 	display: block;
 	float: left;
-	width: 254px;
+	width: $basicInputWidth;
 	height: 25px;
 
 	font-size: 12px;
@@ -582,7 +601,8 @@ to accommodate the drop-down button.
 
 /* unused items - those that are in the default menu but not in the custom one */
 .ws_unused_flag {
-	background-image: url('../images/plugin_add.png');
+	background-image: url('../images/new-menu-badge.png');
+	width: 31px;
 }
 
 /* hidden items */
@@ -606,6 +626,16 @@ to accommodate the drop-down button.
 /* Hidden from everyone except the current user and Super Admin. */
 .ws_hidden_from_others_flag {
 	background-image: url('../images/font-awesome/eye-slash.png');
+}
+
+/* Item visibility can't be determined because it depends on a meta capability. */
+.ws_uncertain_meta_cap_flag::before {
+	font: 16px/1 'dashicons';
+	content: "\f348";
+	color: black;
+
+	filter: alpha(opacity=25); /*IE 5-7*/
+	opacity: 0.25;
 }
 
 /* These classes could be used to apply different styles to items depending on their flags */
@@ -1077,18 +1107,30 @@ a#ws-ame-delete-color-preset:hover {
 
 /* Color scheme display in the editor widget. */
 
-.ws_color_scheme_display {
-    display: inline-block;
-    height: 20px;
-    width: 186px;
+$colorFieldWidth: 190px;
+$colorFieldRightMargin: 5px;
 
-    margin-right: 5px;
-    padding: 2px 3px;
+.ws_color_scheme_display {
+	$colorFieldHeight: 26px;
+
+    display: inline-block;
+	box-sizing: border-box;
+    height: $colorFieldHeight;
+    width: $colorFieldWidth;
+
+    margin-right: $colorFieldRightMargin;
+    padding: 2px 4px;
 
 	font-size: 12px;
     border: 1px solid #ddd;
     background: white;
     cursor: pointer;
+
+	line-height: $colorFieldHeight - 6px;
+}
+
+.ws_open_color_editor {
+	width: $basicInputWidth - $colorFieldWidth - $colorFieldRightMargin - 1px;
 }
 
 .ws_color_display_item {
@@ -1118,6 +1160,8 @@ a#ws-ame-delete-color-preset:hover {
 	position: fixed;
 	left: 0;
 	top: 0;
+	right: 0;
+	bottom: 0;
 	opacity: 0.70;
 	-moz-opacity: 0.70;
 	filter: alpha(opacity=70);
@@ -1270,14 +1314,17 @@ a#ws-ame-delete-color-preset:hover {
 *************************************/
 
 /* The launch button */
+$accessLevelInputWidth: 190px;
+$accessLevelRightMargin: 5px;
 #ws_menu_editor .ws_edit_field-access_level input.ws_field_value
 {
-	width: 190px;
-	margin-right: 5px;
+	width: $accessLevelInputWidth;
+	margin-right: $accessLevelRightMargin;
 }
 
 .ws_launch_access_editor {
 	min-width: 40px;
+	width: $basicInputWidth - $accessLevelRightMargin - $accessLevelInputWidth - 1px;
 }
 
 #ws_menu_access_editor {
@@ -1860,6 +1907,10 @@ $userSelectionPanelPadding: 10px;
 		cursor: default !important;
 	}
 
+	.inside {
+		margin-bottom: 0;
+	}
+
 	ul {
 		list-style: disc outside;
 		margin-left: 1em;
@@ -1894,6 +1945,26 @@ $userSelectionPanelPadding: 10px;
 	//Match .ws_main_container's horizontal margins for proper alignment.
 	margin-left: 2px;
 	margin-right: 2px;
+}
+
+.ws_ame_custom_postbox .ame-tutorial-list {
+	margin: 0;
+
+	a {
+		text-decoration: none;
+		display: block;
+		padding: 4px;
+	}
+
+	ul {
+		margin-left: 1em;
+	}
+
+	li {
+		display: block;
+		margin: 0;
+		list-style: none;
+	}
 }
 
 /************************************
@@ -1952,6 +2023,31 @@ $userSelectionPanelPadding: 10px;
 	margin-bottom: 1em;
 }
 
+.ame-available-add-ons {
+	tr:first-of-type td {
+		margin-top: 0;
+		padding-top: 0;
+	}
+
+	td {
+		padding-top: 10px;
+		padding-bottom: 10px;
+	}
+
+	.ame-add-on-heading {
+		padding-left: 0;
+	}
+}
+
+.ame-add-on-name {
+	font-weight: 600;
+}
+
+.ame-add-on-details-link::after {
+	/*content: " \f504";
+	font-family: dashicons, sans-serif;*/
+}
+
 /*********************************************
       Miscellaneous
 **********************************************/
@@ -1996,3 +2092,5 @@ $userSelectionPanelPadding: 10px;
 .test-content {
     padding: 8px;
 }
+
+@import "test-access-screen";

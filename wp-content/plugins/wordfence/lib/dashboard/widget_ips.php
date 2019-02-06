@@ -122,7 +122,7 @@ if (!isset($limit)) { $limit = 10; $initial = true; }
 		<tr>
 			<td>${d.IP}</td>
 			<td>${d.countryName}</td>
-			<td><img src="${d.countryFlag}" class="wfFlag" height="11" width="16" alt="${d.countryName}" title="${d.countryName}"></td>
+			<td><span class="wf-flag ${d.countryFlag}" title="${d.countryName}"></td>
 			<td>${d.blockCount}</td>
 		</tr>
 		{{/each}}

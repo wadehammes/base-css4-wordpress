@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO plugin file.
+ *
  * @package WPSEO\Admin
  */
 
@@ -7,16 +9,32 @@
  * Class WPSEO_Help_Center
  */
 class WPSEO_Help_Center {
-	/** @var WPSEO_Option_Tab[] $tab */
+	/**
+	 * The tabs in the help center.
+	 *
+	 * @var WPSEO_Option_Tab[] $tab
+	 */
 	private $tabs;
 
-	/** @var string Mount point in the HTML */
+	/**
+	 * Mount point in the HTML.
+	 *
+	 * @var string
+	 */
 	private $identifier = 'yoast-help-center-container';
 
-	/** @var array Additional help center items */
+	/**
+	 * Additional help center items.
+	 *
+	 * @var array
+	 */
 	protected $help_center_items = array();
 
-	/** @var bool Show premium support tab */
+	/**
+	 * Show premium support tab.
+	 *
+	 * @var bool
+	 */
 	protected $premium_support;
 
 	/**
@@ -86,18 +104,41 @@ class WPSEO_Help_Center {
 
 		$formatted_data['translations'] = self::get_translated_texts();
 
-		$formatted_data['videoDescriptions'] = array(
-			array(
+		$formatted_data['videoDescriptions'] = array();
+
+		if ( $is_premium === false ) {
+			$formatted_data['videoDescriptions'][] = array(
 				'title'       => __( 'Need some help?', 'wordpress-seo' ),
 				'description' => __( 'Go Premium and our experts will be there for you to answer any questions you might have about the setup and use of the plugin.', 'wordpress-seo' ),
-				'link'        => 'https://yoa.st/seo-premium-vt?utm_content=' . WPSEO_VERSION,
+				'link'        => WPSEO_Shortlinker::get( 'https://yoa.st/seo-premium-vt' ),
 				'linkText'    => __( 'Get Yoast SEO Premium now »', 'wordpress-seo' ),
-			),
-			array(
+			);
+
+			$formatted_data['videoDescriptions'][] = array(
 				'title'       => __( 'Want to be a Yoast SEO Expert?', 'wordpress-seo' ),
 				'description' => __( 'Follow our Yoast SEO for WordPress training and become a certified Yoast SEO Expert!', 'wordpress-seo' ),
-				'link'        => 'https://yoa.st/wordpress-training-vt?utm_content=' . WPSEO_VERSION,
+				'link'        => WPSEO_Shortlinker::get( 'https://yoa.st/wordpress-training-vt' ),
 				'linkText'    => __( 'Enroll in the Yoast SEO for WordPress training »', 'wordpress-seo' ),
+			);
+		}
+
+		$formatted_data['contactSupportParagraphs'] = array(
+			array(
+				'image'   => array(
+					'src'    => esc_url( plugin_dir_url( WPSEO_FILE ) . 'images/support-team.svg' ),
+					'width'  => 100,
+					'height' => 100,
+					'alt'    => '',
+				),
+				'content' => null,
+			),
+			array(
+				'image'   => null,
+				'content' => __( 'If you have a problem that you can\'t solve with our video tutorials or knowledge base, you can send a message to our support team. They can be reached 24/7.', 'wordpress-seo' ),
+			),
+			array(
+				'image'   => null,
+				'content' => __( 'Support requests you create here are sent directly into our support system, which is secured with 256 bit SSL, so communication is 100% secure.', 'wordpress-seo' ),
 			),
 		);
 
@@ -139,6 +180,9 @@ class WPSEO_Help_Center {
 	 */
 	protected function enqueue_localized_data( $data ) {
 		wp_localize_script( WPSEO_Admin_Asset_Manager::PREFIX . 'help-center', 'wpseoHelpCenterData', $data );
+
+		$yoast_components_l10n = new WPSEO_Admin_Asset_Yoast_Components_L10n();
+		$yoast_components_l10n->localize_script( WPSEO_Admin_Asset_Manager::PREFIX . 'help-center' );
 	}
 
 	/**
@@ -154,21 +198,25 @@ class WPSEO_Help_Center {
 	private function add_contact_support_item() {
 		/* translators: %s: expands to 'Yoast SEO Premium'. */
 		$popup_title   = sprintf( __( 'Email support is a %s feature', 'wordpress-seo' ), 'Yoast SEO Premium' );
-		$popup_content = '<p class="yoast-measure">' . __( 'Go Premium and our experts will be there for you to answer any questions you might have about the set-up and use of the plug-in!', 'wordpress-seo' ) . '</p>';
+		$popup_content = '<p class="yoast-measure">' . __( 'Go Premium and our experts will be there for you to answer any questions you might have about the setup and use of the plugin.', 'wordpress-seo' ) . '</p>';
 		/* translators: %1$s: expands to 'Yoast SEO Premium'. */
 		$popup_content .= '<p>' . sprintf( __( 'Other benefits of %1$s for you:', 'wordpress-seo' ), 'Yoast SEO Premium' ) . '</p>';
 		$popup_content .= '<ul class="wpseo-premium-advantages-list">';
 		$popup_content .= '<li>' . sprintf(
 			// We don't use strong text here, but we do use it in the "Add keyword" popup, this is just to have the same translatable strings.
 			/* translators: %1$s expands to a 'strong' start tag, %2$s to a 'strong' end tag. */
-				__( '%1$sNo more dead links%2$s: easy redirect manager', 'wordpress-seo' ), '', ''
-			) . '</li>';
+			__( '%1$sNo more dead links%2$s: easy redirect manager', 'wordpress-seo' ),
+			'',
+			''
+		) . '</li>';
 		$popup_content .= '<li>' . __( 'Superfast internal links suggestions', 'wordpress-seo' ) . '</li>';
 		$popup_content .= '<li>' . sprintf(
 			// We don't use strong text here, but we do use it in the "Add keyword" popup, this is just to have the same translatable strings.
 			/* translators: %1$s expands to a 'strong' start tag, %2$s to a 'strong' end tag. */
-				__( '%1$sSocial media preview%2$s: Facebook &amp; Twitter', 'wordpress-seo' ), '', ''
-			) . '</li>';
+			__( '%1$sSocial media preview%2$s: Facebook &amp; Twitter', 'wordpress-seo' ),
+			'',
+			''
+		) . '</li>';
 		$popup_content .= '<li>' . __( '24/7 support', 'wordpress-seo' ) . '</li>';
 		$popup_content .= '<li>' . __( 'No ads!', 'wordpress-seo' ) . '</li>';
 		$popup_content .= '</ul>';
@@ -194,7 +242,7 @@ class WPSEO_Help_Center {
 	public static function get_translated_texts() {
 		// Esc_html is not needed because React already handles HTML in the (translations of) these strings.
 		return array(
-			'locale'                             => WPSEO_Utils::get_user_locale(),
+			'locale'                             => WPSEO_Language_Utils::get_user_locale(),
 			'videoTutorial'                      => __( 'Video tutorial', 'wordpress-seo' ),
 			'knowledgeBase'                      => __( 'Knowledge base', 'wordpress-seo' ),
 			'getSupport'                         => __( 'Get support', 'wordpress-seo' ),
@@ -208,23 +256,27 @@ class WPSEO_Help_Center {
 			'searchResultDetail.backButton'      => __( 'Go back', 'wordpress-seo' ),
 			'searchResultDetail.backButtonLabel' => __( 'Go back to the search results', 'wordpress-seo' ),
 			'searchResultDetail.iframeTitle'     => __( 'Knowledge base article', 'wordpress-seo' ),
+			'searchResultDetail.searchResult'    => __( 'Search result', 'wordpress-seo' ),
 			'searchResult.noResultsText'         => __( 'No results found.', 'wordpress-seo' ),
 			'searchResult.foundResultsText'      => sprintf(
-														/* translators: %s expands to the number of results found . */
-														__( 'Number of results found: %s', 'wordpress-seo' ),
-														'{ resultsCount }'
-													),
+				/* translators: %s expands to the number of results found . */
+				__( 'Number of results found: %s', 'wordpress-seo' ),
+				'{ resultsCount }'
+			),
 			'searchResult.searchResultsHeading'  => __( 'Search results', 'wordpress-seo' ),
 			'a11yNotice.opensInNewTab'           => __( '(Opens in a new browser tab)', 'wordpress-seo' ),
-			'contactSupport.button'              => __( 'Open support form', 'wordpress-seo' ),
+			'contactSupport.button'              => __( 'New support request', 'wordpress-seo' ),
 			'helpCenter.buttonText'              => __( 'Need help?', 'wordpress-seo' ),
 		);
 	}
 
+	/* ********************* DEPRECATED METHODS ********************* */
+
 	/**
 	 * Outputs the help center.
 	 *
-	 * @deprecated
+	 * @deprecated 5.6
+	 * @codeCoverageIgnore
 	 */
 	public function output_help_center() {
 		_deprecated_function( 'WPSEO_Help_Center::output_help_center', 'WPSEO 5.6.0', 'WPSEO_Help_Center::mount()' );

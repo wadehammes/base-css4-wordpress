@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO plugin file.
+ *
  * @package WPSEO\Admin\Formatter
  */
 
@@ -28,12 +30,10 @@ class WPSEO_Term_Metabox_Formatter implements WPSEO_Metabox_Formatter_Interface 
 	 *
 	 * @param stdClass         $taxonomy Taxonomy.
 	 * @param WP_Term|stdClass $term     Term.
-	 * @param array            $options  Options with WPSEO_Titles.
 	 */
-	public function __construct( $taxonomy, $term, array $options ) {
+	public function __construct( $taxonomy, $term ) {
 		$this->term     = $term;
 		$this->taxonomy = $taxonomy;
-		$this->options  = $options;
 	}
 
 	/**
@@ -44,7 +44,7 @@ class WPSEO_Term_Metabox_Formatter implements WPSEO_Metabox_Formatter_Interface 
 	public function get_values() {
 		$values = array();
 
-		// Todo: a column needs to be added on the termpages to add a filter for the keyword, so this can be used in the focus kw doubles.
+		// Todo: a column needs to be added on the termpages to add a filter for the keyword, so this can be used in the focus keyphrase doubles.
 		if ( is_object( $this->term ) && property_exists( $this->term, 'taxonomy' ) ) {
 			$values = array(
 				'search_url'        => $this->search_url(),
@@ -88,8 +88,7 @@ class WPSEO_Term_Metabox_Formatter implements WPSEO_Metabox_Formatter_Interface 
 	private function base_url_for_js() {
 
 		$base_url = home_url( '/', null );
-		$options  = WPSEO_Options::get_option( 'wpseo_permalinks' );
-		if ( ! $options['stripcategorybase'] ) {
+		if ( ! WPSEO_Options::get( 'stripcategorybase', false ) ) {
 			$base_url = trailingslashit( $base_url . $this->taxonomy->rewrite['slug'] );
 		}
 
@@ -110,10 +109,16 @@ class WPSEO_Term_Metabox_Formatter implements WPSEO_Metabox_Formatter_Interface 
 	/**
 	 * Retrieves the title template.
 	 *
-	 * @return string
+	 * @return string The title template.
 	 */
 	private function get_title_template() {
-		return $this->get_template( 'title' );
+		$title = $this->get_template( 'title' );
+
+		if ( $title === '' ) {
+			return '%%title%% %%sep%% %%sitename%%';
+		}
+
+		return $title;
 	}
 
 	/**
@@ -134,10 +139,6 @@ class WPSEO_Term_Metabox_Formatter implements WPSEO_Metabox_Formatter_Interface 
 	 */
 	private function get_template( $template_option_name ) {
 		$needed_option = $template_option_name . '-tax-' . $this->term->taxonomy;
-		if ( isset( $this->options[ $needed_option ] ) && $this->options[ $needed_option ] !== '' ) {
-			return $this->options[ $needed_option ];
-		}
-
-		return '';
+		return WPSEO_Options::get( $needed_option, '' );
 	}
 }

@@ -1,4 +1,5 @@
 <?php
+if (defined('WORDFENCE_VERSION')) {
 
 class wfActivityReport {
 	const BLOCK_TYPE_COMPLEX = 'complex';
@@ -55,8 +56,15 @@ class wfActivityReport {
 	 * Send out the report and reschedule the next report's cron job.
 	 */
 	public static function executeCronJob() {
-		$report = new self();
-		$report->sendReportViaEmail(wfConfig::getAlertEmails());
+		if (!wfConfig::get('email_summary_enabled', 1)) {
+			return;
+		}
+		
+		$emails = wfConfig::getAlertEmails();
+		if (count($emails)) {
+			$report = new self();
+			$report->sendReportViaEmail($emails);
+		}
 		self::scheduleCronJob();
 	}
 
@@ -219,9 +227,10 @@ class wfActivityReport {
 				break;
 		}
 		
+		$table_wfBlockedIPLog = wfDB::networkTable('wfBlockedIPLog');
 		$count = $this->db->get_var(<<<SQL
 SELECT SUM(blockCount) as blockCount
-FROM {$this->db->prefix}wfBlockedIPLog
+FROM {$table_wfBlockedIPLog}
 WHERE unixday >= {$interval}{$groupingWHERE}
 SQL
 			);
@@ -249,10 +258,11 @@ SQL
 			$interval = 'FLOOR(UNIX_TIMESTAMP(DATE_SUB(NOW(), interval ' . $maxAgeDays . ' day)) / 86400)';
 		}
 		
+		$table_wfBlockedIPLog = wfDB::networkTable('wfBlockedIPLog');
 		$results = $this->db->get_results($this->db->prepare(<<<SQL
 SELECT *,
 SUM(blockCount) as blockCount
-FROM {$this->db->prefix}wfBlockedIPLog
+FROM {$table_wfBlockedIPLog}
 WHERE unixday >= {$interval}
 GROUP BY IP
 ORDER BY blockCount DESC
@@ -287,11 +297,11 @@ SQL
 		else {
 			$interval = 'FLOOR(UNIX_TIMESTAMP(DATE_SUB(NOW(), interval ' . $maxAgeDays . ' day)) / 86400)';
 		}
-		
+	  	
+		$table_wfBlockedIPLog = wfDB::networkTable('wfBlockedIPLog');
 		$results = $this->db->get_results($this->db->prepare(<<<SQL
 SELECT *, COUNT(IP) as totalIPs, SUM(blockCount) as totalBlockCount
-FROM {$this->db->base_prefix}wfBlockedIPLog
-WHERE unixday >= {$interval}
+FROM (SELECT * FROM {$table_wfBlockedIPLog} WHERE unixday >= {$interval} GROUP BY IP) t
 GROUP BY countryCode
 ORDER BY totalBlockCount DESC
 LIMIT %d
@@ -319,11 +329,12 @@ SQL
 				$interval = 'UNIX_TIMESTAMP(DATE_SUB(NOW(), interval 1 month))';
 				break;
 		}
-
+	  
+		$table_wfLogins = wfDB::networkTable('wfLogins');
 		$failedLogins = $this->db->get_results($this->db->prepare(<<<SQL
 SELECT wfl.*,
 sum(wfl.fail) as fail_count
-FROM {$this->db->base_prefix}wfLogins wfl
+FROM {$table_wfLogins} wfl
 WHERE wfl.fail = 1
 AND wfl.ctime > $interval
 GROUP BY wfl.username
@@ -334,7 +345,7 @@ SQL
 		
 		foreach ($failedLogins as &$login) {
 			$exists = $this->db->get_var($this->db->prepare(<<<SQL
-SELECT !ISNULL(ID) FROM {$this->db->base_prefix}users WHERE user_login = '%s' OR user_email = '%s'
+SELECT !ISNULL(ID) FROM {$this->db->users} WHERE user_login = '%s' OR user_email = '%s'
 SQL
 			, $login->username, $login->username));
 			$login->is_valid_user = $exists;
@@ -397,14 +408,9 @@ SQL
 	 * Remove entries older than a month in the IP log.
 	 */
 	public function rotateIPLog() {
+		$table_wfBlockedIPLog = wfDB::networkTable('wfBlockedIPLog');
 		$this->db->query(<<<SQL
-DELETE FROM {$this->db->base_prefix}wfBlockedIPLog
-WHERE unixday < FLOOR(UNIX_TIMESTAMP(DATE_SUB(NOW(), interval 1 month)) / 86400)
-SQL
-		);
-		
-		$this->db->query(<<<SQL
-DELETE FROM {$this->db->base_prefix}wfBlockedCommentLog
+DELETE FROM {$table_wfBlockedIPLog}
 WHERE unixday < FLOOR(UNIX_TIMESTAMP(DATE_SUB(NOW(), interval 1 month)) / 86400)
 SQL
 		);
@@ -426,8 +432,8 @@ SQL
 			$ip_bin = $ip_address;
 			$ip_address = wfUtils::inet_ntop($ip_bin);
 		}
-
-		$blocked_table = "{$wpdb->base_prefix}wfBlockedIPLog";
+		
+		$blocked_table = wfDB::networkTable('wfBlockedIPLog');
 
 		$unixday_insert = 'FLOOR(UNIX_TIMESTAMP() / 86400)';
 		if (is_int($unixday)) {
@@ -443,41 +449,6 @@ SQL
 		$wpdb->query($wpdb->prepare(<<<SQL
 INSERT INTO $blocked_table (IP, countryCode, blockCount, unixday, blockType)
 VALUES (%s, %s, 1, $unixday_insert, %s)
-ON DUPLICATE KEY UPDATE blockCount = blockCount + 1
-SQL
-			, $ip_bin, $country, $type));
-	}
-	
-	/**
-	 * @param mixed $ip_address
-	 * @param int|null $unixday
-	 */
-	public static function logBlockedComment($ip_address, $type, $unixday = null) {
-		/** @var wpdb $wpdb */
-		global $wpdb;
-		
-		//Possible values for $type: anon, gsb, reputation
-		
-		if (wfUtils::isValidIP($ip_address)) {
-			$ip_bin = wfUtils::inet_pton($ip_address);
-		}
-		else {
-			$ip_bin = $ip_address;
-			$ip_address = wfUtils::inet_ntop($ip_bin);
-		}
-		
-		$blocked_table = "{$wpdb->base_prefix}wfBlockedCommentLog";
-		
-		$unixday_insert = 'FLOOR(UNIX_TIMESTAMP() / 86400)';
-		if (is_int($unixday)) {
-			$unixday_insert = absint($unixday);
-		}
-		
-		$country = wfUtils::IP2Country($ip_address);
-		
-		$wpdb->query($wpdb->prepare(<<<SQL
-INSERT INTO {$blocked_table} (IP, countryCode, blockCount, unixday, blockType)
-VALUES (%s, %s, 1, {$unixday_insert}, %s)
 ON DUPLICATE KEY UPDATE blockCount = blockCount + 1
 SQL
 			, $ip_bin, $country, $type));
@@ -526,7 +497,19 @@ SQL
 	 */
 	public function sendReportViaEmail($email_addresses) {
 		$shortSiteURL = preg_replace('/^https?:\/\//i', '', site_url());
-		return wp_mail($email_addresses, 'Wordfence activity for ' . date_i18n(get_option('date_format')) . ' on ' . $shortSiteURL, $this->toEmailView()->__toString(), 'Content-Type: text/html');
+		
+		$content = $this->toEmailView()->__toString();
+		
+		$success = true;
+		if (is_string($email_addresses)) { $email_addresses = explode(',', $email_addresses); }
+		foreach ($email_addresses as $email) {
+			$uniqueContent = str_replace('<!-- ##UNSUBSCRIBE## -->', sprintf(__('No longer an administrator for this site? <a href="%s" target="_blank">Click here</a> to stop receiving security alerts.', 'wordfence'), wfUtils::getSiteBaseURL() . '?_wfsf=removeAlertEmail&jwt=' . wfUtils::generateJWT(array('email' => $email))), $content);
+			if (!wp_mail($email, 'Wordfence activity for ' . date_i18n(get_option('date_format')) . ' on ' . $shortSiteURL, $uniqueContent, 'Content-Type: text/html')) {
+				$success = false;
+			}
+		}
+		
+		return $success;
 	}
 
 	/**
@@ -580,9 +563,10 @@ class wfRecentFirewallActivity {
 	public function run() {
 		global $wpdb;
 		
+		$table_wfHits = wfDB::networkTable('wfHits');
 		$results = $wpdb->get_results($wpdb->prepare(<<<SQL
 SELECT attackLogTime, IP, URL, UA, actionDescription, actionData
-FROM {$wpdb->prefix}wfHits
+FROM {$table_wfHits}
 WHERE action = 'blocked:waf' AND attackLogTime > (UNIX_TIMESTAMP() - %d)
 ORDER BY attackLogTime DESC
 LIMIT %d
@@ -736,10 +720,11 @@ class wfActivityReportView extends wfView {
 	 * @return string
 	 */
 	public function displayFile($file) {
-		if (stripos($file, ABSPATH) === 0) {
-			return substr($file, strlen(ABSPATH));
+		$realPath = realpath($file);
+		if (stripos($realPath, ABSPATH) === 0) {
+			return substr($realPath, strlen(ABSPATH));
 		}
-		return $file;
+		return $realPath;
 	}
 
 	/**
@@ -765,4 +750,5 @@ class wfActivityReportView extends wfView {
 		$country = wfUtils::countryCode2Name(wfUtils::IP2Country($readableIP));
 		return "{$readableIP} (" . ($country ? $country : 'Unknown') . ")"; 
 	}
+}
 }

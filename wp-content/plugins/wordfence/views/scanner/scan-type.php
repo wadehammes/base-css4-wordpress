@@ -12,24 +12,24 @@ $limitedOptions = array_filter(wfScanner::limitedScanTypeOptions(), '_wfAllowOnl
 $standardOptions = array_filter(wfScanner::standardScanTypeOptions(), '_wfAllowOnlyBoolean');
 $highSensitivityOptions = array_filter(wfScanner::highSensitivityScanTypeOptions(), '_wfAllowOnlyBoolean');
 ?>
-<ul class="wf-scan-type-controls">
+<ul id="wf-option-scanType" class="wf-scan-type-controls">
 	<li class="wf-scan-type-selector wf-overflow-x-auto-xs">
-		<ul class="wf-scan-type" data-option-name="scanType" data-original-value="<?php echo esc_attr($scanner->scanType()); ?>">
+		<ul class="wf-scan-type" data-option-name="scanType" data-original-value="<?php echo esc_attr($scanner->scanType()); ?>" role="radiogroup">
 			<li>
 				<ul class="wf-scan-type-option<?php if ($scanner->scanType() == wfScanner::SCAN_TYPE_LIMITED) { echo ' wf-active'; } ?>" data-option-value="<?php echo esc_attr(wfScanner::SCAN_TYPE_LIMITED); ?>" data-selected-options="<?php echo esc_attr(json_encode($limitedOptions)); ?>">
-					<li class="wf-scan-type-option-name"><div class="wf-option-checkbox"><i class="wf-ion-ios-checkmark-empty" aria-hidden="true"></i></div><span><?php _e('Limited Scan', 'wordfence'); ?></span></li>
+					<li class="wf-scan-type-option-name"><div class="wf-option-checkbox" role="radio" aria-checked="<?php echo ($scanner->scanType() == wfScanner::SCAN_TYPE_LIMITED ? 'true' : 'false'); ?>" tabindex="0"><i class="wf-ion-ios-checkmark-empty" aria-hidden="true"></i></div><span><?php _e('Limited Scan', 'wordfence'); ?></span></li>
 					<li class="wf-scan-type-option-description"><?php _e('For entry-level hosting plans. Provides limited detection capability with very low resource utilization.', 'wordfence'); ?></li>
 				</ul>
 			</li>
 			<li>
 				<ul class="wf-scan-type-option<?php if ($scanner->scanType() == wfScanner::SCAN_TYPE_STANDARD) { echo ' wf-active'; } ?>" data-option-value="<?php echo esc_attr(wfScanner::SCAN_TYPE_STANDARD); ?>" data-selected-options="<?php echo esc_attr(json_encode($standardOptions)); ?>">
-					<li class="wf-scan-type-option-name"><div class="wf-option-checkbox"><i class="wf-ion-ios-checkmark-empty" aria-hidden="true"></i></div><span><?php _e('Standard Scan', 'wordfence'); ?></span></li>
+					<li class="wf-scan-type-option-name"><div class="wf-option-checkbox" role="radio" aria-checked="<?php echo ($scanner->scanType() == wfScanner::SCAN_TYPE_STANDARD ? 'true' : 'false'); ?>" tabindex="0"><i class="wf-ion-ios-checkmark-empty" aria-hidden="true"></i></div><span><?php _e('Standard Scan', 'wordfence'); ?></span></li>
 					<li class="wf-scan-type-option-description"><?php _e('Our recommendation for all websites. Provides the best detection capability in the industry.', 'wordfence'); ?></li>
 				</ul>
 			</li>
 			<li>
 				<ul class="wf-scan-type-option<?php if ($scanner->scanType() == wfScanner::SCAN_TYPE_HIGH_SENSITIVITY) { echo ' wf-active'; } ?>" data-option-value="<?php echo esc_attr(wfScanner::SCAN_TYPE_HIGH_SENSITIVITY); ?>" data-selected-options="<?php echo esc_attr(json_encode($highSensitivityOptions)); ?>">
-					<li class="wf-scan-type-option-name"><div class="wf-option-checkbox"><i class="wf-ion-ios-checkmark-empty" aria-hidden="true"></i></div><span><?php _e('High Sensitivity', 'wordfence'); ?></span></li>
+					<li class="wf-scan-type-option-name"><div class="wf-option-checkbox" role="radio" aria-checked="<?php echo ($scanner->scanType() == wfScanner::SCAN_TYPE_HIGH_SENSITIVITY? 'true' : 'false'); ?>" tabindex="0"><i class="wf-ion-ios-checkmark-empty" aria-hidden="true"></i></div><span><?php _e('High Sensitivity', 'wordfence'); ?></span></li>
 					<li class="wf-scan-type-option-description"><?php _e('For site owners who think they may have been hacked. More thorough but may produce false positives.', 'wordfence'); ?></li>
 				</ul>
 			</li>
@@ -54,6 +54,15 @@ $highSensitivityOptions = array_filter(wfScanner::highSensitivityScanTypeOptions
 					}
 					
 					$('.wf-scan-type-option').each(function(index, element) {
+						$(element).on('keydown', function(e) {
+							if (e.keyCode == 32) {
+								e.preventDefault();
+								e.stopPropagation();
+
+								$(this).trigger('click');
+							}
+						});
+						
 						$(element).on('click', function(e) {
 							if ($(element).hasClass('wf-scan-type-option-custom')) {
 								return;
@@ -68,7 +77,7 @@ $highSensitivityOptions = array_filter(wfScanner::highSensitivityScanTypeOptions
 							var value = $(this).data('optionValue');
 
 							control.find('.wf-scan-type-option').each(function() {
-								$(this).toggleClass('wf-active', value == $(this).data('optionValue'));
+								$(this).toggleClass('wf-active', value == $(this).data('optionValue')).find('.wf-option-checkbox').attr('aria-checked', value == $(this).data('optionValue') ? 'true' : 'false');
 							});
 
 							if (originalValue == value) {
@@ -81,8 +90,16 @@ $highSensitivityOptions = array_filter(wfScanner::highSensitivityScanTypeOptions
 							var selectedOptions = $(this).data('selectedOptions');
 							var keys = Object.keys(selectedOptions);
 							for (var i = 0; i < keys.length; i++) {
-								delete WFAD.pendingChanges[keys[i]];
-								$('.wf-option.wf-option-toggled[data-option="' + keys[i] + '"]').find('.wf-option-checkbox').toggleClass('wf-checked', selectedOptions[keys[i]]); //Currently all checkboxes
+								var el = $('.wf-option.wf-option-toggled[data-option="' + keys[i] + '"]');
+								el.find('.wf-option-checkbox').toggleClass('wf-checked', selectedOptions[keys[i]]).attr('aria-checked', selectedOptions[keys[i]] ? 'true' : 'false'); //Currently all checkboxes
+
+								originalValue = el.attr('data-original-value');
+								if (originalValue !== undefined &&
+									typeof selectedOptions[keys[i]] === 'boolean' &&
+									originalValue != selectedOptions[keys[i]]
+								) {
+									WFAD.pendingChanges[keys[i]] = selectedOptions[keys[i]];
+								}
 							}
 
 							WFAD.updatePendingChanges();
@@ -94,12 +111,12 @@ $highSensitivityOptions = array_filter(wfScanner::highSensitivityScanTypeOptions
 							var originalValue = $(this).data('originalValue');
 							$(this).find('.wf-scan-type-option').each(function() {
 								var isSelected = (originalValue == $(this).data('optionValue'));
-								$(this).toggleClass('wf-active', isSelected);
+								$(this).toggleClass('wf-active', isSelected).find('.wf-option-checkbox').attr('aria-checked', isSelected ? 'true' : 'false');
 								if (!$(this).hasClass('wf-scan-type-option-custom') && isSelected) {
 									var selectedOptions = $(this).data('selectedOptions');
 									var keys = Object.keys(selectedOptions);
 									for (var i = 0; i < keys.length; i++) {
-										$('.wf-option.wf-option-toggled[data-option="' + keys[i] + '"]').find('.wf-option-checkbox').toggleClass('wf-checked', selectedOptions[keys[i]]); //Currently all checkboxes
+										$('.wf-option.wf-option-toggled[data-option="' + keys[i] + '"]').find('.wf-option-checkbox').toggleClass('wf-checked', selectedOptions[keys[i]]).attr('aria-checked', selectedOptions[keys[i]] ? 'true' : 'false'); //Currently all checkboxes
 									}
 								}
 							});
@@ -116,7 +133,7 @@ $highSensitivityOptions = array_filter(wfScanner::highSensitivityScanTypeOptions
 							
 							var currentScanType = $('.wf-scan-type-option.wf-active');
 							if (!currentScanType.hasClass('wf-scan-type-option-custom')) {
-								currentScanType.removeClass('wf-active');
+								currentScanType.removeClass('wf-active').find('.wf-option-checkbox').attr('aria-checked', 'false');
 								$('.wf-scan-type-option.wf-scan-type-option-custom').addClass('wf-active');
 
 								if ($('.wf-scan-type').data('originalValue') == '<?php echo esc_attr(wfScanner::SCAN_TYPE_CUSTOM); ?>') {
@@ -134,7 +151,7 @@ $highSensitivityOptions = array_filter(wfScanner::highSensitivityScanTypeOptions
 									}
 									
 									var option = $('.wf-option.wf-option-toggled[data-option="' + keys[i] + '"]'); 
-									option.find('.wf-option-checkbox').toggleClass('wf-checked', selectedOptions[keys[i]]); //Currently all checkboxes
+									option.find('.wf-option-checkbox').toggleClass('wf-checked', selectedOptions[keys[i]]).attr('aria-checked', selectedOptions[keys[i]] ? 'true' : 'false'); //Currently all checkboxes
 									var value = (selectedOptions[keys[i]] ? option.data('enabledValue') : option.data('disabledValue'));
 									var originalValue = option.data('originalValue');
 									if (originalValue == value) {

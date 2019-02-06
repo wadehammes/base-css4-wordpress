@@ -3,8 +3,8 @@ Contributors: whiteshadow
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=A6P9S6CE3SRSW
 Tags: admin, dashboard, menu, security, wpmu
 Requires at least: 4.1
-Tested up to: 4.9
-Stable tag: 1.8.1
+Tested up to: 5.0
+Stable tag: 1.8.7
 
 Lets you edit the WordPress admin menu. You can re-order, hide or rename menus, add custom menus and more. 
 
@@ -33,9 +33,9 @@ The [Pro version](http://w-shadow.com/AdminMenuEditor/) lets you set per-role me
 **Normal installation**
 
 1. Download the admin-menu-editor.zip file to your computer.
-1. Unzip the file.
-1. Upload the `admin-menu-editor` directory to your `/wp-content/plugins/` directory.
-1. Activate the plugin through the 'Plugins' menu in WordPress.
+2. Unzip the file.
+3. Upload the `admin-menu-editor` directory to your `/wp-content/plugins/` directory.
+4. Activate the plugin through the 'Plugins' menu in WordPress.
 
 That's it. You can access the the menu editor by going to *Settings -> Menu Editor*. The plugin will automatically load your current menu configuration the first time you run it.
 
@@ -44,10 +44,10 @@ That's it. You can access the the menu editor by going to *Settings -> Menu Edit
 If you have WordPress set up in Multisite ("Network") mode, you can also install Admin Menu Editor as a global plugin. This will enable you to edit the Dashboard menu for all sites and users at once.
 
 1. Download the admin-menu-editor.zip file to your computer.
-1. Unzip the file.
-1. Create a new directory named `mu-plugins` in your site's `wp-content` directory (unless it already exists).
-1. Upload the `admin-menu-editor` directory to `/wp-content/mu-plugins/`.
-1. Move `admin-menu-editor-mu.php` from `admin-menu-editor/includes` to `/wp-content/mu-plugins/`.
+2. Unzip the file.
+3. Create a new directory named `mu-plugins` in your site's `wp-content` directory (unless it already exists).
+4. Upload the `admin-menu-editor` directory to `/wp-content/mu-plugins/`.
+5. Move `admin-menu-editor-mu.php` from `admin-menu-editor/includes` to `/wp-content/mu-plugins/`.
 
 Plugins installed in the `mu-plugins` directory are treated as "always on", so you don't need to explicitly activate the menu editor. Just go to *Settings -> Menu Editor* and start customizing your admin menu :)
 
@@ -62,6 +62,42 @@ Plugins installed in the `mu-plugins` directory are treated as "always on", so y
 3. Re-ordering menu items via drag and drop
 
 == Changelog ==
+
+= 1.8.7 =
+* Fixed a bug introcuded in 1.8.6 that caused a PHP warning "strpos(): Empty needle".
+
+= 1.8.6 =
+* Fixed a PHP warning being thrown when the WPMU_PLUGIN_DIR constant is not a valid path or the full path cannot be determined.
+* Fixed a rare PHP warning "parameter 1 to be array, null given in menu-editor-core.php on line 4254" that was most likely caused by an unidentified plugin conflict.
+* Fixed a rare warning about a class being redefined.
+* Updated a number of internal dependencies.
+* Tested with WP 5.0.
+
+= 1.8.5 =
+* Fixed a bug where very long submenus wouldn't be scrollable if the current item was one that was moved to the current submenu from a different top level menu.
+* Fixed an obscure bug where clicking on an item in the current submenu could cause the entire submenu to "jump" up or down.
+* Fixed AME not highlighting the correct menu item when there was a space in any of the query parameter values.
+* Fixed another bug where the plugin didn't highlight the correct item if it was the first item in a submenu and also a custom item.
+
+= 1.8.4 =
+* Added a "Documentation" link below the plugin description. For people concerned about the recent GDPR legislation, the documentation now includes a page explaining [how the plugin processes personal data](https://adminmenueditor.com/free-version-docs/about-data-processing-free-version/). Short version: It usually doesn't.
+* Tested with WP 4.9.6.
+
+= 1.8.3 =
+* Added a couple of tutorial links to the settings page.
+* Fixed a potential crash that was caused by a bug in the "WP Editor" plugin version 1.2.6.3.
+* Fixed some obsolete callback syntax that was still using "&$this".
+* Changed the order of some menu settings and added separators between groups of settings.
+* Removed the "Screen Options" panel from AME tabs that didn't need it like "Plugins".
+* Tested with WP 4.9.5.
+
+= 1.8.2 =
+* Fixed the PHP warning "count(): Parameter must be an array or an object that implements Countable in menu-editor-core.php".
+* Fixed a bug that could cause some network admin menus to be highlighted in green as if they were new.
+* Fixed a conflict with WP Courseware 4.1.2 where activating AME would cause many extra menu items to show up unexpectedly.
+* Fixed a conflict with Ultra WordPress Admin 7.4 that made it impossible to hide plugins.
+* Replaced the "this is a new item" icon with a different one.
+* Tested with WP 4.9.4.
 
 = 1.8.1 =
 * Added a workaround for a buggy "defer_parsing_of_js" code snippet that some users have added to their functions.php. This snippet produces invalid HTML code, which used to break the menu editor.

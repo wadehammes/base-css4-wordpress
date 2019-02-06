@@ -233,6 +233,15 @@ class ConfigCompiler {
 		}
 
 		//
+		// changes in 0.9.7
+		//
+		if ( isset( $file_data['cdnfsd.enabled'] ) &&
+			$file_data['cdnfsd.enabled'] == '1' &&
+			empty( $file_data['cdnfsd.engine'] ) ) {
+			$file_data['cdnfsd.enabled'] = '0';
+		}
+
+		//
 		// changes in 0.9.6
 		//
 		if ( !isset( $file_data['cdn.cors_header'] ) ) {
@@ -384,15 +393,6 @@ class ConfigCompiler {
 		if ( isset( $file_data['browsercache.other.replace'] ) &&
 			!isset( $file_data['browsercache.other.querystring'] ) ) {
 			$file_data['browsercache.other.querystring'] = $file_data['browsercache.other.replace'];
-		}
-
-		//
-		// changes in 0.9.5.3
-		//
-		if ( version_compare( $file_data['version'], '0.9.5.3', '<' ) ) {
-			if ( !isset( $file_data['extensions.active']['swarmify'] ) ) {
-				$file_data['extensions.active']['swarmify'] = 'w3-total-cache/Extension_Swarmify_Plugin.php';
-			}
 		}
 
 		//

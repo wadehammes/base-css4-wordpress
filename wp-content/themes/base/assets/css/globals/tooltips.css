@@ -5,7 +5,7 @@
 
 @prefix bs;
 
-.tooltip {
+/* .tooltip {
   position: absolute;
   z-index: 9999;
   border-radius: var(--border-radius);
@@ -69,7 +69,6 @@
   }
 }
 
-/*
 * Gives a max-width to the tooltip, which can't be
 * achieved on .tooltip due to it being absolutely positioned
 */

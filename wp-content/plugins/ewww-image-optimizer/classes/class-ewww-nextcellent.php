@@ -65,9 +65,7 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 				$ewwwio_ngg_background = new EWWWIO_Ngg_Background_Process();
 			}
 			foreach ( $images as $id ) {
-				$ewwwio_ngg_background->push_to_queue( array(
-					'id' => $id,
-				) );
+				$ewwwio_ngg_background->push_to_queue( array( 'id' => $id ) );
 				set_transient( 'ewwwio-background-in-progress-ngg-' . $id, true, 24 * HOUR_IN_SECONDS );
 				ewwwio_debug_message( "optimization (nextcellent) queued for $id" );
 			}
@@ -94,9 +92,7 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 			$fres = ewww_image_optimizer( $file_path, 2, false, false, true );
 			// Update the metadata for the optimized image.
 			global $nggdb;
-			$nggdb->update_image_meta( $id, array(
-				'ewww_image_optimizer' => $fres[1],
-			) );
+			$nggdb->update_image_meta( $id, array( 'ewww_image_optimizer' => $fres[1] ) );
 		}
 
 		/**
@@ -123,9 +119,7 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 				// Run the optimizer on the current image.
 				$res = ewww_image_optimizer( ABSPATH . $file_path, 2, false, false, true );
 				// Update the metadata for the optimized image.
-				nggdb::update_image_meta( $image['id'], array(
-					'ewww_image_optimizer' => $res[1],
-				) );
+				nggdb::update_image_meta( $image['id'], array( 'ewww_image_optimizer' => $res[1] ) );
 			}
 		}
 
@@ -166,9 +160,7 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 					wp_die( esc_html__( 'You do not have permission to optimize images.', 'ewww-image-optimizer' ) );
 				}
 				ewwwio_ob_clean();
-				wp_die( json_encode( array(
-					'error' => esc_html__( 'You do not have permission to optimize images.', 'ewww-image-optimizer' ),
-				) ) );
+				wp_die( ewwwio_json_encode( array( 'error' => esc_html__( 'You do not have permission to optimize images.', 'ewww-image-optimizer' ) ) ) );
 			}
 			// Make sure function wasn't called without an attachment to work with.
 			if ( empty( $_REQUEST['ewww_attachment_ID'] ) ) {
@@ -176,9 +168,7 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 					wp_die( esc_html__( 'No attachment ID was provided.', 'ewww-image-optimizer' ) );
 				}
 				ewwwio_ob_clean();
-				wp_die( json_encode( array(
-					'error' => esc_html__( 'No attachment ID was provided.', 'ewww-image-optimizer' ),
-				) ) );
+				wp_die( ewwwio_json_encode( array( 'error' => esc_html__( 'No attachment ID was provided.', 'ewww-image-optimizer' ) ) ) );
 			}
 			// Store the attachment $id.
 			$id = intval( $_REQUEST['ewww_attachment_ID'] );
@@ -187,9 +177,7 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 						wp_die( esc_html__( 'Access denied.', 'ewww-image-optimizer' ) );
 				}
 				ewwwio_ob_clean();
-				wp_die( json_encode( array(
-					'error' => esc_html__( 'Access denied.', 'ewww-image-optimizer' ),
-				) ) );
+				wp_die( ewwwio_json_encode( array( 'error' => esc_html__( 'Access denied.', 'ewww-image-optimizer' ) ) ) );
 			}
 			$this->ewww_ngg_optimize( $id );
 			$success = $this->ewww_manage_image_custom_column( 'ewww_image_optimizer', $id, true );
@@ -202,9 +190,7 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 				die;
 			}
 			ewwwio_ob_clean();
-			wp_die( json_encode( array(
-				'success' => $success,
-			) ) );
+			wp_die( ewwwio_json_encode( array( 'success' => $success ) ) );
 		}
 
 		/**
@@ -218,9 +204,7 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 					wp_die( esc_html__( 'You do not have permission to optimize images.', 'ewww-image-optimizer' ) );
 				}
 				ewwwio_ob_clean();
-				wp_die( json_encode( array(
-					'error' => esc_html__( 'You do not have permission to optimize images.', 'ewww-image-optimizer' ),
-				) ) );
+				wp_die( ewwwio_json_encode( array( 'error' => esc_html__( 'You do not have permission to optimize images.', 'ewww-image-optimizer' ) ) ) );
 			}
 			// Make sure function wasn't called without an attachment to work with.
 			if ( false === isset( $_REQUEST['ewww_attachment_ID'] ) ) {
@@ -228,9 +212,7 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 					wp_die( esc_html__( 'No attachment ID was provided.', 'ewww-image-optimizer' ) );
 				}
 				ewwwio_ob_clean();
-				wp_die( json_encode( array(
-					'error' => esc_html__( 'No attachment ID was provided.', 'ewww-image-optimizer' ),
-				) ) );
+				wp_die( ewwwio_json_encode( array( 'error' => esc_html__( 'No attachment ID was provided.', 'ewww-image-optimizer' ) ) ) );
 			}
 			// Sanitize the attachment $id.
 			$id = intval( $_REQUEST['ewww_attachment_ID'] );
@@ -239,16 +221,12 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 						wp_die( esc_html__( 'Access denied.', 'ewww-image-optimizer' ) );
 				}
 				ewwwio_ob_clean();
-				wp_die( json_encode( array(
-					'error' => esc_html__( 'Access denied.', 'ewww-image-optimizer' ),
-				) ) );
+				wp_die( ewwwio_json_encode( array( 'error' => esc_html__( 'Access denied.', 'ewww-image-optimizer' ) ) ) );
 			}
 			ewww_image_optimizer_cloud_restore_from_meta_data( $id, 'nextcell' );
 			$success = $this->ewww_manage_image_custom_column( 'ewww_image_optimizer', $id, true );
 			ewwwio_ob_clean();
-			wp_die( json_encode( array(
-				'success' => $success,
-			) ) );
+			wp_die( ewwwio_json_encode( array( 'success' => $success ) ) );
 		}
 
 		/**
@@ -279,9 +257,7 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 			$fres = ewww_image_optimizer( $file_path, 2, false, false, true );
 			// Update the metadata for the optimized image.
 			global $nggdb;
-			$nggdb->update_image_meta( $id, array(
-				'ewww_image_optimizer' => $fres[1],
-			) );
+			$nggdb->update_image_meta( $id, array( 'ewww_image_optimizer' => $fres[1] ) );
 			// Get the filepath of the thumbnail image.
 			$thumb_path         = $meta->image->thumbPath;
 			$ewww_image         = new EWWW_Image( $id, 'nextcell', $thumb_path );
@@ -377,13 +353,15 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 					list( $detail_output, $converted, $backup_available ) = ewww_image_optimizer_custom_column_results( $id, $optimized_images );
 					$output .= $detail_output;
 					if ( current_user_can( apply_filters( 'ewww_image_optimizer_manual_permissions', '' ) ) ) {
-						$output .= sprintf( '<a class="ewww-manual-optimize" data-id="%1$d" data-nonce="%2$s" href="admin.php?action=ewww_ngg_manual&amp;ewww_manual_nonce=%2$s&amp;ewww_force=1&amp;ewww_attachment_ID=%1$d">%3$s</a>',
+						$output .= sprintf(
+							'<a class="ewww-manual-optimize" data-id="%1$d" data-nonce="%2$s" href="admin.php?action=ewww_ngg_manual&amp;ewww_manual_nonce=%2$s&amp;ewww_force=1&amp;ewww_attachment_ID=%1$d">%3$s</a>',
 							$id,
 							$ewww_manual_nonce,
 							esc_html__( 'Re-optimize', 'ewww-image-optimizer' )
 						);
 						if ( $backup_available ) {
-							$output .= sprintf( '<br><a class="ewww-manual-cloud-restore" data-id="%1$d" data-nonce="%2$s" href="admin.php?action=ewww_ngg_cloud_restore&amp;ewww_manual_nonce=%2$s&amp;ewww_attachment_ID=%1$d">%3$s</a>',
+							$output .= sprintf(
+								'<br><a class="ewww-manual-cloud-restore" data-id="%1$d" data-nonce="%2$s" href="admin.php?action=ewww_ngg_cloud_restore&amp;ewww_manual_nonce=%2$s&amp;ewww_attachment_ID=%1$d">%3$s</a>',
 								$id,
 								$ewww_manual_nonce,
 								esc_html__( 'Restore original', 'ewww-image-optimizer' )
@@ -395,7 +373,8 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 					// Otherwise, give the image size, and a link to optimize right now.
 				} else {
 					if ( current_user_can( apply_filters( 'ewww_image_optimizer_manual_permissions', '' ) ) ) {
-						$output .= sprintf( '<a class="ewww-manual-optimize" data-id="%1$d" data-nonce="%2$s" href="admin.php?action=ewww_ngg_manual&amp;ewww_manual_nonce=%2$s&amp;ewww_attachment_ID=%1$d">%3$s</a>',
+						$output .= sprintf(
+							'<a class="ewww-manual-optimize" data-id="%1$d" data-nonce="%2$s" href="admin.php?action=ewww_ngg_manual&amp;ewww_manual_nonce=%2$s&amp;ewww_attachment_ID=%1$d">%3$s</a>',
 							$id,
 							$ewww_manual_nonce,
 							esc_html__( 'Optimize now!', 'ewww-image-optimizer' )
@@ -448,7 +427,7 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 				}
 				/* translators: %d: number of images */
 				$selected_images_text = sprintf( esc_html( _n( 'There is %d image ready to optimize.', 'There are %d images ready to optimize.', count( $attachments ), 'ewww-image-optimizer' ) ), count( $attachments ) );
-					?>
+				?>
 					<div id="ewww-bulk-loading"></div>
 					<div id="ewww-bulk-progressbar"></div>
 					<div id="ewww-bulk-counter"></div>
@@ -458,21 +437,21 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 			<div id="ewww-bulk-widgets" class="metabox-holder" style="display:none">
 				<div class="meta-box-sortables">
 				<div id="ewww-bulk-last" class="postbox">
-					<button type="button" class="handlediv button-link" aria-expanded="true">
+					<button type="button" class="ewww-handlediv button-link" aria-expanded="true">
 						<span class="screen-reader-text"><?php esc_html_e( 'Click to toggle', 'ewww-image-optimizer' ); ?></span>
 						<span class="toggle-indicator" aria-hidden="true"></span>
 					</button>
-					<h2 class="hndle"><span><?php esc_html_e( 'Last Image Optimized', 'ewww-image-optimizer' ); ?></span></h2>
+					<h2 class="ewww-hndle"><span><?php esc_html_e( 'Last Image Optimized', 'ewww-image-optimizer' ); ?></span></h2>
 					<div class="inside"></div>
 				</div>
 				</div>
 				<div class="meta-box-sortables">
 				<div id="ewww-bulk-status" class="postbox">
-					<button type="button" class="handlediv button-link" aria-expanded="true">
+					<button type="button" class="ewww-handlediv button-link" aria-expanded="true">
 						<span class="screen-reader-text"><?php esc_html_e( 'Click to toggle', 'ewww-image-optimizer' ); ?></span>
 						<span class="toggle-indicator" aria-hidden="true"></span>
 					</button>
-					<h2 class="hndle"><span><?php esc_html_e( 'Optimization Log', 'ewww-image-optimizer' ); ?></span></h2>
+					<h2 class="ewww-hndle"><span><?php esc_html_e( 'Optimization Log', 'ewww-image-optimizer' ); ?></span></h2>
 					<div class="inside"></div>
 				</div>
 				</div>
@@ -584,18 +563,23 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 			wp_register_style( 'ngg-jqueryui', plugins_url( '/includes/jquery-ui-1.10.1.custom.css', EWWW_IMAGE_OPTIMIZER_PLUGIN_FILE ) );
 			// Enqueue the progressbar styling.
 			wp_enqueue_style( 'ngg-jqueryui' );
+			wp_add_inline_style( 'ngg-jqueryui', '.ui-widget-header { background-color: ' . ewww_image_optimizer_admin_background() . '; }' );
 			// Include all the vars we need for javascript.
-			wp_localize_script( 'ewwwbulkscript', 'ewww_vars', array(
-				'_wpnonce'              => wp_create_nonce( 'ewww-image-optimizer-bulk' ),
-				'gallery'               => 'nextgen',
-				'attachments'           => count( $images ),
-				'scan_fail'             => esc_html__( 'Operation timed out, you may need to increase the max_execution_time for PHP', 'ewww-image-optimizer' ),
-				'operation_stopped'     => esc_html__( 'Optimization stopped, reload page to resume.', 'ewww-image-optimizer' ),
-				'operation_interrupted' => esc_html__( 'Operation Interrupted', 'ewww-image-optimizer' ),
-				'temporary_failure'     => esc_html__( 'Temporary failure, seconds left to retry:', 'ewww-image-optimizer' ),
-				'remove_failed'         => esc_html__( 'Could not remove image from table.', 'ewww-image-optimizer' ),
-				'optimized'             => esc_html__( 'Optimized', 'ewww-image-optimizer' ),
-			) );
+			wp_localize_script(
+				'ewwwbulkscript',
+				'ewww_vars',
+				array(
+					'_wpnonce'              => wp_create_nonce( 'ewww-image-optimizer-bulk' ),
+					'gallery'               => 'nextgen',
+					'attachments'           => count( $images ),
+					'scan_fail'             => esc_html__( 'Operation timed out, you may need to increase the max_execution_time for PHP', 'ewww-image-optimizer' ),
+					'operation_stopped'     => esc_html__( 'Optimization stopped, reload page to resume.', 'ewww-image-optimizer' ),
+					'operation_interrupted' => esc_html__( 'Operation Interrupted', 'ewww-image-optimizer' ),
+					'temporary_failure'     => esc_html__( 'Temporary failure, seconds left to retry:', 'ewww-image-optimizer' ),
+					'remove_failed'         => esc_html__( 'Could not remove image from table.', 'ewww-image-optimizer' ),
+					'optimized'             => esc_html__( 'Optimized', 'ewww-image-optimizer' ),
+				)
+			);
 		}
 
 		/**
@@ -607,7 +591,7 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 			if ( ! wp_verify_nonce( $_REQUEST['ewww_wpnonce'], 'ewww-image-optimizer-bulk' ) || ! current_user_can( $permissions ) ) {
 				$output['error'] = esc_html__( 'Access denied.', 'ewww-image-optimizer' );
 				ewwwio_ob_clean();
-				wp_die( json_encode( $output ) );
+				wp_die( ewwwio_json_encode( $output ) );
 			}
 			// Toggle the resume flag to indicate an operation is in progress.
 			update_option( 'ewww_image_optimizer_bulk_ngg_resume', 'true' );
@@ -619,7 +603,7 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 			if ( ! is_array( $attachments ) ) {
 				$output['error'] = esc_html__( 'Error retrieving list of images' );
 				ewwwio_ob_clean();
-				wp_die( json_encode( $output ) );
+				wp_die( ewwwio_json_encode( $output ) );
 			}
 			$id        = array_shift( $attachments );
 			$file_name = $this->ewww_ngg_bulk_filename( $id );
@@ -631,7 +615,7 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 				$output['results'] = '<p>' . esc_html__( 'Optimizing', 'ewww-image-optimizer' ) . ' <b>' . $file_name . "</b>&nbsp;<img src='$loading_image' alt='loading'/></p>";
 			}
 			ewwwio_ob_clean();
-			wp_die( json_encode( $output ) );
+			wp_die( ewwwio_json_encode( $output ) );
 		}
 
 		/**
@@ -666,7 +650,7 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 			if ( ! wp_verify_nonce( $_REQUEST['ewww_wpnonce'], 'ewww-image-optimizer-bulk' ) || ! current_user_can( $permissions ) ) {
 				$outupt['error'] = esc_html__( 'Access token has expired, please reload the page.', 'ewww-image-optimizer' );
 				ewwwio_ob_clean();
-				wp_die( json_encode( $output ) );
+				wp_die( ewwwio_json_encode( $output ) );
 			}
 			session_write_close();
 			// Find out if our nonce is on it's last leg/tick.
@@ -688,7 +672,7 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 			if ( ! empty( $ewww_status ) && preg_match( '/exceeded/', $ewww_status ) ) {
 				$output['error'] = esc_html__( 'License Exceeded', 'ewww-image-optimizer' );
 				ewwwio_ob_clean();
-				wp_die( json_encode( $output ) );
+				wp_die( ewwwio_json_encode( $output ) );
 			}
 			// Output the results of the optimization.
 			if ( $fres[0] ) {
@@ -719,7 +703,7 @@ if ( ! class_exists( 'EWWW_Nextcellent' ) ) {
 				$output['done'] = 1;
 			}
 			ewwwio_ob_clean();
-			wp_die( json_encode( $output ) );
+			wp_die( ewwwio_json_encode( $output ) );
 		}
 
 		/**

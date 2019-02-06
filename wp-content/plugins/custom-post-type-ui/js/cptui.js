@@ -8,6 +8,9 @@ postboxes.add_postbox_toggles(pagenow);
  */
 (function($) {
 
+	$('#cptui_select_post_type_submit').hide();
+	$('#cptui_select_taxonomy_submit').hide();
+
 	if ('edit' === getParameterByName('action')) {
 		// Store our original slug on page load for edit checking.
 		var original_slug = $('#name').val();
@@ -69,6 +72,22 @@ postboxes.add_postbox_toggles(pagenow);
 				$slugchanged.removeClass('hidemessage');
 			} else {
 				$slugchanged.addClass('hidemessage');
+			}
+		}
+
+		var $slugexists = $('#slugexists');
+		if ( typeof cptui_type_data != 'undefined' ) {
+			if (cptui_type_data.existing_post_types.hasOwnProperty(value) && value !== original_slug) {
+				$slugexists.removeClass('hidemessage');
+			} else {
+				$slugexists.addClass('hidemessage');
+			}
+		}
+		if ( typeof cptui_tax_data != 'undefined' ) {
+			if (cptui_tax_data.existing_taxonomies.hasOwnProperty(value) && value !== original_slug) {
+				$slugexists.removeClass('hidemessage');
+			} else {
+				$slugexists.addClass('hidemessage');
 			}
 		}
 	});

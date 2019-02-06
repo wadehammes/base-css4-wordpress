@@ -9,9 +9,7 @@ if (!defined('WORDFENCE_VERSION')) { exit; }
  */
 ?>
 <div class="wf-alert wf-alert-danger" id="wf-scan-failed" style="display: none;">
-	<h4><?php _e('Scan Failed', 'wordfence'); ?></h4>
-	<p><?php _e('The current scan looks like it has failed. Its last status update was <span id="wf-scan-failed-time-ago"></span> ago. You may continue to wait in case it resumes or stop and restart the scan. Some sites may need adjustments to run scans reliably.', 'wordfence'); ?> <a href="<?php echo wfSupportController::esc_supportURL(wfSupportController::ITEM_SCAN_FAILS); ?>" target="_blank" rel="noopener noreferrer"><?php _e('Click here for steps you can try.', 'wordfence'); ?></a></p>
-	<p class="wf-padding-add-top"><a href="#" class="wf-btn wf-btn-primary wf-btn-callout-subtle" onclick="WFAD.killScan(); return false;"><?php _e('Cancel Scan', 'wordfence'); ?></a></p>
+	
 </div>
 <ul class="wf-flex-horizontal wf-flex-vertical-xs wf-flex-full-width wf-no-top wf-no-bottom">
 	<li id="wf-scan-last-status"></li>

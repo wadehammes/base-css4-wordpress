@@ -17,6 +17,16 @@ class Cdnfsd_Plugin_Admin {
 			add_action( 'w3tc_settings_box_cdnfsd', array(
 					'\W3TC\Cdnfsd_CloudFront_Page',
 					'w3tc_settings_box_cdnfsd' ) );
+		} elseif ( $cdnfsd_engine == 'limelight' ) {
+			add_action( 'admin_print_scripts-performance_page_w3tc_cdn', array(
+					'\W3TC\Cdnfsd_LimeLight_Page',
+					'admin_print_scripts_performance_page_w3tc_cdn' ) );
+			add_action( 'w3tc_ajax', array(
+					'\W3TC\Cdnfsd_LimeLight_Popup',
+					'w3tc_ajax' ) );
+			add_action( 'w3tc_settings_box_cdnfsd', array(
+					'\W3TC\Cdnfsd_LimeLight_Page',
+					'w3tc_settings_box_cdnfsd' ) );
 		} elseif ( $cdnfsd_engine == 'maxcdn' ) {
 			add_action( 'admin_print_scripts-performance_page_w3tc_cdn', array(
 					'\W3TC\Cdnfsd_MaxCdn_Page',
@@ -27,15 +37,25 @@ class Cdnfsd_Plugin_Admin {
 			add_action( 'w3tc_settings_box_cdnfsd', array(
 					'\W3TC\Cdnfsd_MaxCdn_Page',
 					'w3tc_settings_box_cdnfsd' ) );
-		} elseif ( $cdnfsd_engine == 'limelight' ) {
+		} elseif ( $cdnfsd_engine == 'stackpath' ) {
 			add_action( 'admin_print_scripts-performance_page_w3tc_cdn', array(
-					'\W3TC\Cdnfsd_Limelight_Page',
+					'\W3TC\Cdnfsd_StackPath_Page',
 					'admin_print_scripts_performance_page_w3tc_cdn' ) );
 			add_action( 'w3tc_ajax', array(
-					'\W3TC\Cdnfsd_Limelight_Popup',
+					'\W3TC\Cdnfsd_StackPath_Popup',
 					'w3tc_ajax' ) );
 			add_action( 'w3tc_settings_box_cdnfsd', array(
-					'\W3TC\Cdnfsd_Limelight_Page',
+					'\W3TC\Cdnfsd_StackPath_Page',
+					'w3tc_settings_box_cdnfsd' ) );
+		} elseif ( $cdnfsd_engine == 'stackpath2' ) {
+			add_action( 'admin_print_scripts-performance_page_w3tc_cdn', array(
+					'\W3TC\Cdnfsd_StackPath2_Page',
+					'admin_print_scripts_performance_page_w3tc_cdn' ) );
+			add_action( 'w3tc_ajax', array(
+					'\W3TC\Cdnfsd_StackPath2_Popup',
+					'w3tc_ajax' ) );
+			add_action( 'w3tc_settings_box_cdnfsd', array(
+					'\W3TC\Cdnfsd_StackPath2_Page',
 					'w3tc_settings_box_cdnfsd' ) );
 		}
 
@@ -55,7 +75,7 @@ class Cdnfsd_Plugin_Admin {
 
 		$cdnfsd_engine_values = array();
 		$cdnfsd_engine_values[''] = array(
-			'label' => __( 'Please select engine', 'w3-total-cache' )
+			'label' => 'Select a provider',
 		);
 		$cdnfsd_engine_values['cloudfront'] = array(
 			'label' => __( 'Amazon CloudFront', 'w3-total-cache' ),
@@ -68,21 +88,29 @@ class Cdnfsd_Plugin_Admin {
 			'label' => __( 'Limelight', 'w3-total-cache' ),
 		);
 		$cdnfsd_engine_values['maxcdn'] = array(
-			'label' => __( 'MaxCDN (recommended)', 'w3-total-cache' ),
+			'label' => __( 'MaxCDN', 'w3-total-cache' ),
+		);
+		$cdnfsd_engine_values['stackpath'] = array(
+			'label' => __( 'StackPath SecureCDN (Legacy)', 'w3-total-cache' ),
+		);
+		$cdnfsd_engine_values['stackpath2'] = array(
+			'label' => __( 'StackPath (recommended)', 'w3-total-cache' ),
 		);
 
 		$tag = '';
 		if ( $cdnfsd_engine == 'cloudfront' ) {
-			$tag = '#cdn-fsd-cloudfront';
+			$tag = 'https://api.w3-edge.com/v1/redirects/faq/cdn-fsd/cloudfront';
 		} elseif ( $cdnfsd_engine == 'maxcdn' ) {
-			$tag = '#cdn-fsd-maxcdn';
+			$tag = 'https://api.w3-edge.com/v1/redirects/faq/cdn-fsd/maxcdn';
+		} elseif ( $cdnfsd_engine == 'stackpath' || $cdnfsd_engine == 'stackpath2' ) {
+			$tag = 'https://api.w3-edge.com/v1/redirects/faq/cdn-fsd/stackpath';
 		}
 
 		if ( empty( $tag ) ) {
 			$cdnfsd_engine_extra_description = '';
 		} else {
 			$cdnfsd_engine_extra_description =
-				' See <a href="admin.php?page=w3tc_faq' . $tag .
+				' See <a href="' . $tag .
 				'">setup instructions</a>';
 		}
 

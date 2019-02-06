@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO plugin file.
+ *
  * @package WPSEO\Internals\Options
  */
 
@@ -19,34 +21,29 @@ class WPSEO_Option_Wpseo extends WPSEO_Option {
 	 */
 	protected $defaults = array(
 		// Non-form fields, set via (ajax) function.
-		'blocking_files'                  => array(),
 		'ms_defaults_set'                 => false,
 		// Non-form field, should only be set via validation routine.
 		'version'                         => '', // Leave default as empty to ensure activation/upgrade works.
 
 		// Form fields.
-		'company_logo'                    => '',
-		'company_name'                    => '',
-		'company_or_person'               => '',
 		'disableadvanced_meta'            => true,
 		'onpage_indexability'             => true,
+		'baiduverify'                     => '', // Text field.
 		'googleverify'                    => '', // Text field.
 		'msverify'                        => '', // Text field.
-		'person_name'                     => '',
-		'website_name'                    => '',
-		'alternate_website_name'          => '',
 		'yandexverify'                    => '',
 		'site_type'                       => '', // List of options.
 		'has_multiple_authors'            => '',
 		'environment_type'                => '',
 		'content_analysis_active'         => true,
 		'keyword_analysis_active'         => true,
-		'enable_setting_pages'            => true,
 		'enable_admin_bar_menu'           => true,
 		'enable_cornerstone_content'      => true,
+		'enable_xml_sitemap'              => true,
 		'enable_text_link_counter'        => true,
 		'show_onboarding_notice'          => false,
 		'first_activated_on'              => false,
+		'recalibration_beta'              => false,
 	);
 
 	/**
@@ -54,7 +51,7 @@ class WPSEO_Option_Wpseo extends WPSEO_Option {
 	 */
 	public $ms_exclude = array(
 		/* Privacy. */
-		'alexaverify',
+		'baiduverify',
 		'googleverify',
 		'msverify',
 		'yandexverify',
@@ -86,6 +83,10 @@ class WPSEO_Option_Wpseo extends WPSEO_Option {
 		false,
 	);
 
+	/**
+	 * @var string Name for an option higher in the hierarchy to override setting access.
+	 */
+	protected $override_option_name = 'wpseo_ms';
 
 	/**
 	 * Add the actions and filters for the option.
@@ -111,7 +112,6 @@ class WPSEO_Option_Wpseo extends WPSEO_Option {
 		$this->defaults = apply_filters( 'wpseo_option_wpseo_defaults', $this->defaults );
 	}
 
-
 	/**
 	 * Get the singleton instance of this class.
 	 *
@@ -123,6 +123,64 @@ class WPSEO_Option_Wpseo extends WPSEO_Option {
 		}
 
 		return self::$instance;
+	}
+
+	/**
+	 * Add filters to make sure that the option is merged with its defaults before being returned.
+	 *
+	 * @return void
+	 */
+	public function add_option_filters() {
+		parent::add_option_filters();
+
+		list( $hookname, $callback, $priority ) = $this->get_verify_features_option_filter_hook();
+
+		if ( has_filter( $hookname, $callback ) === false ) {
+			add_filter( $hookname, $callback, $priority );
+		}
+	}
+
+	/**
+	 * Remove the option filters.
+	 * Called from the clean_up methods to make sure we retrieve the original old option.
+	 *
+	 * @return void
+	 */
+	public function remove_option_filters() {
+		parent::remove_option_filters();
+
+		list( $hookname, $callback, $priority ) = $this->get_verify_features_option_filter_hook();
+
+		remove_filter( $hookname, $callback, $priority );
+	}
+
+	/**
+	 * Add filters to make sure that the option default is returned if the option is not set.
+	 *
+	 * @return void
+	 */
+	public function add_default_filters() {
+		parent::add_default_filters();
+
+		list( $hookname, $callback, $priority ) = $this->get_verify_features_default_option_filter_hook();
+
+		if ( has_filter( $hookname, $callback ) === false ) {
+			add_filter( $hookname, $callback, $priority );
+		}
+	}
+
+	/**
+	 * Remove the default filters.
+	 * Called from the validate() method to prevent failure to add new options.
+	 *
+	 * @return void
+	 */
+	public function remove_default_filters() {
+		parent::remove_default_filters();
+
+		list( $hookname, $callback, $priority ) = $this->get_verify_features_default_option_filter_hook();
+
+		remove_filter( $hookname, $callback, $priority );
 	}
 
 	/**
@@ -142,43 +200,8 @@ class WPSEO_Option_Wpseo extends WPSEO_Option {
 					$clean[ $key ] = WPSEO_VERSION;
 					break;
 
-
-				case 'blocking_files':
-					/*
-					 * {@internal [JRF] To really validate this we should also do a file_exists()
-					 * on each array entry and remove files which no longer exist, but that might be overkill.}}
-					 */
-					if ( isset( $dirty[ $key ] ) && is_array( $dirty[ $key ] ) ) {
-						$clean[ $key ] = array_unique( $dirty[ $key ] );
-					}
-					elseif ( isset( $old[ $key ] ) && is_array( $old[ $key ] ) ) {
-						$clean[ $key ] = array_unique( $old[ $key ] );
-					}
-					break;
-
-				case 'company_or_person':
-					if ( isset( $dirty[ $key ] ) && $dirty[ $key ] !== '' ) {
-						if ( in_array( $dirty[ $key ], array( 'company', 'person' ), true ) ) {
-							$clean[ $key ] = $dirty[ $key ];
-						}
-					}
-					break;
-
-				/* Text fields. */
-				case 'company_name':
-				case 'person_name':
-				case 'website_name':
-				case 'alternate_website_name':
-					if ( isset( $dirty[ $key ] ) && $dirty[ $key ] !== '' ) {
-						$clean[ $key ] = sanitize_text_field( $dirty[ $key ] );
-					}
-					break;
-
-				case 'company_logo':
-					$this->validate_url( $key, $dirty, $old, $clean );
-					break;
-
 				/* Verification strings. */
+				case 'baiduverify':
 				case 'googleverify':
 				case 'msverify':
 				case 'yandexverify':
@@ -247,6 +270,63 @@ class WPSEO_Option_Wpseo extends WPSEO_Option {
 		return $clean;
 	}
 
+	/**
+	 * Verifies that the feature variables are turned off if the network is configured so.
+	 *
+	 * @param mixed $options Value of the option to be returned. Typically an array.
+	 *
+	 * @return mixed Filtered $options value.
+	 */
+	public function verify_features_against_network( $options = array() ) {
+		if ( ! is_array( $options ) || empty( $options ) ) {
+			return $options;
+		}
+
+		// For the feature variables, set their values to off in case they are disabled.
+		$feature_vars = array(
+			'disableadvanced_meta'       => false,
+			'onpage_indexability'        => false,
+			'content_analysis_active'    => false,
+			'keyword_analysis_active'    => false,
+			'enable_admin_bar_menu'      => false,
+			'enable_cornerstone_content' => false,
+			'enable_xml_sitemap'         => false,
+			'enable_text_link_counter'   => false,
+		);
+
+		// We can reuse this logic from the base class with the above defaults to parse with the correct feature values.
+		$options = $this->prevent_disabled_options_update( $options, $feature_vars );
+
+		return $options;
+	}
+
+	/**
+	 * Gets the filter hook name and callback for adjusting the retrieved option value against the network-allowed features.
+	 *
+	 * @return array Array where the first item is the hook name, the second is the hook callback,
+	 *               and the third is the hook priority.
+	 */
+	protected function get_verify_features_option_filter_hook() {
+		return array(
+			"option_{$this->option_name}",
+			array( $this, 'verify_features_against_network' ),
+			11,
+		);
+	}
+
+	/**
+	 * Gets the filter hook name and callback for adjusting the default option value against the network-allowed features.
+	 *
+	 * @return array Array where the first item is the hook name, the second is the hook callback,
+	 *               and the third is the hook priority.
+	 */
+	protected function get_verify_features_default_option_filter_hook() {
+		return array(
+			"default_option_{$this->option_name}",
+			array( $this, 'verify_features_against_network' ),
+			11,
+		);
+	}
 
 	/**
 	 * Clean a given option value.

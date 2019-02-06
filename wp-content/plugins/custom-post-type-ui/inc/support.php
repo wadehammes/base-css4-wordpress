@@ -6,6 +6,7 @@
  * @subpackage Support
  * @author WebDevStudios
  * @since 1.0.0
+ * @license GPL-2.0+
  */
 
 // Exit if accessed directly.
@@ -28,11 +29,12 @@ function cptui_support_enqueue_scripts() {
 		return;
 	}
 
-	if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+	if ( wp_doing_ajax() ) {
 		return;
 	}
 
 	wp_enqueue_script( 'cptui' );
+	wp_enqueue_style( 'cptui-css' );
 }
 add_action( 'admin_enqueue_scripts', 'cptui_support_enqueue_scripts' );
 
@@ -57,16 +59,17 @@ function cptui_support() {
 
 		<p>
 		<?php printf(
-			esc_html__( 'Please note that %s this plugin will not handle display %s of registered post types or taxonomies in your current theme. It simply registers them for you. To display your data, check out %s. If all else fails, visit us on the %s', 'custom-post-type-ui' ),
+			esc_html__( 'Please note that %s this plugin will not handle display %s of registered post types or taxonomies in your current theme. It simply registers them for you. To display your data, check out %s. %s to see some examples that are available with Custom Post Type UI Extended. If all else fails, visit us on the %s', 'custom-post-type-ui' ),
 			'<strong>',
 			'</strong>',
-			'<a href="https://pluginize.com/plugins/custom-post-type-ui-extended/?utm_source=faq&utm_medium=text&utm_campaign=cptui">' . esc_html__( 'CPTUI Extended' ) . '</a>',
+			'<a href="https://pluginize.com/plugins/custom-post-type-ui-extended/?utm_source=faq&utm_medium=text&utm_campaign=cptui">' . esc_html__( 'CPTUI Extended', 'custom-post-type-ui' ) . '</a>',
+			'<a href="https://pluginize.com/cpt-ui-extended-features/?utm_source=faq-layouts&utm_medium=text&utm_campaign=cptui">' . esc_html__( 'View our Layouts page', 'custom-post-type-ui' ) . '</a>',
 			'<a href="https://www.wordpress.org/support/plugin/custom-post-type-ui/">' . esc_html__( 'Support Forums', 'custom-post-type-ui' ) . '</a>'
 		); ?></p>
 
 		<table id="support" class="form-table cptui-table">
 			<tr>
-				<td class="outter">
+				<td class="outer">
 					<h2><?php esc_html_e( 'Pluginize', 'custom-post-type-ui' ); ?></h2>
 					<ol id="questions_pluginize">
 						<li>
@@ -114,7 +117,7 @@ function cptui_support() {
 						</li>
 					</ol>
 				</td>
-				<td class="outter">
+				<td class="outer">
 					<h2><?php esc_html_e( 'General', 'custom-post-type-ui' ); ?></h2>
 					<ol id="questions_general">
 						<li>
@@ -143,7 +146,7 @@ function cptui_support() {
 							</div>
 						</li>
 						<li>
-							<span tabindex="0" class="question" aria-controls="q13" aria-expanded="false"><?php esc_html_e( 'Is there any way to get CPTUI-registered post types working with Visual Composer Media Grid?', 'custom-post-type-ui' ); ?></span>
+							<span tabindex="0" class="question" aria-controls="q13" aria-expanded="false"><?php esc_html_e( 'Is there any way to get Custom Post Type UI-registered post types working with Visual Composer Media Grid?', 'custom-post-type-ui' ); ?></span>
 
 							<div class="answer" id="q13"><?php esc_html_e( 'Please see the solution from the following forum support thread.', 'custom-post-type-ui' ); ?>
 								<a href="https://wordpress.org/support/topic/custom-post-type-and-visual-composer-grid-block?replies=11#post-7111458" target="_blank">https://wordpress.org/support/topic/custom-post-type-and-visual-composer-grid-block?replies=11#post-7111458</a>
@@ -152,7 +155,7 @@ function cptui_support() {
 						<li>
 							<span tabindex="0" class="question" aria-controls="q14" aria-expanded="false"><?php esc_html_e( 'Why can I not use dashes in post type or taxonomy slugs?', 'custom-post-type-ui' ); ?></span>
 
-							<div class="answer" id="q14"><?php esc_html_e( 'CPTUI tries to make smart choices for our users, and forcing underscores is one of them. Please see the tutorial at the following URL for how to get dashes in your permalink urls while continuing to use underscores for the actual slug.', 'custom-post-type-ui' ); ?>
+							<div class="answer" id="q14"><?php esc_html_e( 'Custom Post Type UI tries to make smart choices for our users, and forcing underscores is one of them. Please see the tutorial at the following URL for how to get dashes in your permalink urls while continuing to use underscores for the actual slug.', 'custom-post-type-ui' ); ?>
 								<a href="http://docs.pluginize.com/article/135-dashes-in-post-type-taxonomy-slugs-for-url-seo" target="_blank">http://docs.pluginize.com/article/135-dashes-in-post-type-taxonomy-slugs-for-url-seo</a>
 							</div>
 						</li>
@@ -160,7 +163,7 @@ function cptui_support() {
 				</td>
 			</tr>
 			<tr>
-				<td class="outter">
+				<td class="outer">
 					<h2><?php esc_html_e( 'Front-end Display', 'custom-post-type-ui' ); ?></h2>
 					<ol id="questions_front">
 						<li>
@@ -199,7 +202,7 @@ function cptui_support() {
 						</li>
 					</ol>
 				</td>
-				<td class="outter">
+				<td class="outer">
 					<h2><?php esc_html_e( 'Advanced', 'custom-post-type-ui' ); ?></h2>
 					<ol id="questions_advanced">
 						<li>
@@ -252,9 +255,16 @@ function cptui_support() {
 add_filter( 'enter_title_here', 'my_custom_title_text' );
 </code></pre></div>
 						</li>
+						<li>
+							<span tabindex="0" class="question" aria-controls="q23" aria-expanded="false"><?php esc_html_e( 'Any help with customizing capabilities?', 'custom-post-type-ui' ); ?></span>
+							<div class="answer" id="q23">
+								<p><?php printf( esc_html__( 'We recommend %s for some extended customization and addition of extra fields regarding roles and capabilities.', 'custom-post-type-ui' ),
+									'<a href="https://github.com/tw2113/custom-post-type-ui-capabilities" target="_blank">Custom Post Type UI Capabilities on GitHub</a>' ); ?></p>
+							</div>
+						</li>
 					</ol>
 				</td>
-				<td class="outter">
+				<td class="outer">
 					&nbsp;
 					<?php
 

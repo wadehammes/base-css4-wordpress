@@ -1,4 +1,6 @@
 <?php
+if (!defined('WORDFENCE_VERSION')) { exit; }
+
 $wfBulkCountries = array(
 "AD" => __("Andorra", 'wordfence'),
 "AE" => __("United Arab Emirates", 'wordfence'),
@@ -244,6 +246,7 @@ $wfBulkCountries = array(
 "VU" => __("Vanuatu", 'wordfence'),
 "WF" => __("Wallis and Futuna", 'wordfence'),
 "WS" => __("Samoa", 'wordfence'),
+"XK" => __("Kosovo", 'wordfence'),
 "YE" => __("Yemen", 'wordfence'),
 "YT" => __("Mayotte", 'wordfence'),
 "ZA" => __("South Africa", 'wordfence'),

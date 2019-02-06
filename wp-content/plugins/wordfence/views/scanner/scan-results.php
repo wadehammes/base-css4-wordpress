@@ -9,25 +9,8 @@ if (!defined('WORDFENCE_VERSION')) { exit; }
  * @var wfIssues $issues The issues state.
  */
 
-$hasDeleteableIssue = false;
-$hasRepairableIssue = false;
-$issueCount = $issues->getIssueCount();
-for ($offset = 0; $offset < $issueCount; $offset += 100) {
-	$testing = $issues->getIssues($offset, 100);
-	foreach ($testing['new'] as $i) {
-		if (@$i['data']['canDelete']) {
-			$hasDeleteableIssue = true;
-		}
-		
-		if (@$i['data']['canFix']) {
-			$hasRepairableIssue = true;
-		}
-		
-		if ($hasDeleteableIssue && $hasRepairableIssue) {
-			break 2;
-		}
-	}
-}
+$hasDeleteableIssue = !!$issues->getDeleteableIssueCount();
+$hasRepairableIssue = !!$issues->getFixableIssueCount();
 
 $tabs = array(
   new wfTab('new', 'new', __('Results<span class="wf-hidden-xs"> Found</span>', 'wordfence'), ''),
@@ -116,11 +99,35 @@ $tabs = array(
 				</ul>
 			</div>
 	</li>
-	<li class="wf-scan-results-issues wf-active" id="wf-scan-results-new"></li>
-	<li class="wf-scan-results-issues" id="wf-scan-results-ignored"></li>
+	<li class="wf-scan-results-issues wf-active" id="wf-scan-results-new" data-issue-type="new"></li>
+	<li class="wf-scan-results-issues" id="wf-scan-results-ignored" data-issue-type="ignored"></li>
 </ul>
 <script type="application/javascript">
 	(function($) {
+		WFAD.scanIssuesOffset = 0;
+		
+		var issuesWrapper = $('.wf-scan-results');
+		var hasScrolled = false;
+		$(window).on('scroll', function() {
+			var win = $(this);
+			// console.log(win.scrollTop() + window.innerHeight, liveTrafficWrapper.outerHeight() + liveTrafficWrapper.offset().top);
+			var currentScrollBottom = win.scrollTop() + window.innerHeight;
+			var scrollThreshold = issuesWrapper.outerHeight() + issuesWrapper.offset().top;
+			if (hasScrolled && !WFAD.loadingIssues && currentScrollBottom >= scrollThreshold) {
+				// console.log('infinite scroll');
+
+				WFAD.loadingIssues = true;
+				hasScrolled = false;
+				WFAD.loadMoreIssues(function() {
+					WFAD.loadingIssues = false;
+				}, WFAD.scanIssuesOffset, null, WFAD.scanIssuesIgnoredOffset);
+			}
+			else if (currentScrollBottom < scrollThreshold) {
+				hasScrolled = true;
+				// console.log('no infinite scroll');
+			}
+		});
+		
 		$(function() {
 			$('.wf-scan-tabs .wf-tab a').on('click', function(e) {
 				e.preventDefault();

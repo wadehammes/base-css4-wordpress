@@ -4,10 +4,11 @@
     MINIFIER - increase your page load speed by minifying JavaScript and HTML
     ---------------------------------------------------------------------------------------------------------*/
 
+
     class SBP_HTML_Minifier {
     // Minify settings
     	protected $minify_css = true;
-    	protected $minify_js = true;
+    	protected $minify_js = false;
     	protected $info_comment = true;
     	protected $remove_comments = true;
 

@@ -38,7 +38,7 @@ if (!defined('WORDFENCE_VERSION')) { exit; }
 				$('.wf-scan-starter-running').show();
 			}
 			else {
-				$('.wf-scan-starter-idle').show().toggleClass('wf-disabled', WFAD.scanFailed);
+				$('.wf-scan-starter-idle').show().toggleClass('wf-disabled', WFAD.scanStalled);
 				$('.wf-scan-starter-running').hide();
 			}
 		})

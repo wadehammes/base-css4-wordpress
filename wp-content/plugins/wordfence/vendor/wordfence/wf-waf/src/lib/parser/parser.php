@@ -1,4 +1,5 @@
 <?php
+if (defined('WFWAF_VERSION') && !defined('WFWAF_RUN_COMPLETE')) {
 
 require_once dirname(__FILE__) . '/lexer.php';
 
@@ -858,4 +859,5 @@ class wfWAFRuleVariable {
 	public function setWAF($waf) {
 		$this->waf = $waf;
 	}
+}
 }

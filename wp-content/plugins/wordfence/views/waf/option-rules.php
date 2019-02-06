@@ -1,14 +1,14 @@
 <?php
 if (!defined('WORDFENCE_VERSION')) { exit; }
 ?>
-<ul class="wf-option wf-flex-vertical wf-flex-align-left">
-	<li class="wf-option-title"><strong>Rules</strong> <a href="<?php echo wfSupportController::esc_supportURL(wfSupportController::ITEM_FIREWALL_WAF_RULES); ?>"  target="_blank" rel="noopener noreferrer" class="wf-inline-help"><i class="wf-fa wf-fa-question-circle-o" aria-hidden="true"></i></a></li>
+<ul id="wf-option-wafRules" class="wf-option wf-flex-vertical wf-flex-align-left">
+	<li class="wf-option-title"><strong><?php _e('Rules', 'wordfence'); ?></strong> <a href="<?php echo wfSupportController::esc_supportURL(wfSupportController::ITEM_FIREWALL_WAF_RULES); ?>"  target="_blank" rel="noopener noreferrer" class="wf-inline-help"><i class="wf-fa wf-fa-question-circle-o" aria-hidden="true"></i></a></li>
 	<li class="wf-option-subtitle"><?php echo ($firewall->isSubDirectoryInstallation() ? __('You are currently running the WAF from another WordPress installation. These rules can be disabled or enabled once you configure the firewall to run correctly on this site.', 'wordfence') : ''); ?></li>
 	<li id="waf-rules-wrapper" class="wf-add-top"></li>
 	<?php if (!WFWAF_SUBDIRECTORY_INSTALL): ?>
 	<li>
 		<ul class="wf-option wf-option-footer wf-padding-no-bottom">
-			<li><a class="wf-btn wf-btn-default waf-rules-refresh" href="#">Manually Refresh Rules</a>&nbsp;&nbsp;</li>
+			<li><a class="wf-btn wf-btn-default waf-rules-refresh" href="#"><?php _e('Manually Refresh Rules', 'wordfence'); ?></a>&nbsp;&nbsp;</li>
 			<li class="wf-padding-add-top-xs-small"><em id="waf-rules-next-update"></em></li>
 		</ul>
 		<script type="application/javascript">
@@ -22,10 +22,10 @@ if (!defined('WORDFENCE_VERSION')) { exit; }
 			})(jQuery);
 		<?php
 		try {
-			$lastUpdated = wfWAF::getInstance()->getStorageEngine()->getConfig('rulesLastUpdated');
+			$lastUpdated = wfWAF::getInstance()->getStorageEngine()->getConfig('rulesLastUpdated', null, 'transient');
 			
 			$nextUpdate = PHP_INT_MAX;
-			$cron = wfWAF::getInstance()->getStorageEngine()->getConfig('cron');
+			$cron = (array) wfWAF::getInstance()->getStorageEngine()->getConfig('cron', null, 'livewaf');
 			if (is_array($cron)) {
 				/** @var wfWAFCronEvent $event */
 				foreach ($cron as $index => $event) {

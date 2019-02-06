@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO plugin file.
+ *
  * @package WPSEO\Admin\Options\Tabs
  */
 
@@ -19,6 +21,8 @@ class WPSEO_Option_Tabs {
 
 	/**
 	 * WPSEO_Option_Tabs constructor.
+	 *
+	 * @codeCoverageIgnore
 	 *
 	 * @param string $base       Base of the tabs.
 	 * @param string $active_tab Currently active tab.
@@ -97,10 +101,9 @@ class WPSEO_Option_Tabs {
 	 * Display the tabs
 	 *
 	 * @param Yoast_Form $yform   Yoast Form needed in the views.
-	 * @param array      $options Options needed in the views.
 	 */
-	public function display( Yoast_Form $yform, $options = array() ) {
+	public function display( Yoast_Form $yform ) {
 		$formatter = new WPSEO_Option_Tabs_Formatter();
-		$formatter->run( $this, $yform, $options );
+		$formatter->run( $this, $yform );
 	}
 }

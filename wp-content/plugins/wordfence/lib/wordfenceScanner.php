@@ -84,7 +84,7 @@ class wordfenceScanner {
 	protected function setupSigs() {
 		$sigData = $this->api->call('get_patterns', array(), array());
 		if(! (is_array($sigData) && isset($sigData['rules'])) ){
-			throw new Exception("Wordfence could not get the attack signature patterns from the scanning server.");
+			throw new Exception(__('Wordfence could not get the attack signature patterns from the scanning server.', 'wordfence'));
 		}
 		
 		if (wfWAF::getInstance() && method_exists(wfWAF::getInstance(), 'setMalwareSignatures')) {
@@ -105,7 +105,7 @@ class wordfenceScanner {
 				$logOnly = (isset($signatureRow[5]) && !empty($signatureRow[5])) ? $signatureRow[5] : false;
 				$commonStringIndexes = (isset($signatureRow[8]) && is_array($signatureRow[8])) ? $signatureRow[8] : array(); 
 				if (@preg_match('/' . $pattern . '/iS', null) === false) {
-					wordfence::status(1, 'error', "A regex Wordfence received from its servers is invalid. The pattern is: " . esc_html($pattern));
+					wordfence::status(1, 'error', __('A regex Wordfence received from its servers is invalid. The pattern is: ', 'wordfence') . esc_html($pattern));
 					unset($sigData['rules'][$key]);
 				}
 				else if (!$logOnly) {
@@ -141,7 +141,7 @@ class wordfenceScanner {
 	 * there is no pattern
 	 *
 	 * @param $whichPatterns int Bitmask indicating which patterns to include.
-	 * @return string|boolean
+	 * @return array|boolean
 	 */
 	public static function getExcludeFilePattern($whichPatterns = self::EXCLUSION_PATTERNS_USER) {
 		if (isset(self::$excludePatterns[$whichPatterns])) {
@@ -166,8 +166,13 @@ class wordfenceScanner {
 			}
 		}
 
+		$exParts = array_filter($exParts);
 		if (!empty($exParts)) {
-			self::$excludePatterns[$whichPatterns] = '/(?:' . implode('|', array_filter($exParts)) . ')$/i';
+			$chunks = array_chunk($exParts, 100);
+			self::$excludePatterns[$whichPatterns] = array();
+			foreach ($chunks as $parts) {
+				self::$excludePatterns[$whichPatterns][] = '/(?:' . implode('|', $parts) . ')$/i';
+			}
 		}
 		else {
 			self::$excludePatterns[$whichPatterns] = false;
@@ -197,28 +202,44 @@ class wordfenceScanner {
 			$hooverExclusions = wordfenceURLHoover::standardExcludedHosts();
 		}
 		
+		$backtrackLimit = ini_get('pcre.backtrack_limit');
+		if (is_numeric($backtrackLimit)) {
+			$backtrackLimit = (int) $backtrackLimit;
+			if ($backtrackLimit > 10000000) {
+				ini_set('pcre.backtrack_limit', 1000000);
+				wordfence::status(4, 'info', sprintf(__('Backtrack limit is %d, reducing to 1000000', 'wordfence'), $backtrackLimit));
+			}
+		}
+		else {
+			$backtrackLimit = false;
+		}
+		
 		$lastCount = 'whatever';
-		$excludePattern = self::getExcludeFilePattern(self::EXCLUSION_PATTERNS_USER | self::EXCLUSION_PATTERNS_MALWARE); 
+		$excludePatterns = self::getExcludeFilePattern(self::EXCLUSION_PATTERNS_USER | self::EXCLUSION_PATTERNS_MALWARE); 
 		while (true) {
 			$thisCount = wordfenceMalwareScanFile::countRemaining();
 			if ($thisCount == $lastCount) {
 				//count should always be decreasing. If not, we're in an infinite loop so lets catch it early
-				wordfence::status(4, 'info', "Detected loop in malware scan, aborting.");
+				wordfence::status(4, 'info', __('Detected loop in malware scan, aborting.', 'wordfence'));
 				break;
 			}
 			$lastCount = $thisCount;
 			
 			$files = wordfenceMalwareScanFile::files();
 			if (count($files) < 1) {
-				wordfence::status(4, 'info', "No files remaining for malware scan.");
+				wordfence::status(4, 'info', __('No files remaining for malware scan.', 'wordfence'));
 				break;
 			}
 			
 			foreach ($files as $record) {
 				$file = $record->filename;
-				if ($excludePattern && preg_match($excludePattern, $file)) {
-					$record->markComplete();
-					continue;
+				if ($excludePatterns) {
+					foreach ($excludePatterns as $pattern) {
+						if (preg_match($pattern, $file)) {
+							$record->markComplete();
+							continue 2;
+						}
+					}
 				}
 				if (!file_exists($this->path . $file)) {
 					$record->markComplete();
@@ -239,7 +260,7 @@ class wordfenceScanner {
 					$isHTML = true;
 				}
 				$isJS = false;
-				if(preg_match('/\.(?:js)(\.|$)/i', $file)) {
+				if(preg_match('/\.(?:js|svg)(\.|$)/i', $file)) {
 					$isJS = true;
 				}
 				$dontScanForURLs = false;
@@ -270,22 +291,18 @@ class wordfenceScanner {
 				if(wfUtils::fileTooBig($this->path . $file)){ //We can't use filesize on 32 bit systems for files > 2 gigs
 					//We should not need this check because files > 2 gigs are not hashed and therefore won't be received back as unknowns from the API server
 					//But we do it anyway to be safe.
-					wordfence::status(2, 'error', "Encountered file that is too large: $file - Skipping.");
+					wordfence::status(2, 'error', sprintf(__('Encountered file that is too large: %s - Skipping.', 'wordfence'), $file));
 					$record->markComplete();
 					continue;
 				}
 				wfUtils::beginProcessingFile($file);
 
 				$fsize = @filesize($this->path . $file); //Checked if too big above
-				if($fsize > 1000000){
-					$fsize = sprintf('%.2f', ($fsize / 1000000)) . "M";
-				} else {
-					$fsize = $fsize . "B";
-				}
+				$fsize = wfUtils::formatBytes($fsize);
 				if (function_exists('memory_get_usage')) {
-					wordfence::status(4, 'info', "Scanning contents: $file (Size:$fsize Mem:" . sprintf('%.1f', memory_get_usage(true) / (1024 * 1024)) . "M)");
+					wordfence::status(4, 'info', sprintf(__('Scanning contents: %s (Size: %s Mem: %s)', 'wordfence'), $file, $fsize, wfUtils::formatBytes(memory_get_usage(true))));
 				} else {
-					wordfence::status(4, 'info', "Scanning contents: $file (Size: $fsize)");
+					wordfence::status(4, 'info', sprintf(__('Scanning contents: %s (Size: %s)', 'wordfence'), $file, $fsize));
 				}
 
 				$stime = microtime(true);
@@ -314,10 +331,10 @@ class wordfenceScanner {
 					
 					$extraMsg = '';
 					if ($isScanImagesFile) {
-						$extraMsg = ' This file was detected because you have enabled "Scan images, binary, and other files as if they were executable", which treats non-PHP files as if they were PHP code. This option is more aggressive than the usual scans, and may cause false positives.';
+						$extraMsg = ' ' . __('This file was detected because you have enabled "Scan images, binary, and other files as if they were executable", which treats non-PHP files as if they were PHP code. This option is more aggressive than the usual scans, and may cause false positives.', 'wordfence');
 					}
 					else if ($isHighSensitivityFile) {
-						$extraMsg = ' This file was detected because you have enabled HIGH SENSITIVITY scanning. This option is more aggressive than the usual scans, and may cause false positives.';
+						$extraMsg = ' ' . __('This file was detected because you have enabled HIGH SENSITIVITY scanning. This option is more aggressive than the usual scans, and may cause false positives.', 'wordfence');
 					}
 					
 					$treatAsBinary = ($isPHP || $isHTML || $options['scansEnabled_scanImages']);
@@ -325,15 +342,16 @@ class wordfenceScanner {
 						if ($treatAsBinary && wfUtils::strpos($data, '$allowed'.'Sites') !== false && wfUtils::strpos($data, "define ('VER"."SION', '1.") !== false && wfUtils::strpos($data, "TimThum"."b script created by") !== false) {
 							$this->addResult(array(
 								'type' => 'file',
-								'severity' => 1,
+								'severity' => wfIssues::SEVERITY_CRITICAL,
 								'ignoreP' => $this->path . $file,
 								'ignoreC' => $fileSum,
-								'shortMsg' => "File is an old version of TimThumb which is vulnerable.",
-								'longMsg' => "This file appears to be an old version of the TimThumb script which makes your system vulnerable to attackers. Please upgrade the theme or plugin that uses this or remove it." . $extraMsg,
+								'shortMsg' => __('File is an old version of TimThumb which is vulnerable.', 'wordfence'),
+								'longMsg' => __('This file appears to be an old version of the TimThumb script which makes your system vulnerable to attackers. Please upgrade the theme or plugin that uses this or remove it.', 'wordfence') . $extraMsg,
 								'data' => array_merge(array(
 									'file' => $file,
 									'shac' => $record->SHAC,
 									'highSense' => $options['scansEnabled_highSense'],
+									'betaSigs' => wfConfig::get('betaThreatDefenseFeed'),
 								), $dataForFile),
 							));
 							break;
@@ -349,16 +367,17 @@ class wordfenceScanner {
 									//wordfence::status(4, 'info', "Searching for malware scan resume point (". $stoppedOnSignature . ") at rule " . $rule[0]);
 									if ($stoppedOnSignature == $rule[0]) {
 										$record->updateStoppedOn('', $currentPosition);
-										wordfence::status(4, 'info', "Resuming malware scan at rule {$rule[0]}.");
+										wordfence::status(4, 'info', sprintf(__('Resuming malware scan at rule %s.', 'wordfence'), $rule[0]));
 									}
 									continue;
 								}
 								
 								$type = (isset($rule[4]) && !empty($rule[4])) ? $rule[4] : 'server';
 								$logOnly = (isset($rule[5]) && !empty($rule[5])) ? $rule[5] : false;
-								$commonStringIndexes = (isset($rule[8]) && is_array($rule[8])) ? $rule[8] : array(); 
+								$commonStringIndexes = (isset($rule[8]) && is_array($rule[8])) ? $rule[8] : array();
+								$customMessage = isset($rule[9]) ? $rule[9] : __('This file appears to be installed or modified by a hacker to perform malicious activity. If you know about this file you can choose to ignore it to exclude it from future scans.', 'wordfence');
 								if ($type == 'server' && !$treatAsBinary) { continue; }
-								else if (($type == 'both' || $type == 'browser') && $fileExt == 'js') { $extraMsg = ''; }
+								else if (($type == 'both' || $type == 'browser') && $isJS) { $extraMsg = ''; }
 								else if (($type == 'both' || $type == 'browser') && !$treatAsBinary) { continue; }
 								
 								foreach ($commonStringIndexes as $i) {
@@ -385,20 +404,21 @@ class wordfenceScanner {
 									if (!$logOnly) {
 										$this->addResult(array(
 											'type' => 'file',
-											'severity' => 1,
+											'severity' => wfIssues::SEVERITY_CRITICAL,
 											'ignoreP' => $this->path . $file,
 											'ignoreC' => $fileSum,
-											'shortMsg' => "File appears to be malicious: " . esc_html($file),
-											'longMsg' => "This file appears to be installed by a hacker to perform malicious activity. If you know about this file you can choose to ignore it to exclude it from future scans. The text we found in this file that matches a known malicious file is: <strong style=\"color: #F00;\" class=\"wf-split-word\">\"" . wfUtils::potentialBinaryStringToHTML((wfUtils::strlen($matchString) > 200 ? wfUtils::substr($matchString, 0, 200) . '...' : $matchString)) . "\"</strong>. The infection type is: <strong>" . esc_html($rule[3]) . '</strong>.' . $extraMsg,
+											'shortMsg' => __('File appears to be malicious: ', 'wordfence') . esc_html($file),
+											'longMsg' => $customMessage . ' ' . __('The matched text in this file is:', 'wordfence') . ' ' . '<strong style="color: #F00;" class="wf-split-word">' . wfUtils::potentialBinaryStringToHTML((wfUtils::strlen($matchString) > 200 ? wfUtils::substr($matchString, 0, 200) . '...' : $matchString)) . '</strong>' . '<br><br>' . sprintf(__('The issue type is: <strong>%s</strong>', 'wordfence'), esc_html($rule[7])) . '<br>' . sprintf(__('Description: <strong>%s</strong>', 'wordfence'), esc_html($rule[3])) . $extraMsg,
 											'data' => array_merge(array(
 												'file' => $file,
 												'shac' => $record->SHAC,
 												'highSense' => $options['scansEnabled_highSense'],
+												'betaSigs' => wfConfig::get('betaThreatDefenseFeed'),
 											), $dataForFile),
 										));
 									}
 									$regexMatched = true;
-									$this->scanEngine->recordMetric('malwareSignature', $rule[0], array('file' => $file, 'match' => $matchString, 'before' => $beforeString, 'after' => $afterString), false);
+									$this->scanEngine->recordMetric('malwareSignature', $rule[0], array('file' => $file, 'match' => $matchString, 'before' => $beforeString, 'after' => $afterString, 'md5' => $record->newMD5, 'shac' => $record->SHAC), false);
 									break;
 								}
 								
@@ -406,7 +426,7 @@ class wordfenceScanner {
 									$record->updateStoppedOn($rule[0], $currentPosition);
 									fclose($fh);
 									
-									wordfence::status(4, 'info', "Forking during malware scan ({$rule[0]}) to ensure continuity.");
+									wordfence::status(4, 'info', sprintf(__('Forking during malware scan (%s) to ensure continuity.', 'wordfence'), $rule[0]));
 									$forkObj->fork(); //exits
 								}
 							}
@@ -425,15 +445,16 @@ class wordfenceScanner {
 							if ($badStringFound) {
 								$this->addResult(array(
 									'type' => 'file',
-									'severity' => 1,
+									'severity' => wfIssues::SEVERITY_CRITICAL,
 									'ignoreP' => $this->path . $file,
 									'ignoreC' => $fileSum,
-									'shortMsg' => "This file may contain malicious executable code: " . esc_html($file),
-									'longMsg' => "This file is a PHP executable file and contains the word 'eval' (without quotes) and the word '<span class=\"wf-split-word\">" . esc_html($badStringFound) . "</span>' (without quotes). The eval() function along with an encoding function like the one mentioned are commonly used by hackers to hide their code. If you know about this file you can choose to ignore it to exclude it from future scans. This file was detected because you have enabled HIGH SENSITIVITY scanning. This option is more aggressive than the usual scans, and may cause false positives.",
+									'shortMsg' => __('This file may contain malicious executable code: ', 'wordfence') . esc_html($file),
+									'longMsg' => sprintf(__('This file is a PHP executable file and contains the word "eval" (without quotes) and the word "<span class="wf-split-word">%s</span>" (without quotes). The eval() function along with an encoding function like the one mentioned are commonly used by hackers to hide their code. If you know about this file you can choose to ignore it to exclude it from future scans. This file was detected because you have enabled HIGH SENSITIVITY scanning. This option is more aggressive than the usual scans, and may cause false positives.', 'wordfence'), esc_html($badStringFound)),
 									'data' => array_merge(array(
 										'file' => $file,
 										'shac' => $record->SHAC,
 										'highSense' => $options['scansEnabled_highSense'],
+										'betaSigs' => wfConfig::get('betaThreatDefenseFeed'),
 									), $dataForFile),
 								));
 								break;
@@ -442,7 +463,8 @@ class wordfenceScanner {
 					}
 					
 					if (!$dontScanForURLs && $options['scansEnabled_fileContentsGSB']) {
-						$this->urlHoover->hoover($file, $data, $hooverExclusions);
+						$found = $this->urlHoover->hoover($file, $data, $hooverExclusions);
+						$this->scanEngine->scanController()->incrementSummaryItem(wfScanner::SUMMARY_SCANNED_URLS, $found);
 					}
 					
 					if ($totalRead > 2 * 1024 * 1024) {
@@ -462,10 +484,11 @@ class wordfenceScanner {
 		}
 		$this->writeScanningStatus();
 		if ($options['scansEnabled_fileContentsGSB']) {
-			wordfence::status(2, 'info', "Asking Wordfence to check URLs against malware list.");
+			wordfence::status(2, 'info', __('Asking Wordfence to check URLs against malware list.', 'wordfence'));
 			$hooverResults = $this->urlHoover->getBaddies();
 			if($this->urlHoover->errorMsg){
 				$this->errorMsg = $this->urlHoover->errorMsg;
+				if ($backtrackLimit !== false) { ini_set('pcre.backtrack_limit', $backtrackLimit); }
 				return false;
 			}
 			$this->urlHoover->cleanup();
@@ -486,51 +509,54 @@ class wordfenceScanner {
 					if ($result['badList'] == 'goog-malware-shavar') {
 						$this->addResult(array(
 							'type' => 'file',
-							'severity' => 1,
+							'severity' => wfIssues::SEVERITY_CRITICAL,
 							'ignoreP' => $this->path . $file,
 							'ignoreC' => md5_file($this->path . $file),
-							'shortMsg' => "File contains suspected malware URL: " . esc_html($file),
-							'longMsg' => "This file contains a suspected malware URL listed on Google's list of malware sites. Wordfence decodes " . esc_html($this->patterns['word3']) . " when scanning files so the URL may not be visible if you view this file. The URL is: " . esc_html($result['URL']) . " - More info available at <a href=\"http://safebrowsing.clients.google.com/safebrowsing/diagnostic?site=" . urlencode($result['URL']) . "&client=googlechrome&hl=en-US\" target=\"_blank\" rel=\"noopener noreferrer\">Google Safe Browsing diagnostic page</a>.",
+							'shortMsg' => __('File contains suspected malware URL: ', 'wordfence') . esc_html($file),
+							'longMsg' => sprintf(__('This file contains a suspected malware URL listed on Google\'s list of malware sites. Wordfence decodes %s when scanning files so the URL may not be visible if you view this file. The URL is: %s - More info available at <a href="http://safebrowsing.clients.google.com/safebrowsing/diagnostic?site=%s&client=googlechrome&hl=en-US" target="_blank" rel="noopener noreferrer">Google Safe Browsing diagnostic page</a>.', 'wordfence'), esc_html($this->patterns['word3']), esc_html($result['URL']), urlencode($result['URL'])),
 							'data' => array_merge(array(
 								'file' => $file,
 								'shac' => $record->SHAC,
 								'badURL' => $result['URL'],
 								'gsb' => 'goog-malware-shavar',
 								'highSense' => $options['scansEnabled_highSense'],
+								'betaSigs' => wfConfig::get('betaThreatDefenseFeed'),
 							), $dataForFile),
 						));
 					}
 					else if ($result['badList'] == 'googpub-phish-shavar') {
 						$this->addResult(array(
 							'type' => 'file',
-							'severity' => 1,
+							'severity' => wfIssues::SEVERITY_CRITICAL,
 							'ignoreP' => $this->path . $file,
 							'ignoreC' => md5_file($this->path . $file),
-							'shortMsg' => "File contains suspected phishing URL: " . esc_html($file),
-							'longMsg' => "This file contains a URL that is a suspected phishing site that is currently listed on Google's list of known phishing sites. The URL is: " . esc_html($result['URL']),
+							'shortMsg' => __('File contains suspected phishing URL: ', 'wordfence') . esc_html($file),
+							'longMsg' => __('This file contains a URL that is a suspected phishing site that is currently listed on Google\'s list of known phishing sites. The URL is: ', 'wordfence') . esc_html($result['URL']),
 							'data' => array_merge(array(
 								'file' => $file,
 								'shac' => $record->SHAC,
 								'badURL' => $result['URL'],
 								'gsb' => 'googpub-phish-shavar',
 								'highSense' => $options['scansEnabled_highSense'],
+								'betaSigs' => wfConfig::get('betaThreatDefenseFeed'),
 							), $dataForFile),
 						));
 					}
 					else if ($result['badList'] == 'wordfence-dbl') {
 						$this->addResult(array(
 							'type' => 'file',
-							'severity' => 1,
+							'severity' => wfIssues::SEVERITY_CRITICAL,
 							'ignoreP' => $this->path . $file,
 							'ignoreC' => md5_file($this->path . $file),
-							'shortMsg' => "File contains suspected malware URL: " . esc_html($file),
-							'longMsg' => "This file contains a URL that is currently listed on Wordfence's domain blacklist. The URL is: " . esc_html($result['URL']),
+							'shortMsg' => __('File contains suspected malware URL: ', 'wordfence') . esc_html($file),
+							'longMsg' => __('This file contains a URL that is currently listed on Wordfence\'s domain blacklist. The URL is: ', 'wordfence') . esc_html($result['URL']),
 							'data' => array_merge(array(
 								'file' => $file,
 								'shac' => $record->SHAC,
 								'badURL' => $result['URL'],
 								'gsb' => 'wordfence-dbl',
 								'highSense' => $options['scansEnabled_highSense'],
+								'betaSigs' => wfConfig::get('betaThreatDefenseFeed'),
 							), $dataForFile),
 						));
 					}
@@ -539,7 +565,7 @@ class wordfenceScanner {
 		}
 		wfUtils::endProcessingFile();
 		
-		wordfence::status(4, 'info', "Finalizing malware scan results");
+		wordfence::status(4, 'info', __('Finalizing malware scan results', 'wordfence'));
 		$hashesToCheck = array();
 		foreach ($this->results as $r) {
 			$hashesToCheck[] = $r['data']['shac'];
@@ -553,12 +579,13 @@ class wordfenceScanner {
 				}
 			}
 		}
-
+		
+		if ($backtrackLimit !== false) { ini_set('pcre.backtrack_limit', $backtrackLimit); }
 		return $this->results;
 	}
 
 	protected function writeScanningStatus() {
-		wordfence::status(2, 'info', "Scanned contents of " . $this->totalFilesScanned . " additional files at " . sprintf('%.2f', ($this->totalFilesScanned / (microtime(true) - $this->startTime))) . " per second");
+		wordfence::status(2, 'info', sprintf(__('Scanned contents of %d additional files at %.2f per second', 'wordfence'), $this->totalFilesScanned, ($this->totalFilesScanned / (microtime(true) - $this->startTime))));
 	}
 
 	protected function addResult($result) {
@@ -654,11 +681,15 @@ class wordfenceScanner {
 				$canRegenerate = true;
 			}
 		}
+		
+		$localFile = realpath($this->path . $file);
+		$isWPConfig = $localFile === ABSPATH . 'wp-config.php';
 
 		$data['canDiff'] = $isKnownFile;
-		$data['canFix'] = $isKnownFile;
-		$data['canDelete'] = !$isKnownFile && !$canRegenerate && !$suppressDelete;
-		$data['canRegenerate'] = $canRegenerate;
+		$data['canFix'] = $isKnownFile && !$isWPConfig;
+		$data['canDelete'] = !$isKnownFile && !$canRegenerate && !$suppressDelete && !$isWPConfig;
+		$data['canRegenerate'] = $canRegenerate && !$isWPConfig;
+		$data['wpconfig'] = $isWPConfig;
 
 		return $data;
 	}
@@ -694,12 +725,12 @@ class wordfenceMalwareScanFile {
 	
 	public static function countRemaining() {
 		$db = self::getDB();
-		return $db->querySingle("SELECT COUNT(*) FROM " . wfDB::networkPrefix() . "wfFileMods WHERE oldMD5 != newMD5 AND knownFile = 0");
+		return $db->querySingle("SELECT COUNT(*) FROM " . wfDB::networkTable('wfFileMods') . " WHERE oldMD5 != newMD5 AND knownFile = 0");
 	}
 	
 	public static function files($limit = 500) {
 		$db = self::getDB();
-		$result = $db->querySelect("SELECT filename, filenameMD5, HEX(newMD5) AS newMD5, HEX(SHAC) AS SHAC, stoppedOnSignature, stoppedOnPosition, isSafeFile FROM " . wfDB::networkPrefix() . "wfFileMods WHERE oldMD5 != newMD5 AND knownFile = 0 limit %d", $limit);
+		$result = $db->querySelect("SELECT filename, filenameMD5, HEX(newMD5) AS newMD5, HEX(SHAC) AS SHAC, stoppedOnSignature, stoppedOnPosition, isSafeFile FROM " . wfDB::networkTable('wfFileMods') . " WHERE oldMD5 != newMD5 AND knownFile = 0 limit %d", $limit);
 		$files = array();
 		foreach ($result as $row) {
 			$files[] = new wordfenceMalwareScanFile($row['filename'], $row['filenameMD5'], $row['newMD5'], $row['SHAC'], $row['stoppedOnSignature'], $row['stoppedOnPosition'], $row['isSafeFile']);
@@ -709,7 +740,7 @@ class wordfenceMalwareScanFile {
 	
 	public static function fileForPath($file) {
 		$db = self::getDB();
-		$row = $db->querySingleRec("SELECT filename, filenameMD5, HEX(newMD5) AS newMD5, HEX(SHAC) AS SHAC, stoppedOnSignature, stoppedOnPosition, isSafeFile FROM " . wfDB::networkPrefix() . "wfFileMods WHERE filename = '%s'", $file);
+		$row = $db->querySingleRec("SELECT filename, filenameMD5, HEX(newMD5) AS newMD5, HEX(SHAC) AS SHAC, stoppedOnSignature, stoppedOnPosition, isSafeFile FROM " . wfDB::networkTable('wfFileMods') . " WHERE filename = '%s'", $file);
 		return new wordfenceMalwareScanFile($row['filename'], $row['filenameMD5'], $row['newMD5'], $row['SHAC'], $row['stoppedOnSignature'], $row['stoppedOnPosition'], $row['isSafeFile']);
 	}
 	
@@ -748,25 +779,25 @@ class wordfenceMalwareScanFile {
 	
 	public function markComplete() {
 		$db = self::getDB();
-		$db->queryWrite("UPDATE " . wfDB::networkPrefix() . "wfFileMods SET oldMD5 = newMD5 WHERE filenameMD5 = '%s'", $this->filenameMD5); //A way to mark as scanned so that if we come back from a sleep we don't rescan this one.
+		$db->queryWrite("UPDATE " . wfDB::networkTable('wfFileMods') . " SET oldMD5 = newMD5 WHERE filenameMD5 = '%s'", $this->filenameMD5); //A way to mark as scanned so that if we come back from a sleep we don't rescan this one.
 	}
 	
 	public function updateStoppedOn($signature, $position) {
 		$this->_stoppedOnSignature = $signature;
 		$this->_stoppedOnPosition = $position;
 		$db = self::getDB();
-		$db->queryWrite("UPDATE " . wfDB::networkPrefix() . "wfFileMods SET stoppedOnSignature = '%s', stoppedOnPosition = %d WHERE filenameMD5 = '%s'", $this->stoppedOnSignature, $this->stoppedOnPosition, $this->filenameMD5);
+		$db->queryWrite("UPDATE " . wfDB::networkTable('wfFileMods') . " SET stoppedOnSignature = '%s', stoppedOnPosition = %d WHERE filenameMD5 = '%s'", $this->stoppedOnSignature, $this->stoppedOnPosition, $this->filenameMD5);
 	}
 	
 	public function markSafe() {
 		$db = self::getDB();
-		$db->queryWrite("UPDATE " . wfDB::networkPrefix() . "wfFileMods SET isSafeFile = '1' WHERE filenameMD5 = '%s'", $this->filenameMD5);
+		$db->queryWrite("UPDATE " . wfDB::networkTable('wfFileMods') . " SET isSafeFile = '1' WHERE filenameMD5 = '%s'", $this->filenameMD5);
 		$this->isSafeFile = '1';
 	}
 	
 	public function markUnsafe() {
 		$db = self::getDB();
-		$db->queryWrite("UPDATE " . wfDB::networkPrefix() . "wfFileMods SET isSafeFile = '0' WHERE filenameMD5 = '%s'", $this->filenameMD5);
+		$db->queryWrite("UPDATE " . wfDB::networkTable('wfFileMods') . " SET isSafeFile = '0' WHERE filenameMD5 = '%s'", $this->filenameMD5);
 		$this->isSafeFile = '0';
 	}
 }

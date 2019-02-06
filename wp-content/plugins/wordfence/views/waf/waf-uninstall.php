@@ -58,7 +58,6 @@ if (!defined('WORDFENCE_VERSION')) { exit; }
 				<select name='serverConfiguration' id='wf-waf-server-config'>
 					<?php echo $wafPrependOptions; ?>
 				</select>
-				<p><?php _e('Please download a backup of the following files before we make the necessary changes:', 'wordfence'); ?></p>
 				<?php
 				$adminURL = network_admin_url('admin.php?page=WordfenceWAF&subpage=waf_options&action=removeAutoPrepend');
 				$wfnonce = wp_create_nonce('wfWAFRemoveAutoPrepend');
@@ -67,12 +66,21 @@ if (!defined('WORDFENCE_VERSION')) { exit; }
 					$class = preg_replace('/[^a-z0-9\-]/i', '', $optionValue);
 					$helper = new wfWAFAutoPrependHelper($optionValue, null);
 					$backups = $helper->getFilesNeededForBackup();
-					$jsonBackups = json_encode(array_map('basename', $backups));
+					$filteredBackups = array();
+					foreach ($backups as $index => $backup) {
+						if (!file_exists($backup)) {
+							continue;
+						}
+						
+						$filteredBackups[$index] = $backup;
+					}
+					$jsonBackups = json_encode(array_map('basename', $filteredBackups));
 					?>
 					<div class="wf-waf-backups wf-waf-backups-<?php echo $class; ?>" style="display: none;" data-backups="<?php echo esc_attr($jsonBackups); ?>">
+						<?php if (count($filteredBackups)): ?><p><?php _e('Please download a backup of the following files before we make the necessary changes:', 'wordfence'); ?></p><?php endif; ?>
 						<ul class="wf-waf-backup-file-list">
 							<?php
-							foreach ($backups as $index => $backup) {
+							foreach ($filteredBackups as $index => $backup) {
 								echo '<li><a class="wf-btn wf-btn-default wf-waf-backup-download" data-backup-index="' . $index . '" href="' .
 									esc_url(add_query_arg(array(
 										'downloadBackup'      => 1,
@@ -89,7 +97,7 @@ if (!defined('WORDFENCE_VERSION')) { exit; }
 		</div>
 		<div class="wf-modal-footer">
 			<ul class="wf-flex-horizontal wf-flex-full-width">
-				<li><?php _e('Once you have downloaded the files, click Continue to complete uninstallation.', 'wordfence'); ?></li>
+				<li class="wf-waf-download-instructions"><?php _e('Once you have downloaded the files, click Continue to complete uninstallation.', 'wordfence'); ?></li>
 				<li class="wf-right"><a href="#" class="wf-btn wf-btn-primary wf-btn-callout-subtle wf-disabled" id="wf-waf-uninstall-continue"><?php _e('Continue', 'wordfence'); ?></a></li>
 			</ul>
 		</div>

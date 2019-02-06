@@ -8,7 +8,7 @@
 	<title>Wordfence Cron Viewer</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 	<link rel='stylesheet' id='wordfence-main-style-css'
-	      href='<?php echo wfUtils::getBaseURL(); ?>/css/phpinfo.css?ver=<?php echo WORDFENCE_VERSION; ?>'
+	      href='<?php echo wfUtils::getBaseURL() . wfUtils::versionedAsset('css/phpinfo.css'); ?>?ver=<?php echo WORDFENCE_VERSION; ?>'
 	      type='text/css' media='all'/>
 <body>
 <h1>Wordfence Cron Viewer</h1>

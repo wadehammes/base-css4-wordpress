@@ -1,6 +1,8 @@
 <?php
 /**
- * @package WPSEO\Admin|Google_Search_Console
+ * WPSEO plugin file.
+ *
+ * @package WPSEO\Admin\Google_Search_Console
  */
 
 if ( ! class_exists( 'WP_List_Table' ) ) {
@@ -172,7 +174,7 @@ class WPSEO_GSC_Table extends WP_List_Table {
 	 * @return string
 	 */
 	protected function column_last_crawled( $item ) {
-		return date_i18n( get_option( 'date_format' ), strtotime( $item['last_crawled'] ) );
+		return date_i18n( get_option( 'date_format' ), (int) $item['last_crawled_raw'] );
 	}
 
 	/**
@@ -183,7 +185,7 @@ class WPSEO_GSC_Table extends WP_List_Table {
 	 * @return string
 	 */
 	protected function column_first_detected( $item ) {
-		return date_i18n( get_option( 'date_format' ), strtotime( $item['first_detected'] ) );
+		return date_i18n( get_option( 'date_format' ), (int) $item['first_detected_raw'] );
 	}
 
 	/**
@@ -237,11 +239,13 @@ class WPSEO_GSC_Table extends WP_List_Table {
 	 * @param int $posts_per_page Number of items per page.
 	 */
 	private function set_pagination( $total_items, $posts_per_page ) {
-		$this->set_pagination_args( array(
+		$pagination_args = array(
 			'total_items' => $total_items,
 			'total_pages' => ceil( ( $total_items / $posts_per_page ) ),
 			'per_page'    => $posts_per_page,
-		) );
+		);
+
+		$this->set_pagination_args( $pagination_args );
 	}
 
 	/**

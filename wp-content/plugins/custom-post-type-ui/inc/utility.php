@@ -6,6 +6,7 @@
  * @subpackage Utility
  * @author WebDevStudios
  * @since 1.3.0
+ * @license GPL-2.0+
  */
 
 // Exit if accessed directly.
@@ -24,8 +25,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return array Amended array of links.
  */
 function cptui_edit_plugin_list_links( $links ) {
-	// We shouldn't encourage editing our plugin directly.
-	unset( $links['edit'] );
+
+	if ( is_array( $links ) && isset( $links['edit'] ) ) {
+		// We shouldn't encourage editing our plugin directly.
+		unset( $links['edit'] );
+	}
 
 	// Add our custom links to the returned array value.
 	return array_merge( array(
@@ -108,6 +112,18 @@ function cptui_footer( $original = '' ) {
 		'<a href="http://wordpress.org/support/plugin/custom-post-type-ui" target="_blank">%s</a>',
 		__( 'Support forums', 'custom-post-type-ui' )
 	) . ' - ' .
+	sprintf(
+		'<a href="https://wordpress.org/plugins/custom-post-type-ui/reviews/" target="_blank">%s</a>',
+		sprintf(
+			// translators: Placeholder will hold `<abbr>` tag for CPTUI.
+			__( 'Review %s', 'custom-post-type-ui' ),
+			sprintf(
+				'<abbr title="%s">%s</abbr>',
+				esc_attr__( 'Custom Post Type UI', 'custom-post-type-ui' ),
+				'CPTUI'
+			)
+		)
+	) . ' - ' .
 	__( 'Follow on Twitter:', 'custom-post-type-ui' ) .
 	sprintf(
 		' %s',
@@ -123,7 +139,7 @@ add_filter( 'admin_footer_text', 'cptui_footer' );
  */
 function cptui_flush_rewrite_rules() {
 
-	if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+	if ( wp_doing_ajax() ) {
 		return;
 	}
 
@@ -230,7 +246,7 @@ function cptui_get_post_form_action( $ui = '' ) {
  * @param object $ui CPTUI Admin UI instance.
  */
 function cptui_post_form_action( $ui ) {
-	echo cptui_get_post_form_action( $ui );
+	echo esc_attr( cptui_get_post_form_action( $ui ) );
 }
 
 /**
@@ -275,6 +291,29 @@ function cptui_get_post_type_exists( $slug = '', $data = array() ) {
 	 * @param array|string $data Post type data being utilized.
 	 */
 	return apply_filters( 'cptui_get_post_type_exists', post_type_exists( $slug ), $data );
+}
+
+/**
+ * Checks if a taxonomy is already registered.
+ *
+ * @since 1.6.0
+ *
+ * @param string       $slug Taxonomy slug to check. Optional. Default empty string.
+ * @param array|string $data Taxonomy data being utilized. Optional.
+ *
+ * @return mixed
+ */
+function cptui_get_taxonomy_exists( $slug = '', $data = array() ) {
+
+	/**
+	 * Filters the boolean value for if a taxonomy exists for 3rd parties.
+	 *
+	 * @since 1.6.0
+	 *
+	 * @param string       $slug Taxonomy slug to check.
+	 * @param array|string $data Taxonomy data being utilized.
+	 */
+	return apply_filters( 'cptui_get_taxonomy_exists', taxonomy_exists( $slug ), $data );
 }
 
 /**
@@ -329,7 +368,6 @@ add_action( 'cptui_below_taxonomy_tab_menu', 'cptui_products_sidebar' );
 function cptui_newsletter_form() {
 	?>
 <!-- Begin MailChimp Signup Form -->
-<link href="//cdn-images.mailchimp.com/embedcode/classic-10_7.css" rel="stylesheet" type="text/css">
 <div id="mc_embed_signup">
 	<form action="//webdevstudios.us1.list-manage.com/subscribe/post?u=67169b098c99de702c897d63e&amp;id=9cb1c7472e" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank" novalidate>
 		<div id="mc_embed_signup_scroll">
@@ -350,17 +388,37 @@ function cptui_newsletter_form() {
 		</div>
 	</form>
 </div>
-<script type='text/javascript' src='//s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js'></script>
-<script type='text/javascript'>(function ($) {
-		window.fnames = new Array();
-		window.ftypes = new Array();
-		fnames[0] = 'EMAIL';
-		ftypes[0] = 'email';
-	}(jQuery));
-	var $mcj = jQuery.noConflict(true);</script>
 <!--End mc_embed_signup-->
 <?php
 }
+
+function cptui_mailchimp_scripts_styles() {
+	$current_screen = get_current_screen();
+
+	if ( ! is_object( $current_screen ) ) {
+		return;
+	}
+
+	$screens = array(
+		'toplevel_page_cptui_main_menu',
+		'cpt-ui_page_cptui_manage_post_types',
+		'cpt-ui_page_cptui_manage_taxonomies',
+	);
+
+	if ( ! in_array( $current_screen->base, $screens, true ) ) {
+		return;
+	}
+
+	if ( ! has_action( 'cptui_below_post_type_tab_menu' ) || ! has_action( 'cptui_below_taxonomy_tab_menu' ) ) {
+		return;
+	}
+
+	wp_enqueue_style( 'cptui-mailchimp', '//cdn-images.mailchimp.com/embedcode/classic-10_7.css' );
+	wp_enqueue_script( 'cptui-mailchimp-js', '//s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js', array(), '', true );
+	wp_add_inline_script( 'cptui-mailchimp-js', '(function ($) {window.fnames = new Array();window.ftypes = new Array();fnames[0] = "EMAIL";ftypes[0] = "email";}(jQuery));var $mcj = jQuery.noConflict(true);' );
+
+}
+add_action( 'admin_enqueue_scripts', 'cptui_mailchimp_scripts_styles' );
 
 /**
  * Fetch all set ads to be displayed.
@@ -398,19 +456,19 @@ function cptui_get_ads() {
  */
 function cptui_default_ads( $ads = array() ) {
 	$ads[] = array(
-		'url'   => 'https://pluginize.com/plugins/custom-post-type-ui-extended/ref/pluginizeaff/?campaign=cptui-sidebar-extended',
+		'url'   => 'https://pluginize.com/plugins/custom-post-type-ui-extended/?utm_source=cptui-sidebar&utm_medium=text&utm_campaign=cptui',
 		'image' => plugin_dir_url( dirname( __FILE__ ) ) . 'images/wds_ads/cptui-extended.png',
 		'text'  => 'Custom Post Type UI Extended product ad',
 	);
 
 	$ads[] = array(
-		'url'   => 'https://pluginize.com/plugins/instago/ref/pluginizeaff/?campaign=cptui-sidebar-ig',
+		'url'   => 'https://pluginize.com/plugins/instago/?utm_source=cptui-sidebar&utm_medium=text&utm_campaign=instago',
 		'image' => plugin_dir_url( dirname( __FILE__ ) ) . 'images/wds_ads/instago.png',
 		'text'  => 'InstaGo product ad',
 	);
 
 	$ads[] = array(
-		'url'   => 'https://pluginize.com/plugins/buddypages/ref/pluginizeaff/?campaign=cptui-sidebar-buddypages',
+		'url'   => 'https://pluginize.com/plugins/buddypages/?utm_source=cptui-sidebar&utm_medium=text&utm_campaign=buddypages',
 		'image' => plugin_dir_url( dirname( __FILE__ ) ) . 'images/wds_ads/buddypages.png',
 		'text'  => 'BuddyPages product ad',
 	);
@@ -426,6 +484,29 @@ function cptui_default_ads( $ads = array() ) {
 add_filter( 'cptui_ads', 'cptui_default_ads' );
 
 /**
+ * Randomize our array order.
+ * Preserves CPTUI-Extended as the first index. Self promotion, yo.
+ *
+ * @since 1.3.0
+ *
+ * @param array $ads Array of ads to show.
+ * @return array
+ */
+function cptui_randomize_ads( $ads = array() ) {
+	$new_order = array();
+	foreach ( $ads as $key => $ad ) {
+		if ( false !== strpos( $ad['url'], 'custom-post-type-ui-extended' ) ) {
+			$new_order[] = $ad;
+			unset( $ads[ $key ] );
+		}
+	}
+	shuffle( $ads );
+
+	return array_merge( $new_order, $ads );
+}
+add_filter( 'cptui_ads', 'cptui_randomize_ads', 11 );
+
+/**
  * Secondary admin notices function for use with admin_notices hook.
  *
  * Constructs admin notice HTML.
@@ -434,7 +515,7 @@ add_filter( 'cptui_ads', 'cptui_default_ads' );
  *
  * @param string $message Message to use in admin notice. Optional. Default empty string.
  * @param bool   $success Whether or not a success. Optional. Default true.
- * @return mixed|void
+ * @return mixed
  */
 function cptui_admin_notices_helper( $message = '', $success = true ) {
 
@@ -625,6 +706,17 @@ function cptui_slug_matches_taxonomy() {
 }
 
 /**
+ * Returns error message for if not providing a post type to associate taxonomy to.
+ *
+ * @since 1.6.0
+ *
+ * @return string
+ */
+function cptui_empty_cpt_on_taxonomy() {
+	return esc_html__( 'Please provide a post type to attach to.', 'custom-post-type-ui' );
+}
+
+/**
  * Returns error message for if trying to register post type with matching page slug.
  *
  * @since 1.4.0
@@ -683,7 +775,7 @@ function cptui_not_new_install( $wp_upgrader, $extras ) {
 	}
 
 	// Was CPTUI updated?
-	if ( ! in_array( 'custom-post-type-ui/custom-post-type-ui.php', $extras['plugins'] ) ) {
+	if ( ! in_array( 'custom-post-type-ui/custom-post-type-ui.php', $extras['plugins'], true ) ) {
 		return;
 	}
 
@@ -790,3 +882,23 @@ function cptui_post_type_supports( $post_type, $feature ) {
 
 	return false;
 }
+
+/**
+ * Add missing post_format taxonomy support for CPTUI post types.
+ *
+ * Addresses bug wih previewing changes for published posts with post types that
+ * have post-formats support.
+ *
+ * @since 1.5.8
+ *
+ * @param array $post_types Array of CPTUI post types.
+ */
+function cptui_published_post_format_fix( $post_types ) {
+	foreach ( $post_types as $type ) {
+		if ( in_array( 'post-formats', $type['supports'], true ) ) {
+			add_post_type_support( $type['name'], 'post-formats' );
+			register_taxonomy_for_object_type( 'post_format', $type['name'] );
+		}
+	}
+}
+add_action( 'cptui_post_register_post_types', 'cptui_published_post_format_fix' );

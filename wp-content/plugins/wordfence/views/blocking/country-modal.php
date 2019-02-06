@@ -72,7 +72,7 @@ $letters = str_split($letters);
 		<div class="wf-modal-footer">
 			<ul class="wf-flex-horizontal wf-flex-full-width">
 				<li id="wf-country-selector-count"></li>
-				<li class="wf-right"><a href="#" onclick="jQuery.wfDrawer.close(); return false;" class="wf-btn wf-btn-default wf-btn-callout-subtle" id="wf-country-selector-cancel"><?php _e('Cancel', 'wordfence'); ?></a>&nbsp;&nbsp;<a href="#" class="wf-btn wf-btn-primary wf-btn-callout-subtle" id="wf-country-selector-confirm"><?php _e('Save', 'wordfence'); ?></a></li>
+				<li class="wf-right"><a href="#" class="wf-btn wf-btn-default wf-btn-callout-subtle" id="wf-country-selector-cancel"><?php _e('Back', 'wordfence'); ?></a>&nbsp;&nbsp;<a href="#" class="wf-btn wf-btn-primary wf-btn-callout-subtle" id="wf-country-selector-confirm"><?php _e('Save', 'wordfence'); ?></a></li>
 			</ul>
 		</div>
 	</div>

@@ -12,7 +12,12 @@ $dashboard = new wfDashboard();
 <?php endif; ?>
 <?php
 if (wfOnboardingController::shouldShowAttempt3()) {
+	echo wfView::create('onboarding/disabled-overlay')->render();
 	echo wfView::create('onboarding/banner')->render();
+}
+else if (wfConfig::get('touppPromptNeeded')) {
+	echo wfView::create('gdpr/disabled-overlay')->render();
+	echo wfView::create('gdpr/banner')->render();
 }
 ?>
 <div class="wrap wordfence">
@@ -108,6 +113,12 @@ if (wfOnboardingController::shouldShowAttempt3()) {
 		<div class="wf-row">
 			<div class="wf-col-xs-12">
 				<div class="wf-block wf-active">
+					<?php if (wfConfig::get('betaThreatDefenseFeed')): ?>
+						<ul class="wf-block-banner">
+							<li><?php _e('Beta scan signatures are currently enabled. These signatures have not been fully tested yet and may cause false positives or scan stability issues on some sites.', 'wordfence'); ?></li>
+							<li><a href="#" class="wf-btn wf-btn-default" id="wf-beta-disable"><?php _e('Turn Off Beta Signatures', 'wordfence'); ?></a></li>
+						</ul>
+					<?php endif; ?>
 					<div class="wf-block-content">
 						<ul class="wf-block-list">
 							<li>
@@ -175,6 +186,14 @@ if (wfOnboardingController::shouldShowAttempt3()) {
 			  ?>
             </div>
         </div>
+		<div class="wf-row">
+			<div class="wf-col-xs-12">
+				<?php
+				echo wfView::create('scanner/site-cleaning-bottom', array(
+				))->render();
+				?>
+			</div>
+		</div>
 	</div> <!-- end container -->
 </div>
 <script type="application/javascript">
@@ -222,6 +241,7 @@ if (wfOnboardingController::shouldShowAttempt3()) {
 <?php
 echo wfView::create('scanner/site-cleaning')->render();
 echo wfView::create('scanner/site-cleaning-high-sense')->render();
+echo wfView::create('scanner/site-cleaning-beta-sigs')->render();
 echo wfView::create('scanner/no-issues')->render();
 echo wfView::create('scanner/issue-wfUpgrade')->render();
 echo wfView::create('scanner/issue-wfPluginUpgrade')->render();
@@ -236,6 +256,7 @@ echo wfView::create('scanner/issue-publiclyAccessible')->render();
 echo wfView::create('scanner/issue-coreUnknown')->render();
 echo wfView::create('scanner/issue-dnsChange')->render();
 echo wfView::create('scanner/issue-diskSpace')->render();
+echo wfView::create('scanner/issue-geoipSupport')->render();
 echo wfView::create('scanner/issue-easyPassword')->render();
 echo wfView::create('scanner/issue-commentBadURL')->render();
 echo wfView::create('scanner/issue-postBadURL')->render();
@@ -375,3 +396,18 @@ if (wfOnboardingController::willShowNewTour(wfOnboardingController::TOUR_SCAN)):
 		</div>
 	</script>
 <?php endif; ?>
+
+<script type="application/javascript">
+	(function($) {
+		$(function() {
+			$('#wf-beta-disable').on('click', function(e) {
+				e.preventDefault();
+				e.stopPropagation();
+
+				WFAD.setOption('betaThreatDefenseFeed', 0, function() {
+					window.location.reload(true);
+				});
+			});
+		});
+	})(jQuery);
+</script>

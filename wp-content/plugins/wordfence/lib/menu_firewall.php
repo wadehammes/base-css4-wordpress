@@ -1,9 +1,17 @@
 <?php
 if (!defined('WORDFENCE_VERSION')) { exit; }
 if (wfOnboardingController::shouldShowAttempt3()) {
+	echo wfView::create('onboarding/disabled-overlay')->render();
 	echo wfView::create('onboarding/banner')->render();
 }
+else if (wfConfig::get('touppPromptNeeded')) {
+	echo wfView::create('gdpr/disabled-overlay')->render();
+	echo wfView::create('gdpr/banner')->render();
+}
 ?>
+<?php if (isset($storageExceptionMessage)): ?>
+	<div class="notice notice-error"><p><?php echo $storageExceptionMessage; ?></p></div>
+<?php endif; ?>
 <div class="wrap wordfence">
 	<div class="wf-container-fluid">
 		<?php

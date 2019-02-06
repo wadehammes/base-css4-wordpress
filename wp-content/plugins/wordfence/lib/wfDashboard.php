@@ -38,7 +38,13 @@ class wfDashboard {
 	
 	public $countriesLocal;
 	public $countriesNetwork;
-	
+	public $wordfenceCentralConnected;
+	public $wordfenceCentralConnectTime;
+	public $wordfenceCentralConnectEmail;
+	public $wordfenceCentralDisconnected;
+	public $wordfenceCentralDisconnectTime;
+	public $wordfenceCentralDisconnectEmail;
+
 	public static function processDashboardResponse($data) {
 		if (isset($data['notifications'])) {
 			foreach ($data['notifications'] as $n) {
@@ -216,5 +222,13 @@ class wfDashboard {
 			}
 			$this->countriesNetwork = $networkCountries;
 		}
+
+		// Wordfence Central
+		$this->wordfenceCentralConnected = wfConfig::get('wordfenceCentralConnected');
+		$this->wordfenceCentralConnectTime = wfConfig::get('wordfenceCentralConnectTime');
+		$this->wordfenceCentralConnectEmail = wfConfig::get('wordfenceCentralConnectEmail');
+		$this->wordfenceCentralDisconnected = wfConfig::get('wordfenceCentralDisconnected');
+		$this->wordfenceCentralDisconnectTime = wfConfig::get('wordfenceCentralDisconnectTime');
+		$this->wordfenceCentralDisconnectEmail = wfConfig::get('wordfenceCentralDisconnectEmail');
 	}
 }

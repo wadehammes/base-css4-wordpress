@@ -14,10 +14,10 @@ require( dirname(__FILE__) . '/wp-load.php' );
 // Redirect to https login if forced to use SSL
 if ( force_ssl_admin() && ! is_ssl() ) {
 	if ( 0 === strpos($_SERVER['REQUEST_URI'], 'http') ) {
-		wp_redirect( set_url_scheme( $_SERVER['REQUEST_URI'], 'https' ) );
+		wp_safe_redirect( set_url_scheme( $_SERVER['REQUEST_URI'], 'https' ) );
 		exit();
 	} else {
-		wp_redirect( 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] );
+		wp_safe_redirect( 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] );
 		exit();
 	}
 }
@@ -28,18 +28,19 @@ if ( force_ssl_admin() && ! is_ssl() ) {
  * @param string   $title    Optional. WordPress login Page title to display in the `<title>` element.
  *                           Default 'Log In'.
  * @param string   $message  Optional. Message to display in header. Default empty.
- * @param WP_Error $wp_error Optional. The error to pass. Default empty.
+ * @param WP_Error $wp_error Optional. The error to pass. Default is a WP_Error instance.
  */
-function login_header( $title = 'Log In', $message = '', $wp_error = '' ) {
+function login_header( $title = 'Log In', $message = '', $wp_error = null ) {
 	global $error, $interim_login, $action;
 
 	// Don't index any of these forms
-	add_action( 'login_head', 'wp_no_robots' );
+	add_action( 'login_head', 'wp_sensitive_page_meta' );
 
 	add_action( 'login_head', 'wp_login_viewport_meta' );
 
-	if ( empty($wp_error) )
+	if ( ! is_wp_error( $wp_error ) ) {
 		$wp_error = new WP_Error();
+	}
 
 	// Shake it!
 	$shake_error_codes = array( 'empty_password', 'empty_email', 'invalid_email', 'invalidcombo', 'empty_username', 'invalid_username', 'incorrect_password' );
@@ -252,6 +253,7 @@ function login_footer($input_id = '') {
 		/* translators: %s: site title */
 		printf( _x( '&larr; Back to %s', 'site' ), get_bloginfo( 'title', 'display' ) );
 	?></a></p>
+	<?php the_privacy_policy_link( '<div class="privacy-policy-page-link">', '</div>' ); ?>
 	<?php endif; ?>
 
 	</div>
@@ -413,7 +415,7 @@ if ( isset($_GET['key']) )
 	$action = 'resetpass';
 
 // validate action so as to default to the login screen
-if ( !in_array( $action, array( 'postpass', 'logout', 'lostpassword', 'retrievepassword', 'resetpass', 'rp', 'register', 'login' ), true ) && false === has_filter( 'login_form_' . $action ) )
+if ( !in_array( $action, array( 'postpass', 'logout', 'lostpassword', 'retrievepassword', 'resetpass', 'rp', 'register', 'login', 'confirmaction' ), true ) && false === has_filter( 'login_form_' . $action ) )
 	$action = 'login';
 
 nocache_headers();
@@ -434,9 +436,6 @@ $secure = ( 'https' === parse_url( wp_login_url(), PHP_URL_SCHEME ) );
 setcookie( TEST_COOKIE, 'WP Cookie check', 0, COOKIEPATH, COOKIE_DOMAIN, $secure );
 if ( SITECOOKIEPATH != COOKIEPATH )
 	setcookie( TEST_COOKIE, 'WP Cookie check', 0, SITECOOKIEPATH, COOKIE_DOMAIN, $secure );
-
-$lang            = ! empty( $_GET['wp_lang'] ) ? sanitize_text_field( $_GET['wp_lang'] ) : '';
-$switched_locale = switch_to_locale( $lang );
 
 /**
  * Fires when the login form is initialized.
@@ -498,10 +497,6 @@ case 'postpass' :
 	}
 	setcookie( 'wp-postpass_' . COOKIEHASH, $hasher->HashPassword( wp_unslash( $_POST['post_password'] ) ), $expire, COOKIEPATH, COOKIE_DOMAIN, $secure );
 
-	if ( $switched_locale ) {
-	    restore_previous_locale();
-	}
-
 	wp_safe_redirect( wp_get_referer() );
 	exit();
 
@@ -517,10 +512,6 @@ case 'logout' :
 	} else {
 		$redirect_to = 'wp-login.php?loggedout=true';
 		$requested_redirect_to = '';
-	}
-
-	if ( $switched_locale ) {
-	    restore_previous_locale();
 	}
 
 	/**
@@ -615,10 +606,6 @@ endif;
 
 <?php
 login_footer('user_login');
-
-if ( $switched_locale ) {
-    restore_previous_locale();
-}
 
 break;
 
@@ -745,10 +732,6 @@ endif;
 <?php
 login_footer('user_pass');
 
-if ( $switched_locale ) {
-    restore_previous_locale();
-}
-
 break;
 
 case 'register' :
@@ -832,11 +815,44 @@ case 'register' :
 <?php
 login_footer('user_login');
 
-if ( $switched_locale ) {
-    restore_previous_locale();
-}
-
 break;
+
+case 'confirmaction' :
+	if ( ! isset( $_GET['request_id'] ) ) {
+		wp_die( __( 'Invalid request.' ) );
+	}
+
+	$request_id = (int) $_GET['request_id'];
+
+	if ( isset( $_GET['confirm_key'] ) ) {
+		$key    = sanitize_text_field( wp_unslash( $_GET['confirm_key'] ) );
+		$result = wp_validate_user_request_key( $request_id, $key );
+	} else {
+		$result = new WP_Error( 'invalid_key', __( 'Invalid key' ) );
+	}
+
+	if ( is_wp_error( $result ) ) {
+		wp_die( $result );
+	}
+	
+	/**
+	 * Fires an action hook when the account action has been confirmed by the user.
+	 * 
+	 * Using this you can assume the user has agreed to perform the action by
+	 * clicking on the link in the confirmation email.
+	 * 
+	 * After firing this action hook the page will redirect to wp-login a callback
+	 * redirects or exits first.
+	 *
+	 * @param int $request_id Request ID.
+	 */
+	do_action( 'user_request_action_confirmed', $request_id );
+
+	$message = _wp_privacy_account_request_confirmed_message( $request_id );
+
+	login_header( __( 'User action confirmed.' ), $message );
+	login_footer();
+	exit;
 
 case 'login' :
 default:
@@ -1079,10 +1095,6 @@ try {
 
 <?php
 login_footer();
-
-if ( $switched_locale ) {
-    restore_previous_locale();
-}
 
 break;
 } // end action switch

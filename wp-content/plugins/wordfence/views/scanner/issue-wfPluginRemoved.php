@@ -19,7 +19,17 @@ echo wfView::create('scanner/issue-base', array(
 	),
 	'detailControls' => array(
 		'<a href="#" class="wf-btn wf-btn-default wf-btn-callout-subtle wf-issue-control-mark-fixed">' . __('Mark as Fixed', 'wordfence') . '</a>',
-		'<a href="' . esc_url(network_admin_url('plugins.php')) . '" class="wf-btn wf-btn-default wf-btn-callout-subtle wf-issue-control-manage-plugins">' . __('Manage Plugins', 'wordfence') . '</a>',
-	)
+		'<a href="' . esc_url(wfUtils::wpAdminURL('plugins.php')) . '" class="wf-btn wf-btn-default wf-btn-callout-subtle wf-issue-control-manage-plugins">' . __('Manage Plugins', 'wordfence') . '</a>',
+	),
+	'textOutput' => (isset($textOutput) ? $textOutput : null),
+	'textOutputDetailPairs' => array(
+		__('Plugin Name', 'wordfence') => '$data.Name',
+		__('Current Plugin Version', 'wordfence') => '$data.Version',
+		null,
+		__('Details', 'wordfence') => '$longMsg',
+		null,
+		__('Plugin URL', 'wordfence') => '$data.PluginURI',
+		__('Vulnerability Information', 'wordfence') => '$data.vulnerabilityLink',
+	),
 ))->render(); 
 

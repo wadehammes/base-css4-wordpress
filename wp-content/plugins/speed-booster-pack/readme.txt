@@ -1,16 +1,18 @@
 === Speed Booster Pack ===
-Contributors: machothemes
-Donate link:
-Tags: speed, optimization, performance, scripts to the footer, google libraries, font awesome cdn, defer parsing of javascript, remove query strings, lazy load images, gtmetrix, google pageSpeed, yslow, eliminate external render-blocking javascript and css, compression, async, render-blocking css
-Requires at least: 3.6
-Tested up to: 4.9
-Stable tag: 3.6.1
-License: GPLv2 or later
-License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Contributors: machothemes, silkalns
+Tags: speed, optimization, performance, scripts to the footer, google libraries, font awesome cdn, defer parsing of javascript, remove query strings, gtmetrix, google pageSpeed, yslow, compression
+Requires at least: 4.6
+Tested up to: 5.0
+Requires PHP: 5.6
+Stable tag: 3.7.6
+License: GPLv3 or later
+License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
 A light, frequently updated and easy to use plugin to make your site load faster and score higher on Google PSI.
 
 == Description ==
+
+**Speed Booster Pack** is a standalone plugin built, maintained & operated by the friendly folks over at [MachoThemes](https://www.machothemes.com/)
 
 **Speed Booster Pack is a lightweight, frequently updated, easy to use and well supported plugin which allows you to improve your website's loading speed.**
 
@@ -28,7 +30,6 @@ Speed Booster Pack is a plugin that can help you speed up your website by tweaki
 * **Load CSS asynchronously** to render your page more quickly and get a higher score on the major speed testing services.
 * **Minify and inline all CSS styles and move them to the footer** to eliminate external render-blocking CSS and optimize CSS delivery.
 * ** Minify HTML and JavaScript to increase your page load speed.
-* **Lazy loads images** to improve page load times and save bandwidth.
 * **Change image compression level** to keep file sizes smaller; Change JPG quality.
 * **Load javascript files from Google Libraries** rather than serving them from your WordPress install directly, to reduce latency, increase parallelism and improve browser caching.
 * **Defer parsing of javascript files** to reduce the initial load time of your page.
@@ -46,9 +47,6 @@ Speed Booster Pack is a plugin that can help you speed up your website by tweaki
 
 * For complete usage instructions visit [Plugin Documentation](http://docs.machothemes.com/category/118-speed-booster)
 
-A short video about how Speed Booster pack can help actually increase a website's score in Google PageSpeed Insights:
-
-https://www.youtube.com/watch?v=u0G6pk2mX4M
 
 Future Development:
 
@@ -62,7 +60,7 @@ Future Development:
 * [Simple Author Box](http://wordpress.org/plugins/simple-author-box/) - A simple but cool author box with social icons.
 
 **About us:**
-We are a young team of WordPress aficionados who love building WordPress plugins & <a href="https://www.machothemes.com/" target="_blank" title="Premium WordPress themes">Premium WordPress themes</a> over on our theme shop. We’re also blogging and wish to help our users find the <a href="https://www.machothemes.com/blog/best-cheap-wordpress-hosting/" target="_blank" title="Best Cheap WordPress Hosting">Best Cheap WordPress Hosting</a> available on the market. Check out our blog. 
+We are a young team of WordPress aficionados who love building WordPress plugins & <a href="https://www.machothemes.com/" target="_blank" title="Premium WordPress themes">Premium WordPress themes</a> over on our theme shop. We’re also blogging and wish to help our users find the <a href="https://www.machothemes.com/blog/cheapest-wordpress-hosting/" target="_blank" title="Best Cheap WordPress Hosting">Best Cheap WordPress Hosting</a> available on the market. Check out our blog.
 
 
 == Installation ==
@@ -77,6 +75,68 @@ We are a young team of WordPress aficionados who love building WordPress plugins
 1. Plugin options page, simple view (v2.5)
 
 == Changelog ==
+
+= 3.7.6 =
+* Improved admin UI
+* Added "Disable Self Pingbacks" option
+* Added "Disable Dashicons" option
+* Added "Disable Google Maps" option
+* Added "Disable Heartbeat" option
+* Added "Heartbeat frequency" option
+* Added "Autosave interval" option
+* Added "Remove REST API Links" option
+* Added "Limit Post Revision" option
+* Added CDN options
+* Added Google Analytics options
+* Removed "Remove RSD(Really Simple Discovery) Link" option
+* Removed "Image compression level" option
+
+= 3.7.5 =
+* removed uninstall feedback
+
+= 3.7.4 =
+* minor backend tweaks - notice
+* added language files
+
+= 3.7.3 =
+* minor backend tweaks
+
+= 3.7.2 =
+* minor tweaks & version bump
+* removed ShortPixel aff integration
+
+= 3.7.1 =
+* Temporarily remove lazyLoad as the bundled JS files, namely, CrazyLazy don't seem to be working properly with the latest jQuery version.
+
+= 3.7 =
+
+* Bumped FontAwesome bundled CSS version from 4.1 -> 4.7 and changed to using MaxCDN
+* (Hopefully) fixed the issue affecting relative/absolute paths when using minify CSS
+* Wrongfully used escape functions
+* Should use wp_scripts-> done instead of wp_scripts->queue
+* Update Use Google Libraries 3rd party dependency
+* Can't be fully translated because of one wrong text-domain string
+* Change UI to WordPress Core UI
+* Added plugin uninstall feedback
+* Added plugin (dedicated) support tab && moved plugin feedback section only to support tab
+* Added tooltips to all fields
+* Re-worked the page load / site stats bar & added a bit more info
+* Removed the old way of handling the uninstall hook & deletion of the sbp_integer variable from SBP when you uninstall it. In case you change your mind & reactivate the plugin, your former image compression value's there waiting for you.
+* Addressed a small issue with the "Exclude scripts from being moved to footer" display
+* Made all of the plugin's link send to MachoTheme's docs instead of Tiguan
+* Updated jQuery UI CSS to latest version & included the PNG sprites that come by default with jQuery UI, eliminating some back-end "asset not found" errors
+* Removed unused files
+* Added feature: "Remove Emoji scripts"
+* Added feature: "Disable XML-RPC" pings
+* Added default values. Now it's even easier to get speed boosts without actually having to toggle stuff
+* Removed po/mo files from SBP since translations are now handled here: https://translate.wordpress.org/projects/wp-plugins/speed-booster-pack
+* jQuery will always be enqueued in the header, as a security/fallback measure.
+* Fixed the way "exclude scripts from footer" works. It's now usable and only requires the script handle. Added backwards compat as well
+* Fixed the way script deferring works, it's now actually usable. Introduced a filter: sbp_exclude_defer_scripts so users can exclude more than 4 scripts from being deferred
+* Rewrote the way the plugin was handling removal of query strings from assets
+* Automatically exclude certain known CSS assets from being async/minifed and/or moved from header (ex: dashicons / admin-bar)
+* Full list of changes for v3.7, here: https://github.com/MachoThemes/speed-booster-pack/milestone/1?closed=1
+
 = 3.6.1 =
  * Added a section for feedback in the plugin's dashboard
 

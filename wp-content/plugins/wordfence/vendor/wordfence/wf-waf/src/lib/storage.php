@@ -1,4 +1,5 @@
 <?php
+if (defined('WFWAF_VERSION') && !defined('WFWAF_RUN_COMPLETE')) {
 
 interface wfWAFStorageInterface {
 	const IP_BLOCKS_ALL = PHP_INT_MAX;
@@ -49,13 +50,15 @@ interface wfWAFStorageInterface {
 	
 	public function purgeIPBlocks($types = wfWAFStorageInterface::IP_BLOCKS_ALL);
 
-	public function getConfig($key, $default = null);
+	public function getConfig($key, $default = null, $category = '');
 
-	public function setConfig($key, $value);
+	public function setConfig($key, $value, $category = '');
 
-	public function unsetConfig($key);
+	public function unsetConfig($key, $category = '');
 
 	public function uninstall();
+	
+	//optional public function fileList();
 
 	public function isInLearningMode();
 
@@ -64,4 +67,5 @@ interface wfWAFStorageInterface {
 	public function getRulesDSLCacheFile();
 
 	public function isAttackDataFull();
+}
 }

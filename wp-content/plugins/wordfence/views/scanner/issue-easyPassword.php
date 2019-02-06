@@ -17,5 +17,13 @@ echo wfView::create('scanner/issue-base', array(
 	),
 	'detailControls' => array(
 		'<a href="#" class="wf-btn wf-btn-default wf-btn-callout-subtle wf-issue-control-mark-fixed">' . __('Mark as Fixed', 'wordfence') . '</a>',
-	)
+	),
+	'textOutput' => (isset($textOutput) ? $textOutput : null),
+	'textOutputDetailPairs' => array(
+		__('Login Name', 'wordfence') => '$data.user_login',
+		__('User Email', 'wordfence') => '$data.user_email',
+		__('Full Name', 'wordfence') => '$data.first_name $data.last_name',
+		null,
+		__('Details', 'wordfence') => '$longMsg',
+	),
 ))->render();

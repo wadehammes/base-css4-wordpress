@@ -703,7 +703,7 @@ function get_bloginfo( $show = '', $filter = 'raw' ) {
 			 */
 			$output = __( 'html_lang_attribute' );
 			if ( 'html_lang_attribute' === $output || preg_match( '/[^a-zA-Z0-9-]/', $output ) ) {
-				$output = is_admin() ? get_user_locale() : get_locale();
+				$output = determine_locale();
 				$output = str_replace( '_', '-', $output );
 			}
 			break;
@@ -2813,6 +2813,24 @@ function wp_no_robots() {
 }
 
 /**
+ * Display a noindex,noarchive meta tag and referrer origin-when-cross-origin meta tag.
+ *
+ * Outputs a noindex,noarchive meta tag that tells web robots not to index or cache the page content.
+ * Outputs a referrer origin-when-cross-origin meta tag that tells the browser not to send the full
+ * url as a referrer to other sites when cross-origin assets are loaded.
+ *
+ * Typical usage is as a wp_head callback. add_action( 'wp_head', 'wp_sensitive_page_meta' );
+ *
+ * @since 5.0.0
+ */
+function wp_sensitive_page_meta() {
+	?>
+	<meta name='robots' content='noindex,noarchive' />
+	<meta name='referrer' content='strict-origin-when-cross-origin' />
+	<?php
+}
+
+/**
  * Display site icon meta tags.
  *
  * @since 4.3.0
@@ -2885,7 +2903,7 @@ function wp_resource_hints() {
 	 * The path is removed in the foreach loop below.
 	 */
 	/** This filter is documented in wp-includes/formatting.php */
-	$hints['dns-prefetch'][] = apply_filters( 'emoji_svg_url', 'https://s.w.org/images/core/emoji/2.3/svg/' );
+	$hints['dns-prefetch'][] = apply_filters( 'emoji_svg_url', 'https://s.w.org/images/core/emoji/11/svg/' );
 
 	foreach ( $hints as $relation_type => $urls ) {
 		$unique_urls = array();
@@ -3029,7 +3047,7 @@ function user_can_richedit() {
 			if ( $is_safari ) {
 				$wp_rich_edit = ! wp_is_mobile() || ( preg_match( '!AppleWebKit/(\d+)!', $_SERVER['HTTP_USER_AGENT'], $match ) && intval( $match[1] ) >= 534 );
 			} elseif ( $is_IE ) {
-				$wp_rich_edit = ( strpos( $_SERVER['HTTP_USER_AGENT'], 'MSIE ' ) === false );
+				$wp_rich_edit = ( strpos( $_SERVER['HTTP_USER_AGENT'], 'Trident/7.0;' ) !== false );
 			} elseif ( $is_gecko || $is_chrome || $is_edge || ( $is_opera && !wp_is_mobile() ) ) {
 				$wp_rich_edit = true;
 			}
@@ -3121,7 +3139,9 @@ function wp_enqueue_editor() {
  * @since 4.9.0
  *
  * @see wp_enqueue_editor()
+ * @see wp_get_code_editor_settings();
  * @see _WP_Editors::parse_settings()
+ *
  * @param array $args {
  *     Args.
  *
@@ -3134,13 +3154,100 @@ function wp_enqueue_editor() {
  *     @type array    $jshint     JSHint rule overrides.
  *     @type array    $htmlhint   JSHint rule overrides.
  * }
- * @returns array|false Settings for the enqueued code editor, or false if the editor was not enqueued .
+ * @return array|false Settings for the enqueued code editor, or false if the editor was not enqueued.
  */
 function wp_enqueue_code_editor( $args ) {
 	if ( is_user_logged_in() && 'false' === wp_get_current_user()->syntax_highlighting ) {
 		return false;
 	}
 
+	$settings = wp_get_code_editor_settings( $args );
+
+	if ( empty( $settings ) || empty( $settings['codemirror'] ) ) {
+		return false;
+	}
+
+	wp_enqueue_script( 'code-editor' );
+	wp_enqueue_style( 'code-editor' );
+
+	if ( isset( $settings['codemirror']['mode'] ) ) {
+		$mode = $settings['codemirror']['mode'];
+		if ( is_string( $mode ) ) {
+			$mode = array(
+				'name' => $mode,
+			);
+		}
+
+		if ( ! empty( $settings['codemirror']['lint'] ) ) {
+			switch ( $mode['name'] ) {
+				case 'css':
+				case 'text/css':
+				case 'text/x-scss':
+				case 'text/x-less':
+					wp_enqueue_script( 'csslint' );
+					break;
+				case 'htmlmixed':
+				case 'text/html':
+				case 'php':
+				case 'application/x-httpd-php':
+				case 'text/x-php':
+					wp_enqueue_script( 'htmlhint' );
+					wp_enqueue_script( 'csslint' );
+					wp_enqueue_script( 'jshint' );
+					if ( ! current_user_can( 'unfiltered_html' ) ) {
+						wp_enqueue_script( 'htmlhint-kses' );
+					}
+					break;
+				case 'javascript':
+				case 'application/ecmascript':
+				case 'application/json':
+				case 'application/javascript':
+				case 'application/ld+json':
+				case 'text/typescript':
+				case 'application/typescript':
+					wp_enqueue_script( 'jshint' );
+					wp_enqueue_script( 'jsonlint' );
+					break;
+			}
+		}
+	}
+
+	wp_add_inline_script( 'code-editor', sprintf( 'jQuery.extend( wp.codeEditor.defaultSettings, %s );', wp_json_encode( $settings ) ) );
+
+	/**
+	 * Fires when scripts and styles are enqueued for the code editor.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @param array $settings Settings for the enqueued code editor.
+	 */
+	do_action( 'wp_enqueue_code_editor', $settings );
+
+	return $settings;
+}
+
+/**
+ * Generate and return code editor settings.
+ *
+ * @since 5.0.0
+ *
+ * @see wp_enqueue_code_editor()
+ *
+ * @param array $args {
+ *     Args.
+ *
+ *     @type string   $type       The MIME type of the file to be edited.
+ *     @type string   $file       Filename to be edited. Extension is used to sniff the type. Can be supplied as alternative to `$type` param.
+ *     @type WP_Theme $theme      Theme being edited when on theme editor.
+ *     @type string   $plugin     Plugin being edited when on plugin editor.
+ *     @type array    $codemirror Additional CodeMirror setting overrides.
+ *     @type array    $csslint    CSSLint rule overrides.
+ *     @type array    $jshint     JSHint rule overrides.
+ *     @type array    $htmlhint   JSHint rule overrides.
+ * }
+ * @return array|false Settings for the code editor.
+ */
+function wp_get_code_editor_settings( $args ) {
 	$settings = array(
 		'codemirror' => array(
 			'indentUnit' => 4,
@@ -3155,6 +3262,8 @@ function wp_enqueue_code_editor( $args ) {
 				'Ctrl-/' => 'toggleComment',
 				'Cmd-/' => 'toggleComment',
 				'Alt-F' => 'findPersistent',
+				'Ctrl-F'     => 'findPersistent',
+				'Cmd-F'      => 'findPersistent',
 			),
 			'direction' => 'ltr', // Code is shown in LTR even in RTL languages.
 			'gutters' => array(),
@@ -3197,7 +3306,7 @@ function wp_enqueue_code_editor( $args ) {
 		'htmlhint' => array(
 			'tagname-lowercase' => true,
 			'attr-lowercase' => true,
-			'attr-value-double-quotes' => true,
+			'attr-value-double-quotes' => false,
 			'doctype-first' => false,
 			'tag-pair' => true,
 			'spec-char-escape' => true,
@@ -3429,7 +3538,7 @@ function wp_enqueue_code_editor( $args ) {
 	 *
 	 * @param array $settings The array of settings passed to the code editor. A falsey value disables the editor.
 	 * @param array $args {
-	 *     Args passed when calling `wp_enqueue_code_editor()`.
+	 *     Args passed when calling `get_code_editor_settings()`.
 	 *
 	 *     @type string   $type       The MIME type of the file to be edited.
 	 *     @type string   $file       Filename being edited.
@@ -3441,69 +3550,7 @@ function wp_enqueue_code_editor( $args ) {
 	 *     @type array    $htmlhint   JSHint rule overrides.
 	 * }
 	 */
-	$settings = apply_filters( 'wp_code_editor_settings', $settings, $args );
-
-	if ( empty( $settings ) || empty( $settings['codemirror'] ) ) {
-		return false;
-	}
-
-	wp_enqueue_script( 'code-editor' );
-	wp_enqueue_style( 'code-editor' );
-
-	if ( isset( $settings['codemirror']['mode'] ) ) {
-		$mode = $settings['codemirror']['mode'];
-		if ( is_string( $mode ) ) {
-			$mode = array(
-				'name' => $mode,
-			);
-		}
-
-		if ( ! empty( $settings['codemirror']['lint'] ) ) {
-			switch ( $mode['name'] ) {
-				case 'css':
-				case 'text/css':
-				case 'text/x-scss':
-				case 'text/x-less':
-					wp_enqueue_script( 'csslint' );
-					break;
-				case 'htmlmixed':
-				case 'text/html':
-				case 'php':
-				case 'application/x-httpd-php':
-				case 'text/x-php':
-					wp_enqueue_script( 'htmlhint' );
-					wp_enqueue_script( 'csslint' );
-					wp_enqueue_script( 'jshint' );
-					if ( ! current_user_can( 'unfiltered_html' ) ) {
-						wp_enqueue_script( 'htmlhint-kses' );
-					}
-					break;
-				case 'javascript':
-				case 'application/ecmascript':
-				case 'application/json':
-				case 'application/javascript':
-				case 'application/ld+json':
-				case 'text/typescript':
-				case 'application/typescript':
-					wp_enqueue_script( 'jshint' );
-					wp_enqueue_script( 'jsonlint' );
-					break;
-			}
-		}
-	}
-
-	wp_add_inline_script( 'code-editor', sprintf( 'jQuery.extend( wp.codeEditor.defaultSettings, %s );', wp_json_encode( $settings ) ) );
-
-	/**
-	 * Fires when scripts and styles are enqueued for the code editor.
-	 *
-	 * @since 4.9.0
-	 *
-	 * @param array $settings Settings for the enqueued code editor.
-	 */
-	do_action( 'wp_enqueue_code_editor', $settings );
-
-	return $settings;
+	return apply_filters( 'wp_code_editor_settings', $settings, $args );
 }
 
 /**
@@ -4112,25 +4159,25 @@ function get_the_generator( $type = '' ) {
 
 	switch ( $type ) {
 		case 'html':
-			$gen = '<meta name="generator" content="WordPress ' . get_bloginfo( 'version' ) . '">';
+			$gen = '<meta name="generator" content="WordPress ' . esc_attr( get_bloginfo( 'version' ) ) . '">';
 			break;
 		case 'xhtml':
-			$gen = '<meta name="generator" content="WordPress ' . get_bloginfo( 'version' ) . '" />';
+			$gen = '<meta name="generator" content="WordPress ' . esc_attr( get_bloginfo( 'version' ) ) . '" />';
 			break;
 		case 'atom':
-			$gen = '<generator uri="https://wordpress.org/" version="' . get_bloginfo_rss( 'version' ) . '">WordPress</generator>';
+			$gen = '<generator uri="https://wordpress.org/" version="' . esc_attr( get_bloginfo_rss( 'version' ) ) . '">WordPress</generator>';
 			break;
 		case 'rss2':
-			$gen = '<generator>https://wordpress.org/?v=' . get_bloginfo_rss( 'version' ) . '</generator>';
+			$gen = '<generator>' . esc_url_raw( 'https://wordpress.org/?v=' . get_bloginfo_rss( 'version' ) ) . '</generator>';
 			break;
 		case 'rdf':
-			$gen = '<admin:generatorAgent rdf:resource="https://wordpress.org/?v=' . get_bloginfo_rss( 'version' ) . '" />';
+			$gen = '<admin:generatorAgent rdf:resource="' . esc_url_raw( 'https://wordpress.org/?v=' . get_bloginfo_rss( 'version' ) ) . '" />';
 			break;
 		case 'comment':
-			$gen = '<!-- generator="WordPress/' . get_bloginfo( 'version' ) . '" -->';
+			$gen = '<!-- generator="WordPress/' . esc_attr( get_bloginfo( 'version' ) ) . '" -->';
 			break;
 		case 'export':
-			$gen = '<!-- generator="WordPress/' . get_bloginfo_rss('version') . '" created="'. date('Y-m-d H:i') . '" -->';
+			$gen = '<!-- generator="WordPress/' . esc_attr( get_bloginfo_rss( 'version' ) ) . '" created="' . date( 'Y-m-d H:i' ) . '" -->';
 			break;
 	}
 

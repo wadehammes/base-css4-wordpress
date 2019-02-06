@@ -206,6 +206,36 @@ if ( ! class_exists( 'EWWWIO_Background_Process' ) ) {
 		}
 
 		/**
+		 * Count items in queue.
+		 *
+		 * @return bool
+		 */
+		public function count_queue() {
+			global $wpdb;
+
+			$key = $wpdb->esc_like( $this->identifier . '_batch_' ) . '%';
+
+			$queues = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT option_value
+					FROM $wpdb->options
+					WHERE option_name LIKE %s AND option_value != ''",
+					$key
+				),
+				ARRAY_A
+			);
+			if ( empty( $queues ) ) {
+				return 0;
+			}
+			$queued = array();
+			foreach ( $queues as $queue ) {
+				$queue  = maybe_unserialize( $queue['option_value'] );
+				$queued = array_merge( $queued, $queue );
+			}
+			return count( $queued );
+		}
+
+		/**
 		 * Is queue empty
 		 *
 		 * @return bool
@@ -215,11 +245,14 @@ if ( ! class_exists( 'EWWWIO_Background_Process' ) ) {
 
 			$key = $wpdb->esc_like( $this->identifier . '_batch_' ) . '%';
 
-			$count = $wpdb->get_var( $wpdb->prepare( "
-				SELECT COUNT(*)
-				FROM $wpdb->options
-				WHERE option_name LIKE %s AND option_value != ''
-			", $key ) );
+			$count = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*)
+					FROM $wpdb->options
+					WHERE option_name LIKE %s AND option_value != ''",
+					$key
+				)
+			);
 
 			return ( $count > 0 ) ? false : true;
 		}
@@ -459,7 +492,7 @@ if ( ! class_exists( 'EWWWIO_Background_Process' ) ) {
 			$interval = apply_filters( $this->identifier . '_cron_interval', 5 );
 
 			if ( property_exists( $this, 'cron_interval' ) ) {
-				$interval = apply_filters( $this->identifier . '_cron_interval', $this->cron_interval_identifier );
+				$interval = apply_filters( $this->identifier . '_cron_interval', $this->cron_interval );
 			}
 
 			// Adds every 5 minutes to the existing schedules.

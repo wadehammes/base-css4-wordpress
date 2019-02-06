@@ -10,7 +10,7 @@ echo wfView::create('scanner/issue-base', array(
 	'summaryControls' => array(wfView::create('scanner/issue-control-repair'), wfView::create('scanner/issue-control-ignore', array('ignoreP' => __('Always Ignore', 'wordfence'), 'ignoreC' => __('Ignore Until File Changes', 'wordfence'))), wfView::create('scanner/issue-control-show-details')),
 	'detailPairs' => array(
 		__('Filename', 'wordfence') => '<span class="wf-split-word-xs">${data.file}</span>',
-		__('File Type', 'wordfence') => '{{if data.cType}}${WFAD.ucfirst(data.cType)}{{else}}' . __('Not a core, theme or plugin file', 'wordfence') . '.{{/if}}',
+		__('File Type', 'wordfence') => '{{if data.cType}}${WFAD.ucfirst(data.cType)}{{else}}' . __('Not a core, theme, or plugin file from wordpress.org', 'wordfence') . '.{{/if}}',
 		__('Bad URL', 'wordfence') => array('(typeof data.badURL !== \'undefined\') && data.badURL', '${data.badURL}'),
 		null,
 		__('Details', 'wordfence') => '{{html longMsg}}',
@@ -20,5 +20,14 @@ echo wfView::create('scanner/issue-base', array(
 		'{{if data.canDiff}}<a target="_blank" class="wf-btn wf-btn-default wf-btn-callout-subtle" rel="noopener noreferrer" href="${WFAD.makeDiffLink(data)}">' . __('View Differences', 'wordfence') . '</a>{{/if}}',
 		'{{if data.canDelete}}<a href="#" class="wf-btn wf-btn-default wf-btn-callout-subtle wf-issue-control-delete-file">' . __('Delete File', 'wordfence') . '</a>{{/if}}',
 		'<a href="#" class="wf-btn wf-btn-default wf-btn-callout-subtle wf-issue-control-mark-fixed">' . __('Mark as Fixed', 'wordfence') . '</a>',
-	)
+	),
+	'textOutput' => (isset($textOutput) ? $textOutput : null),
+	'textOutputDetailPairs' => array(
+		__('Filename', 'wordfence') => '$data.file',
+		__('File Type', 'wordfence') => '$data.ucType',
+		__('File Type', 'wordfence') => array('!$data.ucType', 'Not a core, theme, or plugin file from wordpress.org'),
+		__('Bad URL', 'wordfence') => '$data.badURL',
+		null,
+		__('Details', 'wordfence') => '$longMsg',
+	),
 ))->render();

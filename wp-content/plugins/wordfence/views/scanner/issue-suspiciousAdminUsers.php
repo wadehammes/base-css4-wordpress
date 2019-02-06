@@ -15,5 +15,9 @@ echo wfView::create('scanner/issue-base', array(
 		'<a href="#" class="wf-btn wf-btn-default wf-btn-callout-subtle" onclick="WFAD.deleteAdminUser(\'${id}\'); return false;">' . __('Delete User', 'wordfence') . '</a>',
 		'<a href="#" class="wf-btn wf-btn-default wf-btn-callout-subtle" onclick="WFAD.revokeAdminUser(\'${id}\'); return false;">' . __('Revoke Capabilities', 'wordfence') . '</a>',
 		'<a href="#" class="wf-btn wf-btn-default wf-btn-callout-subtle wf-issue-control-mark-fixed">' . __('Mark as Fixed', 'wordfence') . '</a>',
-	)
+	),
+	'textOutput' => (isset($textOutput) ? $textOutput : null),
+	'textOutputDetailPairs' => array(
+		__('Details', 'wordfence') => '$longMsg',
+	),
 ))->render();

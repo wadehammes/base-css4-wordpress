@@ -18,9 +18,17 @@ class Cdnfsd_CacheFlush {
 	/**
 	 * Purges everything from CDNs that supports it
 	 */
-	static public function w3tc_flush_all( $extras = array() ) {
+	static public function w3tc_flush_all( $extras = null ) {
 		if ( isset( $extras['only'] ) && $extras['only'] != 'cdn' )
 			return;
+
+		$config = Dispatcher::config();
+		if ( $config->get_boolean( 'cdn.flush_manually' ) ) {
+			// in this mode flush only on purge button clicks
+			if ( !isset( $extras['ui_action'] ) ) {
+				return true;
+			}
+		}
 
 		$o = Dispatcher::component( 'Cdnfsd_CacheFlush' );
 
@@ -36,7 +44,7 @@ class Cdnfsd_CacheFlush {
 	 * @param integer $post_id
 	 * @return boolean
 	 */
-	static public function w3tc_flush_post( $post_id ) {
+	static public function w3tc_flush_post( $post_id, $extras = null ) {
 		if ( !$post_id ) {
 			$post_id = Util_Environment::detect_post_id();
 		}
@@ -45,6 +53,13 @@ class Cdnfsd_CacheFlush {
 			return false;
 
 		$config = Dispatcher::config();
+		if ( $config->get_boolean( 'cdn.flush_manually' ) ) {
+			// in this mode flush only on purge button clicks
+			if ( !isset( $extras['ui_action'] ) ) {
+				return true;
+			}
+		}
+
 		$full_urls = array();
 		$post = null;
 		$terms = array();
@@ -181,7 +196,15 @@ class Cdnfsd_CacheFlush {
 	 *
 	 * @param unknown $url
 	 */
-	static public function w3tc_flush_url( $url ) {
+	static public function w3tc_flush_url( $url, $extras = null ) {
+		$config = Dispatcher::config();
+		if ( $config->get_boolean( 'cdn.flush_manually' ) ) {
+			// in this mode flush only on purge button clicks
+			if ( !isset( $extras['ui_action'] ) ) {
+				return true;
+			}
+		}
+
 		$o = Dispatcher::component( 'Cdnfsd_CacheFlush' );
 		$o->queued_urls[$url] = '*';
 
@@ -194,12 +217,18 @@ class Cdnfsd_CacheFlush {
 	static public function w3tc_flush_execute_delayed_operations( $actions_made ) {
 		$o = Dispatcher::component( 'Cdnfsd_CacheFlush' );
 
+		// protection from incorrect w3tc upgrade operation when engine gets empty
+		$c = Dispatcher::config();
+		$engine = $c->get_string( 'cdnfsd.engine' );
+		if ( empty( $engine ) )
+			return $actions_made;
+
 		if ( $o->flush_all_requested ) {
 			$core = Dispatcher::component( 'Cdnfsd_Core' );
-			$engine = $core->get_engine();
 
-		
 			try {
+				$engine = $core->get_engine();
+
 				if ( !is_null( $engine ) ) {
 					$engine->flush_all();
 					$actions_made[] = array( 'module' => 'cdn' );
@@ -219,8 +248,10 @@ class Cdnfsd_CacheFlush {
 				$urls = array_keys( $o->queued_urls );
 
 				$core = Dispatcher::component( 'Cdnfsd_Core' );
-				$engine = $core->get_engine();
+
 				try {
+					$engine = $core->get_engine();
+
 					if ( !is_null( $engine ) ) {
 						$engine->flush_urls( $urls );
 						$actions_made[] = array( 'module' => 'cdn' );

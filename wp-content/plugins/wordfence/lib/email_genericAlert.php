@@ -1,28 +1,30 @@
 <?php if (!defined('WORDFENCE_VERSION')) { exit; } ?>
-This email was sent from your website "<?php echo $blogName; ?>" by the Wordfence plugin at <?php echo $date; ?>
+<?php printf(__('This email was sent from your website "%s" by the Wordfence plugin at %s', 'wordfence'), $blogName, $date); ?>
 
-The Wordfence administrative URL for this site is: <?php echo network_admin_url('admin.php?page=Wordfence'); ?>
+<?php printf(__('The Wordfence administrative URL for this site is: %s', 'wordfence'), wfUtils::wpAdminURL('admin.php?page=Wordfence')); ?>
 
 <?php echo $alertMsg; ?>
 <?php if($IPMsg){ echo "\n$IPMsg\n"; } ?>
 
 <?php if(! $isPaid){ ?>
-NOTE: You are using the free version of Wordfence. Upgrade today:
- - Advanced features like IP reputation monitoring, country blocking, an advanced comment spam filter and cell phone sign-in give you the best protection available
- - Remote, frequent and scheduled scans
+	<?php _e('NOTE: You are using the free version of Wordfence. Upgrade today:
+ - Receive real-time Firewall and Scan engine rule updates for protection as threats emerge
+ - Real-time IP Blacklist blocks the most malicious IPs from accessing your site
+ - Country blocking
+ - Two factor authentication
+ - IP reputation monitoring
+ - Schedule scans to run more frequently and at optimal times
  - Access to Premium Support
- - Discounts of up to 90% for multiyear and multi-license purchases
+ - Discounts for multi-year and multi-license purchases
 
 Click here to upgrade to Wordfence Premium:
-https://www.wordfence.com/zz1/wordfence-signup/
+https://www.wordfence.com/zz1/wordfence-signup/', 'wordfence'); ?>
 <?php } ?>
 
 --
-To change your alert options for Wordfence, visit:
-<?php echo $myOptionsURL; ?>
+<?php printf(__("To change your alert options for Wordfence, visit:\n%s", 'wordfence'), $myOptionsURL); ?>
 
-To see current Wordfence alerts, visit:
-<?php echo $myHomeURL; ?>
+<?php printf(__("To see current Wordfence alerts, visit:\n%s", 'wordfence'), $myHomeURL); ?>
 
 
 

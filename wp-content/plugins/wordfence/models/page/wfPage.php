@@ -11,9 +11,8 @@ class wfPage {
 	const PAGE_SCAN_OPTIONS = 'scan-options';
 	const PAGE_TOOLS_2FA = 'tools-2fa';
 	const PAGE_TOOLS_LIVE_TRAFFIC = 'tools-2fa';
-	const PAGE_TOOLS_PASSWORD_AUDIT = 'tools-password-audit';
-	const PAGE_TOOLS_COMMENT_SPAM = 'tools-comment-spam';
 	const PAGE_TOOLS_WHOIS = 'tools-whois';
+	const PAGE_TOOLS_IMPORT_EXPORT = 'tools-import-export';
 	const PAGE_TOOLS_DIAGNOSTICS = 'tools-diagnostics';
 	const PAGE_SUPPORT = 'support';
 	
@@ -38,8 +37,7 @@ class wfPage {
 			case self::PAGE_SCAN_OPTIONS:
 			case self::PAGE_TOOLS_2FA:
 			case self::PAGE_TOOLS_LIVE_TRAFFIC:
-			case self::PAGE_TOOLS_PASSWORD_AUDIT:
-			case self::PAGE_TOOLS_COMMENT_SPAM:
+			case self::PAGE_TOOLS_IMPORT_EXPORT:
 			case self::PAGE_TOOLS_WHOIS:
 			case self::PAGE_TOOLS_DIAGNOSTICS:
 			case self::PAGE_SUPPORT:
@@ -119,10 +117,8 @@ class wfPage {
 				return __('Two Factor Authentication', 'wordfence');
 			case self::PAGE_TOOLS_LIVE_TRAFFIC:
 				return __('Live Traffic', 'wordfence');
-			case self::PAGE_TOOLS_PASSWORD_AUDIT:
-				return __('Password Audit', 'wordfence');
-			case self::PAGE_TOOLS_COMMENT_SPAM:
-				return __('Comment Spam Filter', 'wordfence');
+			case self::PAGE_TOOLS_IMPORT_EXPORT:
+				return __('Import/Export Options', 'wordfence');
 			case self::PAGE_TOOLS_WHOIS:
 				return __('Whois Lookup', 'wordfence');
 			case self::PAGE_TOOLS_DIAGNOSTICS:
@@ -182,13 +178,9 @@ class wfPage {
 				$page = 'WordfenceTools';
 				$subpage = 'livetraffic';
 				break;
-			case self::PAGE_TOOLS_PASSWORD_AUDIT:
+			case self::PAGE_TOOLS_IMPORT_EXPORT:
 				$page = 'WordfenceTools';
-				$subpage = 'pwaudit';
-				break;
-			case self::PAGE_TOOLS_COMMENT_SPAM:
-				$page = 'WordfenceTools';
-				$subpage = 'commentspam';
+				$subpage = 'importexport';
 				break;
 			case self::PAGE_TOOLS_WHOIS:
 				$page = 'WordfenceTools';
@@ -256,9 +248,7 @@ class wfPage {
 				return array($this);
 			case self::PAGE_TOOLS_LIVE_TRAFFIC:
 				return array($this);
-			case self::PAGE_TOOLS_PASSWORD_AUDIT:
-				return array($this);
-			case self::PAGE_TOOLS_COMMENT_SPAM:
+			case self::PAGE_TOOLS_IMPORT_EXPORT:
 				return array($this);
 			case self::PAGE_TOOLS_WHOIS:
 				return array($this);

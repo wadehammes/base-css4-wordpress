@@ -3,6 +3,9 @@ if (!defined('WORDFENCE_VERSION')) { exit; }
 if (wfOnboardingController::shouldShowAttempt3()) {
 	echo wfView::create('onboarding/banner')->render();
 }
+else if (wfConfig::get('touppPromptNeeded')) {
+	echo wfView::create('gdpr/banner')->render();
+}
 
 $support = @json_decode(wfConfig::get('supportContent'), true);
 ?>
@@ -47,6 +50,54 @@ $support = @json_decode(wfConfig::get('supportContent'), true);
 					</div>
 				</div>
 			</div>
+			<div class="wf-row">
+				<div class="wf-col-xs-12">
+					<div class="wf-block<?php echo (wfPersistenceController::shared()->isActive('support-gdpr') ? ' wf-active' : ''); ?>" data-persistence-key="support-gdpr">
+						<div class="wf-block-header">
+							<div class="wf-block-header-content">
+								<div class="wf-block-title">
+									<strong><?php _e('GDPR Information', 'wordfence'); ?></strong>
+								</div>
+								<div class="wf-block-header-action"><div class="wf-block-header-action-disclosure" role="checkbox" aria-checked="<?php echo (wfPersistenceController::shared()->isActive('support-gdpr') ? 'true' : 'false'); ?>" tabindex="0"></div></div>
+							</div>
+						</div>
+						<div class="wf-block-content">
+							<ul class="wf-block-list">
+								<li>
+									<ul class="wf-option wf-option-static">
+										<li class="wf-option-title">
+											<ul class="wf-flex-vertical wf-flex-align-left">
+												<li><?php _e('General Data Protection Regulation', 'wordfence'); ?> <a href="<?php echo wfSupportController::esc_supportURL(wfSupportController::ITEM_GDPR); ?>" target="_blank" rel="noopener noreferrer" class="wf-inline-help"><i class="wf-fa wf-fa-question-circle-o" aria-hidden="true"></i></a></li>
+												<li class="wf-option-subtitle"><?php _e('The GDPR is a set of rules that provides more control over EU personal data. Defiant has updated its terms of use, privacy policies, and software, as well as made available a data processing agreement to meet GDPR compliance.', 'wordfence'); ?></li>
+											</ul>
+										</li>
+									</ul>
+								</li>
+								<li>
+									<ul class="wf-option wf-option-static">
+										<li class="wf-option-title">
+											<ul class="wf-flex-vertical wf-flex-align-left">
+												<li><?php _e('Data Processing Agreement', 'wordfence'); ?> <a href="<?php echo wfSupportController::esc_supportURL(wfSupportController::ITEM_GDPR_DPA); ?>" target="_blank" rel="noopener noreferrer" class="wf-inline-help"><i class="wf-fa wf-fa-question-circle-o" aria-hidden="true"></i></a></li>
+												<li class="wf-option-subtitle"><?php printf(__('If you qualify as a data controller under the GDPR and need a data processing agreement, it can be <a href="%s" target="_blank" rel="noopener noreferrer">found here</a>.', 'wordfence'), wfSupportController::esc_supportURL(wfSupportController::ITEM_GDPR_DPA)); ?></li>
+											</ul>
+										</li>
+									</ul>
+								</li>
+								<li>
+									<ul class="wf-option wf-option-static">
+										<li class="wf-option-title">
+											<ul class="wf-flex-vertical wf-flex-align-left">
+												<li><?php _e('Agreement to New Terms and Privacy Policies', 'wordfence'); ?></li>
+												<li class="wf-option-subtitle"><?php _e('To continue using Defiant products and services including the Wordfence plugin, all customers must review and agree to the updated terms and privacy policies. These changes reflect our commitment to follow data protection best practices and regulations. The Wordfence interface will remain disabled until these terms are agreed to.', 'wordfence'); ?></li>
+											</ul>
+										</li>
+									</ul>
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div> <!-- end GDPR -->
 			<?php if (isset($support['all'])): ?>
 			<div class="wf-row">
 				<div class="wf-col-xs-12 wf-col-sm-9 wf-col-sm-half-padding-right wf-add-top">
@@ -117,4 +168,139 @@ $support = @json_decode(wfConfig::get('supportContent'), true);
 			<?php endif; ?>
 		</div> <!-- end container -->
 	</div>
-	
+<?php if (wfOnboardingController::shouldShowAttempt3() && (isset($_GET['onboarding']) || wfOnboardingController::shouldShowAttempt3Automatically())): ?>
+	<?php wfConfig::set('onboardingAttempt3Initial', true); ?>
+	<script type="text/x-jquery-template" id="wfTmpl_onboardingFinal">
+		<?php echo wfView::create('onboarding/modal-final-attempt')->render(); ?>
+	</script>
+	<script type="application/javascript">
+		(function($) {
+			$(function() {
+				var prompt = $('#wfTmpl_onboardingFinal').tmpl();
+				var promptHTML = $("<div />").append(prompt).html();
+				WFAD.colorboxHTML('800px', promptHTML, {overlayClose: false, closeButton: false, className: 'wf-modal', onComplete: function() {
+					setTimeout(function() {
+						$('#wf-onboarding-subscribe-controls > p').show();
+						$.wfcolorbox.resize();
+					}, 30000);
+
+					$('#wf-onboarding-subscribe .wf-switch > li').each(function(index, element) {
+						$(element).on('click', function(e) {
+							e.preventDefault();
+							e.stopPropagation();
+
+							var control = $(this).closest('.wf-switch');
+							control.find('li').removeClass('wf-active');
+							$(this).addClass('wf-active');
+
+							$('#wf-onboarding-continue').toggleClass('wf-disabled', wordfenceExt.parseEmails($('#wf-onboarding-alerts').val()).length == 0 || !($('#wf-onboarding-agree').is(':checked')) || $('#wf-onboarding-subscribe .wf-switch > li.wf-active').length == 0);
+						});
+					});
+					
+					$('#wf-onboarding-agree').on('change', function() {
+						$('#wf-onboarding-continue').toggleClass('wf-disabled', wordfenceExt.parseEmails($('#wf-onboarding-alerts').val()).length == 0 || !($('#wf-onboarding-agree').is(':checked')) || $('#wf-onboarding-subscribe .wf-switch > li.wf-active').length == 0);
+					});
+
+					$('#wf-onboarding-alerts').on('change paste keyup', function() {
+						setTimeout(function() {
+							$('#wf-onboarding-continue').toggleClass('wf-disabled', wordfenceExt.parseEmails($('#wf-onboarding-alerts').val()).length == 0 || !($('#wf-onboarding-agree').is(':checked')) || $('#wf-onboarding-subscribe .wf-switch > li.wf-active').length == 0);
+						}, 100);
+					}).trigger('change');
+
+					$('#wf-onboarding-continue').on('click', function(e) {
+						e.preventDefault();
+						e.stopPropagation();
+
+						var touppAgreed = !!$('#wf-onboarding-agree').is(':checked');
+						if (!touppAgreed) {
+							return;
+						}
+
+						var emails = wordfenceExt.parseEmails($('#wf-onboarding-alerts').val());
+						if (emails.length > 0) {
+							var subscribe = !!parseInt($('#wf-onboarding-subscribe .wf-switch > li.wf-active').data('optionValue'));
+							wordfenceExt.onboardingProcessEmails(emails, subscribe, touppAgreed);
+							
+							<?php if (wfConfig::get('isPaid')): ?>
+							wordfenceExt.setOption('onboardingAttempt3', '<?php echo esc_attr(wfOnboardingController::ONBOARDING_THIRD_LICENSE); ?>');
+							$('#wf-onboarding-banner').slideUp();
+							WFAD.colorboxClose();
+							if (WFAD.tour1) { setTimeout(function() { WFAD.tour1(); }, 500); }
+							<?php else: ?>
+							wordfenceExt.setOption('onboardingAttempt3', '<?php echo esc_attr(wfOnboardingController::ONBOARDING_THIRD_EMAILS); ?>');
+
+							$('#wf-onboarding-final-attempt-1, .wf-modal-footer').fadeOut(400, function() {
+								$('#wf-onboarding-final-attempt-2').fadeIn();
+								$.wfcolorbox.resize();
+							});
+							<?php endif; ?>
+						}
+					});
+
+					$('#wf-onboarding-license input').on('change paste keyup', function() {
+						setTimeout(function() {
+							$('#wf-onboarding-license-install').toggleClass('wf-disabled', $('#wf-onboarding-license input').val().length == 0);
+						}, 100);
+					}).trigger('change');
+
+					$('#wf-onboarding-license-install').on('click', function(e) {
+						e.preventDefault();
+						e.stopPropagation();
+
+						$('#wf-onboarding-license-status').fadeOut();
+
+						var license = $('#wf-onboarding-license input').val();
+						wordfenceExt.onboardingInstallLicense(license,
+							function(res) { //Success
+								if (res.isPaid) {
+									wordfenceExt.setOption('onboardingAttempt3', '<?php echo esc_attr(wfOnboardingController::ONBOARDING_THIRD_LICENSE); ?>');
+									//$('#wf-onboarding-license-status').addClass('wf-green-dark').removeClass('wf-yellow-dark wf-red-dark').text('You have successfully installed a premium license.').fadeIn();
+									//$('#wf-onboarding-license-install').text('Installed').addClass('wf-disabled');
+									//$('#wf-onboarding-license input').attr('disabled', true);
+									$('#wf-onboarding-banner').slideUp();
+									$('#wf-onboarding-final-attempt .wf-modal-header-action-close').off('click');
+									/*$('#wf-onboarding-premium-cta, #wf-onboarding-license-footer, #wf-onboarding-or').fadeOut(400, function() {
+									 $('#wf-onboarding-license-finished').fadeIn();
+									 $.wfcolorbox.resize();
+									 });*/
+
+									var html = '<div class="wf-modal wf-modal-success"><div class="wf-model-success-wrapper"><div class="wf-modal-header"><div class="wf-modal-header-content"><div class="wf-modal-title"><?php _e('Premium License Installed', 'wordfence'); ?></div></div></div><div class="wf-modal-content"><?php _e('Congratulations! Wordfence Premium is now active on your website. Please note that some Premium features are not enabled by default.', 'wordfence'); ?></div></div><div class="wf-modal-footer"><ul class="wf-onboarding-flex-horizontal wf-onboarding-flex-align-right wf-onboarding-full-width"><li><a href="<?php echo esc_url(network_admin_url('admin.php?page=Wordfence')); ?>" class="wf-onboarding-btn wf-onboarding-btn-primary"><?php _e('Continue', 'wordfence'); ?></a></li></ul></div></div>';
+									$.wfcolorbox({
+										width: (wordfenceExt.isSmallScreen ? '300px' : '500px'),
+										html: html,
+										overlayClose: true,
+										closeButton: false,
+										className: 'wf-modal'
+									});
+									<?php
+									//Congratulations! Wordfence Premium is now active on your website. Please note that some Premium features are not enabled by default. Read this brief article to learn more about <a href="#todo" target="_blank" rel="noopener noreferrer">getting the most out of Wordfence Premium</a>.	
+									?>
+								}
+								else { //Unlikely to happen but possible
+									$('#wf-onboarding-license-status').addClass('wf-yellow-dark').removeClass('wf-green-dark wf-red-dark').text('You have successfully installed a free license.').fadeIn();
+									$.wfcolorbox.resize();
+								}
+							},
+							function(res) { //Error
+								$('#wf-onboarding-license-status').addClass('wf-red-dark').removeClass('wf-green-dark wf-yellow-dark').text(res.error).fadeIn();
+								$.wfcolorbox.resize();
+							});
+					});
+
+					$('#wf-onboarding-no-thanks, #wf-onboarding-final-attempt .wf-modal-header-action-close').on('click', function(e) {
+						e.preventDefault();
+						e.stopPropagation();
+
+						if ($('#wf-onboarding-final-attempt-2').is(':visible')) {
+							wordfenceExt.setOption('onboardingAttempt3', '<?php echo esc_attr(wfOnboardingController::ONBOARDING_THIRD_LICENSE); ?>');
+							$('#wf-onboarding-banner').slideUp();
+						}
+
+						WFAD.colorboxClose();
+						if (WFAD.tour1) { setTimeout(function() { WFAD.tour1(); }, 500); }
+					});
+				}});
+			});
+		})(jQuery);
+	</script>
+<?php endif; ?>

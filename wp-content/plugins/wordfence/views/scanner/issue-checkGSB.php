@@ -16,4 +16,10 @@ echo wfView::create('scanner/issue-base', array(
 	'detailControls' => array(
 		'<a href="#" class="wf-btn wf-btn-default wf-btn-callout-subtle wf-issue-control-mark-fixed">' . __('Mark as Fixed', 'wordfence') . '</a>',
 	),
+	'textOutput' => (isset($textOutput) ? $textOutput : null),
+	'textOutputDetailPairs' => array(
+		__('Bad URL', 'wordfence') => '$data.badURL',
+		null,
+		__('Details', 'wordfence') => '$longMsg',
+	),
 ))->render();

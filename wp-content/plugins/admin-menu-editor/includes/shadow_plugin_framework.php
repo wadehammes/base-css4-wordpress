@@ -58,8 +58,8 @@ class MenuEd_ShadowPluginFramework {
 		/************************************
 				Add the default hooks
 		************************************/
-		add_action('activate_'.$this->plugin_basename, array(&$this,'activate'));
-		add_action('deactivate_'.$this->plugin_basename, array(&$this,'deactivate'));
+		add_action('activate_'.$this->plugin_basename, array($this,'activate'));
+		add_action('deactivate_'.$this->plugin_basename, array($this,'deactivate'));
 		
 		$this->init();        //Call the plugin's init() function
 		$this->init_finish(); //Complete initialization by loading settings, etc
@@ -97,7 +97,7 @@ class MenuEd_ShadowPluginFramework {
 		
 		//Add a "Settings" action link
 		if ($this->settings_link)
-			add_filter('plugin_action_links', array(&$this, 'plugin_action_links'), 10, 2);
+			add_filter('plugin_action_links', array($this, 'plugin_action_links'), 10, 2);
 		
 		if ($this->magic_hooks)
 			$this->set_magic_hooks();
@@ -240,7 +240,7 @@ class MenuEd_ShadowPluginFramework {
 				//Get the hook's tag from the method name 
 				$hook = substr($method->name, 5);
 				//Add the hook. Uses add_filter because add_action is simply a wrapper of the same.
-				add_filter($hook, array(&$this, $method->name), 
+				add_filter($hook, array($this, $method->name),
 					$this->get_magic_hook_priority(), $method->getNumberOfParameters());
 			}
 		}
@@ -282,8 +282,9 @@ class MenuEd_ShadowPluginFramework {
    * @return array
    */
 	function plugin_action_links($links, $file) {
-        if ($file == $this->plugin_basename)
-            $links[] = "<a href='" . $this->settings_link . "'>" . __('Settings') . "</a>";
+        if (($file == $this->plugin_basename) && is_array($links)) {
+	        $links[] = "<a href='" . $this->settings_link . "'>" . __('Settings') . "</a>";
+        }
         return $links;
     }
     
@@ -305,13 +306,23 @@ class MenuEd_ShadowPluginFramework {
    * @return bool
    */
 	function is_in_wpmu_plugin_dir( $filename = '' ){
-		if ( !defined('WPMU_PLUGIN_DIR') ) return false;
+		if ( !defined('WPMU_PLUGIN_DIR') ) {
+			return false;
+		}
 		
 		if ( empty($filename) ){
 			$filename = $this->plugin_file;
 		}
-		
-		return (strpos( realpath($filename), realpath(WPMU_PLUGIN_DIR) ) !== false);
+
+		$normalizedMuPluginDir = realpath(WPMU_PLUGIN_DIR);
+		$normalizedFileName = realpath($filename);
+
+		//If realpath() fails, just normalize the syntax instead.
+		if ( empty($normalizedFileName) || empty($normalizedFileName) ) {
+			$normalizedMuPluginDir = wp_normalize_path(WPMU_PLUGIN_DIR);
+			$normalizedFileName = wp_normalize_path($filename);
+		}
+		return (strpos( $normalizedFileName, $normalizedMuPluginDir ) !== false);
 	}
 	
 	/**

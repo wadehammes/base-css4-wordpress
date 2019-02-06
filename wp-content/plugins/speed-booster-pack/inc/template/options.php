@@ -1,444 +1,704 @@
-<div class="wrap">
-
-<div class="sb-pack">
-
-<div id="poststuff">
-<div id="postbox-container" class="postbox-container">
-  <div class="meta-box-sortables ui-sortable" id="normal-sortables">
-
-
-<h2 class="sbp-icon"><?php echo esc_html( get_admin_page_title() ); ?></h2>
-
-<div class="welcome-panel">
-
-<div class="welcome-panel-content">
-
-<form method="post" action="options.php">
-
-<?php settings_fields( 'speed_booster_settings_group' ); ?>
-<div class="main-sbp-title"><h3 ><?php _e( 'Boost Your Website Speed!', 'sb-pack' ); ?></h3></div>
-<div class="postbox" id="tiguan1">
-
-<div title="Click to toggle" class="handlediv"><br></div>
-<h3 class="hndle"><span><?php _e( 'General options', 'sb-pack' ); ?></span></h3>
-
-<div class="inside">
-
-<div class="welcome-panel-column-container">
-
-<div class="welcome-panel-column">
-
-<h4><?php _e( 'Main plugin options', 'sb-pack' ); ?></h4>
-
-<p>
-<input id="sbp_settings[jquery_to_footer]" name="sbp_settings[jquery_to_footer]" type="checkbox" value="1" <?php checked( 1, isset( $sbp_options['jquery_to_footer'] ) ); ?> />
-<label for="sbp_settings[jquery_to_footer]"><?php _e( 'Move scripts to the footer', 'sb-pack' ); ?></label>
-</p>
-
-<p>
-<input id="sbp_settings[use_google_libs]" name="sbp_settings[use_google_libs]" type="checkbox" value="1" <?php checked( 1, isset( $sbp_options['use_google_libs'] ) ); ?> />
-<label for="sbp_settings[use_google_libs]"><?php _e( 'Load JS from Google Libraries', 'sb-pack' ); ?></label>
-</p>
-
-<p>
-<input id="sbp_settings[defer_parsing]" name="sbp_settings[defer_parsing]" type="checkbox" value="1" <?php checked( 1, isset( $sbp_options['defer_parsing'] ) ); ?> />
-<label for="sbp_settings[defer_parsing]"><?php _e( 'Defer parsing of javascript files', 'sb-pack' ); ?></label>
-</p>
-
-<p>
-<input id="sbp_settings[query_strings]" name="sbp_settings[query_strings]" type="checkbox" value="1" <?php checked( 1, isset( $sbp_options['query_strings'] ) ); ?> />
-<label for="sbp_settings[query_strings]"><?php _e( 'Remove query strings', 'sb-pack' ); ?></label>
-</p>
-
- <p>
-     <?php if ( is_plugin_active('crazy-lazy/crazy-lazy.php') ) { ?>
-         <input id="sbp_settings[lazy_load]" name="sbp_settings[lazy_load]" type="hidden" value="<?php echo(isset( $sbp_options['lazy_load'] )? '1' : '0' ); ?>" />
-         <label for="sbp_settings[lazy_load]"><?php _e( 'Lazy loading already handled by CrazyLazy plugin', 'sb-pack' ); ?></label>
-     <?php } else {?>
-        <input id="sbp_settings[lazy_load]" name="sbp_settings[lazy_load]" type="checkbox" value="1" <?php checked( 1, isset( $sbp_options['lazy_load'] ) ); ?> />
-        <label for="sbp_settings[lazy_load]"><?php _e( 'Lazy load images to improve speed', 'sb-pack' ); ?></label>
-     <?php } ?>
-</p>
-
-
-<p>
-<input id="sbp_settings[font_awesome]" name="sbp_settings[font_awesome]" type="checkbox" value="1" <?php checked( 1, isset( $sbp_options['font_awesome'] ) ); ?> />
-<label for="sbp_settings[font_awesome]"><?php _e( 'Removes extra Font Awesome styles', 'sb-pack' ); ?></label>
-</p>
-
-</div> <!-- END welcome-panel-column -->
-
-
-<div class="welcome-panel-column">
-<h4> <?php _e( 'Other plugin settings', 'sb-pack' ); ?></h4>
-
-<p>
-<input id="sbp_settings[minify_html_js]" name="sbp_settings[minify_html_js]" type="checkbox" value="1" <?php checked( 1, isset( $sbp_options['minify_html_js'] ) ); ?> />
-<label for="sbp_settings[minify_html_js]"><?php _e( 'Minify HTML and JS', 'sb-pack' ); ?></label>
-</p>
-
-<p>
-<input id="sbp_settings[remove_wsl]" name="sbp_settings[remove_wsl]" type="checkbox" value="1" <?php checked( 1, isset( $sbp_options['remove_wsl'] ) ); ?> />
-<label for="sbp_settings[remove_wsl]"><?php _e( 'Remove WordPress Shortlink', 'sb-pack' ); ?></label>
-</p>
-
-<p>
-<input id="sbp_settings[remove_adjacent]" name="sbp_settings[remove_adjacent]" type="checkbox" value="1" <?php checked( 1, isset( $sbp_options['remove_adjacent'] ) ); ?> />
-<label for="sbp_settings[remove_adjacent]"><?php _e( 'Remove Adjacent Posts Links', 'sb-pack' ); ?></label>
-</p>
-
-<p>
-    <input id="sbp_settings[wml_link]" name="sbp_settings[wml_link]" type="checkbox" value="1" <?php checked( 1, isset( $sbp_options['wml_link'] ) ); ?> />
-    <label for="sbp_settings[wml_link]"><?php _e( 'Remove Windows Manifest', 'sb-pack' ); ?></label>
-</p>
-
-<p>
-<input id="sbp_settings[wp_generator]" name="sbp_settings[wp_generator]" type="checkbox" value="1" <?php checked( 1, isset( $sbp_options['wp_generator'] ) ); ?> />
-<label for="sbp_settings[wp_generator]"><?php _e( 'Remove the WordPress Version', 'sb-pack' ); ?></label>
-</p>
-
-<p>
-<input id="sbp_settings[remove_all_feeds]" name="sbp_settings[remove_all_feeds]" type="checkbox" value="1" <?php checked( 1, isset( $sbp_options['remove_all_feeds'] ) ); ?> />
-<label for="sbp_settings[remove_all_feeds]"><?php _e( 'Remove all rss feed links', 'sb-pack' ); ?></label>
-</p>
-
-</div> <!-- END welcome-panel-column -->
-
-
-<div class="welcome-panel-column  welcome-panel-last">
-
-<h4> <?php _e( 'Home Page Load Stats', 'sb-pack' ); ?></h4>
-
-<span class="sbp-stats"><?php _e( 'Page loading time in seconds:', 'sb-pack' ); ?></span>
-
-<div class="sbp-progress time">
-<span></span>
-</div>
-
-<div class="sbp-values">
-<div class="sbp-numbers">
-<?php echo $page_time; ?> <?php _e( 's', 'sb-pack' ); ?>
-</div>
-</div>
-
-<span class="sbp-stats"><?php _e( 'Number of executed queries:', 'sb-pack' ); ?></span>
-
-<div class="sbp-progress queries">
-<span></span>
-</div>
-
-<div class="sbp-values">
-<div class="sbp-numbers">
-<?php echo $page_queries; ?> <?php _e( 'q', 'sb-pack' ); ?>
-</div>
-</div>
-
-<div class="debug-info">
-<strong><?php _e( 'Peak Memory Used:', 'sb-pack' ); ?></strong> <span><?php echo number_format( ( memory_get_peak_usage()/1024/1024 ), 2, ',', '' ) . ' / ' . ini_get( 'memory_limit' ), '<br />'; ?></span>
-<strong><?php _e( 'Active Plugins:', 'sb-pack' ); ?></strong> <span><?php echo count( get_option( 'active_plugins' ) ) ; ?></span>
-</div>
-
-</div> <!-- END welcome-panel-column  welcome-panel-last -->
-
-</div> <!-- END welcome-panel-column-container -->
-
- </div>
- </div>
-
-          <div style="display: block;" class="postbox closed" id="tiguan2">
-            <div title="Click to toggle" class="handlediv"><br></div><h3 class="hndle"><?php _e( 'Exclude scripts from being moved to the footer', 'sb-pack' ); ?></h3>
-            <div class="inside">
-
-<div class="sbp-inline-wrap">
-<div class="sbp-columns1">
-
-<h4><?php _e( 'Script Handle', 'sb-pack' ); ?></h4>
-
-<p>
-<input type="text" name="sbp_js_footer_exceptions1" id="sbp_js_footer_exceptions1" value="<?php echo $js_footer_exceptions1; ?>" />
-</p>
-
-<p>
-<input type="text" name="sbp_js_footer_exceptions2" id="sbp_js_footer_exceptions2" value="<?php echo $js_footer_exceptions2; ?>" />
-</p>
-
-<p>
-<input type="text" name="sbp_js_footer_exceptions3" id="sbp_js_footer_exceptions3" value="<?php echo $js_footer_exceptions3; ?>" />
-</p>
-
-<p>
-<input type="text" name="sbp_js_footer_exceptions4" id="sbp_js_footer_exceptions4" value="<?php echo $js_footer_exceptions4; ?>" />
-</p>
-
-
-</div>
-
-<div class="sbp-columns2">
-
-<h4><?php _e( 'Copy the HTML code of the script from your page source and add it below', 'sb-pack' ); ?></h4>
-
-
-<p>
-<input type="text" name="sbp_head_html_script1" id="sbp_head_html_script1" class="regular-text" value="<?php echo $sbp_html_script1; ?>" />
-</p>
-
-<p>
-<input type="text" name="sbp_head_html_script2" id="sbp_head_html_script2" class="regular-text" value="<?php echo $sbp_html_script2; ?>" />
-</p>
-
-<p>
-<input type="text" name="sbp_head_html_script3" id="sbp_head_html_script3" class="regular-text" value="<?php echo $sbp_html_script3; ?>" />
-</p>
-
-<p>
-<input type="text" name="sbp_head_html_script4" id="sbp_head_html_script4" class="regular-text" value="<?php echo $sbp_html_script4; ?>" />
-</p>
-
-</div>
-</div>
-
-<p class="description">
-<?php _e('Enter one js handle per text field, in the left area and the correspondent html script in the right text fields.', 'sb-pack' ); ?> <?php _e( 'Read more', 'sb-pack' ); ?> <a href="http://tiguandesign.com/docs/speed-booster/#exclude-scripts-from-being-moved-to-the-footer-50" target="_blank" title="Documentation"><?php _e( 'detailed instructions', 'sb-pack' ); ?></a> <?php _e( 'on this option on plugin documentation.', 'sb-pack' ); ?> <br /> <?php _e( 'If you want to exclude more than 4 scripts, your page score will be hit and therefore the use of "Move scripts to footer" option will become useless so you can disable it.', 'sb-pack' ); ?>
-</p>
-<div class="td-border-last"></div>
-
-<p>
-<h4 class="hndle"><?php _e( 'As a guidance, here is a list of script handles and script paths of each enqueued script detected by our plugin:', 'sb-pack' ); ?></h4>
-</p>
-
-<div class="sbp-all-enqueued">
-
-<div class="sbp-div-head">
-<div class="sbp-title-scripts"><?php _e('Script Handle', 'sb-pack' ); ?></div>
-<div class="sbp-title-scripts"><?php _e('Script Path', 'sb-pack' ); ?></div>
-</div>
-
-<div class="sbp-inline-wrap">
-
-<div class="sbp-columns1 sbp-width">
-<?php echo get_option( 'all_theme_scripts_handle' ) ; ?>
-</div>
-
-<div class="sbp-columns2 sbp-width">
-<?php echo get_option( 'all_theme_scripts_src' ) ; ?>
- </div>
-
-
- </div>
-
-</div>
-<p class="description">
-    <?php _e('*The list may be incomplete in some circumstances.', 'sb-pack' ); ?>
-</p>
- </div>
- </div>
-
-
-
- <div style="display: block;" class="postbox closed" id="tiguan3">
-    <div title="Click to toggle" class="handlediv"><br></div><h3 class="hndle"><?php _e( 'Exclude scripts from being deferred', 'sb-pack' ); ?></h3>
-    <div class="inside">
-
-<div class="sbp-inline-wrap">
-
- <p>
-<input type="text" class="sbp-more-width" name="sbp_defer_exceptions1" id="sbp_defer_exceptions1" value="<?php echo $defer_exceptions1; ?>" />
-</p>
-
-<p>
-<input type="text" class="sbp-more-width" name="sbp_defer_exceptions2" id="sbp_defer_exceptions2" value="<?php echo $defer_exceptions2; ?>" />
-</p>
-
-<p>
-<input type="text" class="sbp-more-width" name="sbp_defer_exceptions3" id="sbp_defer_exceptions3" value="<?php echo $defer_exceptions3; ?>" />
-</p>
-
-<p>
-<input type="text" class="sbp-more-width" name="sbp_defer_exceptions4" id="sbp_defer_exceptions4" value="<?php echo $defer_exceptions4; ?>" />
-</p>
-
-
-</div>
-        <p class="description">
-            <?php _e('Enter one by text field, the final part of the js files that you want to be excluded from defer parsing option. For example: <code>jquery.min.js</code> If you want to exclude more than 4 scripts, your page score will be hit and therefore the use of "Defer parsing of javascript files" option will become useless so you can disable it', 'sb-pack' ); ?>
-        </p>
-
-    </div>
-</div>
-
-
-          <div style="display: block;" class="postbox closed" id="tiguan4">
-            <div title="Click to toggle" class="handlediv"><br></div><h3 class="hndle sbp-emphasize"><?php _e( 'Change the default image compression level', 'sb-pack' ); ?></h3>
-            <div class="inside">
-
-
-
-<script type='text/javascript'>
-var jpegCompression = '<?php echo $this->image_compression; ?>';
-</script>
-
-<div>
-
-<p class="sbp-amount">
-<?php _e( 'Compression level:', 'sb-pack' ); ?><input type="text" class="sbp-amount" id="sbp-amount" />
-</p>
-
-<p>
-<div class="sbp-slider" id="sbp-slider"></div>
-<input type="hidden" name="sbp_integer" id="sbp_integer" value="<?php echo $this->image_compression; ?>" />
-</p>
-
-<p class="description">
-<?php _e( 'The default image compression setting in WordPress is 90%. Compressing your images further than the default will make your file sizes even smaller and will boost your site performance. As a reference, a lower level of compression means more performance but might induce quality loss. We recommend you choose a compression level between 50 and 75.', 'sb-pack' ); ?><br />
-</p>
-<p class="description"><strong>
-<?php _e( 'Note that any changes you make will only affect new images uploaded to your site. A specialized plugin can optimize all your present images and will also optimize new ones as they are added. ', 'sb-pack' ); ?>
-</strong></p>
-<br>
-<p class="description sp-link"><strong>
-   <a href="https://shortpixel.com/h/af/U3NQVWK31472" target="_blank">
-       <?php _e( 'Test your website with  ShortPixel for free to see how much you could gain by optimizing your images.', 'sb-pack' ); ?>
-   </a>
-</strong></p>
-<a href="https://shortpixel.com/h/af/U3NQVWK31472" target="_blank"><img src="<?php echo $this->plugin_url . "inc/images/sp.png"; ?>" class="sbp-sp"/></a>
-<p class="description">
-    <?php _e( 'ShortPixel is an easy to use, comprehensive, stable and frequently updated image optimization plugin supported by the friendly team that created it. Using a powerful set of specially tuned algorithms, it squeezes the most of each image striking the best balance between image size and quality. Current images can be all optimized with a single click. Newly added images are automatically resized/rescaled and optimized on the fly, in the background.', 'sb-pack' ); ?>
-</p>
-<p class="description-link">
-    <a href="https://shortpixel.com/h/af/U3NQVWK31472" target="_blank">&gt;&gt; <?php _e( 'More info', 'sb-pack' ); ?></a>
-</p>
-</div>
-
- </div>
- </div>
-
-
-          <div style="display: block;" class="postbox closed" id="tiguan5">
-            <div title="Click to toggle" class="handlediv"><br></div><h3 class="hndle"><?php _e( 'Still need more speed?', 'sb-pack' ); ?></h3>
-            <div class="inside">
-
-
-<p>
-<input id="sbp_css_async" name="sbp_settings[sbp_css_async]" type="checkbox" value="1"  <?php checked( 1, isset( $sbp_options['sbp_css_async'] ) ); ?> />
-<label for="sbp_css_async"><?php _e( 'Load CSS asynchronously', 'sb-pack' ); ?></label>
-</p>
-
-
-<div id="sbp-css-content">
-
-<p>
-<input id="sbp_settings[sbp_css_minify]" name="sbp_settings[sbp_css_minify]" type="checkbox" value="1" <?php checked( 1, isset( $sbp_options['sbp_css_minify'] ) ); ?> />
-<label for="sbp_settings[sbp_css_minify]"><?php _e( 'Minify all CSS styles', 'sb-pack' ); ?></label>
-</p>
-
-<div class="sbp-radio-content">
-
-<p>
-<input id="sbp_settings[sbp_footer_css]" name="sbp_settings[sbp_footer_css]" type="checkbox" value="1" <?php checked( 1, isset( $sbp_options['sbp_footer_css'] ) ); ?> />
-<label for="sbp_settings[sbp_footer_css]"><?php _e( 'Insert all CSS styles inline to the footer', 'sb-pack' ); ?></label>
-</p>
-
-<p>
-<input id="sbp_settings[sbp_is_mobile]" name="sbp_settings[sbp_is_mobile]" type="checkbox" value="1" <?php checked( 1, isset( $sbp_options['sbp_is_mobile'] ) ); ?> />
-<label for="sbp_settings[sbp_is_mobile]"><?php _e( 'Disable all above CSS options on mobile devices', 'sb-pack' ); ?></label>
-</p>
-
-<div class="td-border-last"></div>
-
-<h4><?php _e( 'Exclude styles from asynchronously option: ', 'sb-pack' ); ?></h4>
-<p><textarea cols="50" rows="3" name="sbp_css_exceptions" id="sbp_css_exceptions" value="<?php echo $css_exceptions; ?>" /><?php echo $css_exceptions; ?></textarea></p>
-<p class="description">
-<?php _e('Enter one by line, the handles of css files or the final part of the style URL. For example: <code>font-awesome</code> or <code>font-awesome.min.css</code>', 'sb-pack' ); ?>
-</p>
-
-
-<div class="td-border-last"></div>
-
-<p>
-<h4 class="hndle"><?php _e( 'As a guidance, here is a list of css handles of each enqueued style detected by our plugin:', 'sb-pack' ); ?></h4>
-</p>
-
-<div class="sbp-all-enqueued">
-
-<div class="sbp-div-head">
-<div class="sbp-title-scripts"><?php _e('CSS Handle', 'sb-pack' ); ?></div>
-</div>
-
-<div class="sbp-inline-wrap">
-<div class="sbp-columns1 sbp-width">
-<?php echo get_option( 'all_theme_styles_handle' ) ; ?>
-</div>
-</div>
-
-</div>
-
-<p class="description">
-    <?php _e('*The list may be incomplete in some circumstances.', 'sb-pack' ); ?>
-</p>
-
-
-
-<div class="td-border-last"></div>
-<h4 class="sbp-icon-information"><?php _e( 'Additional information:', 'sb-pack' ); ?></h4>
-<p class ="description"><strong><?php _e( 'Insert all CSS styles inline to the footer: ', 'sb-pack' ); ?></strong><?php _e( 'this option will eliminate render-blocking CSS warning in Google Page Speed test. If there is something broken after activation, you need to disable this option. Please note that before enabling this sensitive option, it is strongly recommended that you also enable the "Move scripts to the footer" option.', 'sb-pack' ); ?></p>
-
- </div>
- </div>
-</div><!-- END sbp-radio-content -->
-</div><!-- END sbp-css-content -->
-
-
-
-<?php submit_button() ?>
-
-</form>
-
-</div> <!-- END welcome-panel-content -->
-
-</div> <!-- END welcome-panel -->
-
-<div class="col-fulwidth feedback-box">
-  <h3>
-    <?php esc_html_e( 'Lend a hand & share your thoughts', 'saboxplugin' ); ?>
-    <img src="<?php echo $this->plugin_url . "inc/images/handshake.png"; ?>"> 
-  </h3>
-  <p>
-    <?php
-    echo vsprintf(
-      // Translators: 1 is Theme Name, 2 is opening Anchor, 3 is closing.
-      __( 'We\'ve been working hard on making %1$s the best one out there. We\'re interested in hearing your thoughts about %1$s and what we could do to <u>make it even better</u>.<br/> <br/> %2$sHave your say%3$s', 'sb-pack' ),
-      array(
-        'Speed Booster Pack',
-        '<a class="button button-feedback" target="_blank" href="http://bit.ly/feedback-speed-booster-pack">',
-        '</a>',
-      )
-    );
-    ?>
-  </p>
-</div>
-
-<!-- START docs and version areas -->
-
-<div class="sbp-title-div">
-<div class="sbp-title">
-<?php _e( 'What do these settings mean?', 'sb-pack' ); ?>
-</div>
-</div>
-
-<div class="sbp-box"><!-- start sbp-box div 1 -->
-
-<div class="sbp-box-legend">
-<i class="sbp-icon-help"></i>
-</div>
-
-<p><a href="http://tiguandesign.com/docs/speed-booster/" target="_blank" title="Documentation"><?php _e( 'Read online plugin documentation', 'sb-pack' ); ?></a><?php _e( ' with guidelines to enhance your website performance.', 'sb-pack' ); ?></p>
-
-</div> <!-- end sbp-box div 1-->
-
-<!-- END docs and version areas -->
-          </div>
-        </div>
-    </div>
-</div> <!-- END sb-pack-->
-
+<?php
+
+// handle closed postboxes
+$user_id     = get_current_user_id();
+$option_name = 'closedpostboxes_' . 'toplevel_page_sbp-options'; // use the "pagehook" ID
+$option_arr  = get_user_option( $option_name, $user_id ); // get the options for that page
+
+
+if ( is_array( $option_arr ) && in_array( 'exclude-from-footer', $option_arr ) ) {
+	$closed = true;
+}
+
+
+if ( is_array( $option_arr ) && in_array( 'defer-from-footer', $option_arr ) ) {
+	$closed_defer = true;
+}
+
+?>
+
+<div class="wrap about-wrap">
+	<div class="sb-pack">
+
+		<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+
+		<div class="about-text">
+			<?php
+			/* Translators: Welcome Screen Description. */
+			echo esc_html__( 'Speed Booster Pack is a lightweight, frequently updated, easy to use and well supported plugin which allows you to improve your website’s loading speed. Visitors usually close a website if it doesn’t load in a few seconds and the slower a site loads the greater the chances are that the visitors will leave. And you don’t want that to happen, do you?', 'speed-booster-pack' );
+			?>
+		</div>
+		<div class="wp-badge sbp-welcome-logo"></div>
+
+		<h2 class="nav-tab-wrapper wp-clearfix">
+			<a class="nav-tab" href="#general-options"><?php esc_html_e( 'General', 'speed-booster-pack' ); ?></a>
+			<a class="nav-tab" href="#advanced-options"><?php esc_html_e( 'Advanced', 'speed-booster-pack' ); ?></a>
+			<a class="nav-tab" href="#cdn-options"><?php esc_html_e( 'CDN', 'speed-booster-pack' ); ?></a>
+			<a class="nav-tab" href="#google-analytics"><?php esc_html_e( 'Google Analytics', 'speed-booster-pack' ); ?></a>
+			<a class="nav-tab" href="#optimize-more"><?php esc_html_e( 'Optimize More', 'speed-booster-pack' ); ?></a>
+		</h2>
+
+		<form method="post" action="options.php">
+
+			<?php wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', false ); ?>
+			<?php wp_nonce_field( 'meta-box-order', 'meta-box-order-nonce', false ); ?>
+			<?php settings_fields( 'speed_booster_settings_group' ); ?>
+
+			<?php
+
+			$sbp_options_array = array(
+				//general options panel
+				'general-options'  => array(
+					//General section
+					'sections' => array(
+						array(
+							'type'  => 'section',
+							'label' => __( 'General', 'speed-booster-pack' ),
+							'items' => array(
+								'jquery_to_footer' => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Move scripts to footer', 'speed-booster-pack' ),
+									'tooltip'       => __( 'This option move all scripts to the footer while keeping stylesheets in the header to improve page loading speed and get a higher score on the major speed testing sites such as GTmetrix or other website speed testing tools', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'use_google_libs'  => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Load JS from Google Libraries', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Loading WordPress javascript files from Google’s Libraries rather than serving it from your WordPress install directly, will reduce latency, increase parallelism and improve caching.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'minify_html_js'   => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Minify HTML', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Activate this option only if you don’t want to use other minify plugins or other speed optimization plugin that has minify option included. If something goes wrong, simply uncheck this option and save the settings.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'defer_parsing'    => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Defer parsing of javascript files', 'speed-booster-pack' ),
+									'tooltip'       => __( '!!!Note: This will be disabled IF Move Scripts to Footer is enabled. By deferring parsing of unneeded JavaScript until it needs to be executed, you can reduce the initial load time of your page. Please note that this option will not defer the main WordPress jQuery script if Load JS from Google Libraries option is not checked.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'query_strings'    => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Remove query strings', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Since most proxies do not cache resources with a ? in their URL, this option allows you to remove any query strings (version numbers) from static resources like CSS & JS files, thus improving your speed scores in services like GTmetrix, PageSpeed, YSlow and Pingdoom.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'font_awesome'     => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Removes extra Font Awesome styles', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Use this option only if your theme uses Font Awesome, to prevent other plugins that uses Font Awesome, to add their stylesheets to your theme. In other words, this option removes extra Font Awesome stylesheets added to your theme by certain plugins.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+							),
+						),
+						//more settings section
+						array(
+							'type'  => 'section',
+							'label' => __( 'More settings', 'speed-booster-pack' ),
+							'items' => array(
+								'remove_emojis'          => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Remove WordPress Emoji scripts', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Emojis are fun and all, but if you are aren’t using them they actually load a JavaScript file (wp-emoji-release.min.js) on every page of your website. For a lot of businesses, this is not needed and simply adds load time to your site. So we recommend disabling this.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'remove_wsl'             => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Remove WordPress Shortlink', 'speed-booster-pack' ),
+									'tooltip'       => __( 'WordPress URL shortening is sometimes useful, but it automatically adds an ugly code in your header, so you can remove it.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'remove_adjacent'        => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Remove Adjacent Posts Links', 'speed-booster-pack' ),
+									'tooltip'       => __( 'WordPress incorrectly implements this feature that supposedly should fix a pagination issues but it messes up, so there is no reason to keep these around. However, some browsers may use Adjacent Posts Links to navigate your site, although you can remove it if you run a well designed theme.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'wml_link'               => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Remove Windows Manifest', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Windows Live Writer (WLW) is a Microsoft application for composing and managing blog posts offline and publish them later. If you are not using Windows Live Writer application, you can remove it from the WP head.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'wp_generator'           => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Remove the WordPress Version', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Windows Live Writer (WLW) is a Microsoft application for composing and managing blog posts offline and publish them later. If you are not using Windows Live Writer application, you can remove it from the WP head.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'remove_all_feeds'       => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Remove all rss feed links', 'speed-booster-pack' ),
+									'tooltip'       => __( 'This option wil remove all rss feed links to cleanup your WordPress header. It is also useful on Unicorn – The W3C Markup Validation Service to get rid out the “feed does not validate” error.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'disable_xmlrpc'         => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Disable XML-RPC', 'speed-booster-pack' ),
+									'tooltip'       => __( 'XML-RPC was added in WordPress 3.5 and allows for remote connections, and unless you are using your mobile device to post to WordPress it does more bad than good. In fact, it can open your site up to a bunch of security risks. There are a few plugins that utilize this such as JetPack, but we don’t recommend using JetPack for performance reasons.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'disable_self_pingbacks' => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Disable Self Pingbacks', 'speed-booster-pack' ),
+									'tooltip'       => __( 'A pingback is a special type of comment that’s created when you link to another blog post, as long as the other blog is set to accept pingbacks.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'disable_dashicons'      => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Disable Dashicons', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Disable dashicons from front end.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'disable_google_maps'    => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Disable Google Maps', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Disable Google Maps from front end. ', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'disable_heartbeat'      => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Disable Heartbeat', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Disable heartbeat everywhere ( used for autosaving and revision tracking ).', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'heartbeat_frequency'    => array(
+									'type'          => 'select',
+									'label'         => __( 'Heartbeat frequency', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Controls how often the Wordpress Heartbeat API is allowed to run. ', 'speed-booster-pack' ),
+									'options'       => array(
+										'15' => '15',
+										'30' => '30',
+										'45' => '45',
+										'60' => '60',
+									),
+									'options_group' => 'sbp_settings',
+								),
+								'limit_post_revisions'   => array(
+									'type'          => 'select',
+									'label'         => __( 'Limit Post Revision', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Controls how many Revisions Wordpress will save ', 'speed-booster-pack' ),
+									'options'       => array(
+										'1'     => '1',
+										'2'     => '2',
+										'3'     => '3',
+										'4'     => '4',
+										'5'     => '5',
+										'10'    => '10',
+										'15'    => '15',
+										'20'    => '20',
+										'25'    => '25',
+										'30'    => '30',
+										'false' => 'Disable',
+									),
+									'options_group' => 'sbp_settings',
+								),
+								'autosave_interval'      => array(
+									'type'          => 'select',
+									'label'         => __( 'Autosave interval', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Controls how wordpress will autosave posts and pages while editing.', 'speed-booster-pack' ),
+									'options'       => array(
+										'1' => __( '1 minute ( default )', 'speed-booster-pack' ),
+										'2' => __( '2 minutes', 'speed-booster-pack' ),
+										'3' => __( '3 minutes', 'speed-booster-pack' ),
+										'4' => __( '4 minutes', 'speed-booster-pack' ),
+										'5' => __( '5 minutes', 'speed-booster-pack' ),
+									),
+									'options_group' => 'sbp_settings',
+								),
+								'remove_rest_api_links'  => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Remove REST API Links', 'speed-booster-pack' ),
+									'tooltip'       => __( 'The WordPress REST API provides API endpoints for WordPress data types that allow developers to interact with sites remotely by sending and receiving JSON (JavaScript Object Notation) objects.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+							),
+						),
+						//need even more speed section
+						array(
+							'type'  => 'section',
+							'label' => __( 'Need even more speed?', 'speed-booster-pack' ),
+							'items' => array(
+								'sbp_css_async'  => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Inline all CSS styles', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Checking this option will inline the contents of all your stylesheets. This helps with the annoying render blocking error Google Page Speed Insights displays.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'sbp_css_minify' => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Minify all (previously) inlined CSS styles', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Minifying all inlined CSS styles will optimize the CSS delivery and will eliminate the annoying message on Google Page Speed regarding to render-blocking css.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'sbp_footer_css' => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Move all inlined CSS into the footer', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Inserting all CSS styles inline to the footer is a sensitive option that will eliminate render-blocking CSS warning in Google Page Speed test. If there is something broken after activation, you need to disable this option. Please note that before enabling this sensitive option, it is strongly recommended that you also enable the “ Move scripts to the footer” option.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'sbp_is_mobile'  => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Disable all above CSS options on mobile devices', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Disable all above CSS options on mobile devices: this option was added to avoid some appearance issues on mobile devices.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+							),
+						),
+						//other options section
+						array(
+							'type'  => 'section',
+							'items' => array(
+								'sbp_css_exceptions'   => array(
+									'type'        => 'textarea',
+									'label'       => __( 'Exclude styles from being inlined and/or minified option: ', 'speed-booster-pack' ),
+									'description' => __( 'Enter one by line, the handles of css files or the final part of the style URL.', 'speed-booster-pack' ),
+								),
+								//CSS handle guidance
+								'guidance_options_css' => array(
+									'type'  => 'guidance',
+									'label' => __( 'As a guidance, here is a list of css handles of each enqueued style detected by our plugin:', 'speed-booster-pack' ),
+								),
+							),
+						),
+					),
+				),
+				//advanced options panel
+				'advanced-options' => array(
+					//Exclude scripts fro being moved to the footer
+					'sections' => array(
+						array(
+							'type'        => 'section',
+							'label'       => __( 'Exclude scripts from being moved to the footer', 'speed-booster-pack' ),
+							'description' => __( 'Enter one js handle per text field. Read more <a href="https://docs.machothemes.com/article/119-plugin-options-explained#exclude-scripts-from-being-moved-to-the-footer-50">detailed instructions</a> on this option on plugin documentation.', 'speed-booster-pack' ),
+							'items'       => array(
+								'sbp_js_footer_exceptions1' => array(
+									'type' => 'text',
+								),
+								'sbp_js_footer_exceptions2' => array(
+									'type' => 'text',
+								),
+								'sbp_js_footer_exceptions3' => array(
+									'type' => 'text',
+								),
+								'sbp_js_footer_exceptions4' => array(
+									'type' => 'text',
+								),
+								//guidance
+								'guidance_options_js'       => array(
+									'type'  => 'guidance',
+									'label' => __( 'As a guidance, here is a list of script handles and script paths of each enqueued script detected by our plugin:', 'speed-booster-pack' ),
+								),
+							),
+						),
+						//Exclude scripts from being deferred
+						array(
+							'type'  => 'section',
+							'label' => __( 'Exclude scripts from being deferred', 'speed-booster-pack' ),
+							'items' => array(
+								'sbp_defer_exceptions1' => array(
+									'type' => 'text',
+								),
+								'sbp_defer_exceptions2' => array(
+									'type' => 'text',
+								),
+								'sbp_defer_exceptions3' => array(
+									'type' => 'text',
+								),
+								'sbp_defer_exceptions4' => array(
+									'type' => 'text',
+								),
+								'info'                  => array(
+									'type'             => 'guidance',
+									'description_only' => true,
+									'description'      => __( 'Enter one by text field, the handle part of the js files that you want to be excluded from defer parsing option. For example: <code>jquery-core</code> If you want to exclude more than 4 scripts, you can use the following filter: <code>sbp_exclude_defer_scripts</code> which takes an array of script handles as params. If you don\'t know how to handle this, feel free to post on our support forums.', 'speed-booster-pack' ),
+								),
+							),
+						),
+					),
+				),
+				'cdn-options'      => array(
+					'sections' => array(
+						array(
+							'type'        => 'section',
+							'label'       => __( 'CDN', 'speed-booster-pack' ),
+							'description' => __( 'CDN options that allow you to rewrite your site URLs with your CDN URLs.', 'speed-booster-pack' ),
+							'items'       => array(
+								'sbp_enable_cdn'               => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Enable CDN Rewrite', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Enables rewriting of your site URLs with your CDN URLs', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'sbp_cdn_url'                  => array(
+									'type'          => 'text',
+									'label'         => __( 'CDN URL', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Enter your CDN URL without the trailing backslash. Example: https://cdn.example.com', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'sbp_cdn_included_directories' => array(
+									'type'          => 'text',
+									'label'         => __( 'Included Directories', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Enter any directories you would like to be included in CDN rewriting, separated by commas (,). Default: wp-content,wp-includes', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+									'default'       => 'wp-content,wp-includes',
+								),
+								'sbp_cdn_exclusions'           => array(
+									'type'          => 'text',
+									'label'         => __( 'CDN Exclusions', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Enter any directories or file extensions you would like to be excluded from CDN rewriting, separated by commas (,). Default: .php', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+									'default'       => '.php',
+								),
+							),
+						),
+					),
+				),
+				'google-analytics' => array(
+					'sections' => array(
+						array(
+							'type'        => 'section',
+							'label'       => __( 'Google Analytics', 'speed-booster-pack' ),
+							'description' => __( 'Optimization options for Google Analytics.', 'speed-booster-pack' ),
+							'items'       => array(
+								'sbp_enable_local_analytics'   => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Enable Local Analytics', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Enable syncing og the Google Analytics script to your own server.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'sbp_ga_tracking_id'           => array(
+									'type'          => 'text',
+									'label'         => __( 'Tracking ID', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Enter your Google Analytics tracking ID', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'sbp_tracking_position'        => array(
+									'type'          => 'select',
+									'label'         => __( 'Tracking code position', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Load your analytics script in the header or footer of the site. Default - header', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+									'options'       => array(
+										'header' => 'Header ( default )',
+										'footer' => 'Footer',
+									),
+								),
+								'sbp_disable_display_features' => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Disable Display Features', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Disable marketing and advertising which generates a 2nd HTTP request', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'sbp_anonymize_ip'             => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Anonymize IP', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Shorten visitor IP to comply with privacy restrictions in some countries.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'sbp_track_loggedin_admins'    => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'Track Logged In Admins', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Include logged in Wordpress admins in your GA report.', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'sbp_bounce_rate'              => array(
+									'type'          => 'text',
+									'label'         => __( 'Adjusted Bounce Rate', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Set a timeout limit in seconds to better evaluate the quality of your traffic ( 1 - 100 )', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+								'sbp_monsterinsights'          => array(
+									'type'          => 'checkbox',
+									'label'         => __( 'User MonsterInsights', 'speed-booster-pack' ),
+									'tooltip'       => __( 'Allows MonsterInsights to manage your Google Analaytics while still using the locally hosted analytics.js generated by Speed Booster Pack', 'speed-booster-pack' ),
+									'options_group' => 'sbp_settings',
+								),
+							),
+						),
+					),
+				),
+			);
+
+			//Start the tabs
+			foreach ( $sbp_options_array as $k => $values ) { ?>
+			<!--  Tab sections  -->
+			<div id="<?php echo $k; ?>" class="sb-pack-tab">
+
+				<?php
+				if ( $k == 'advanced-options' ) {
+				?>
+				<!-- Advanced Options sections -->
+				<h3><?php _e('Advanced', 'speed-bosoter-pack'); ?></h3>
+				<div id="poststuff">
+
+					<?php
+					} else {
+					?>
+					<!-- Sections For General Options -->
+					<div class="sb-pack">
+						<?php
+						if ( isset( $values['label'] ) ) {
+							?>
+							<h3><?php echo $values['label']; ?></h3>
+							<?php
+						}
+						}
+						//Start the sections
+						foreach ( $values['sections'] as $section => $section_value ) {
+							if ( 'advanced-options' != $k ) {
+								?>
+								<h3><?php echo ( isset( $section_value['label'] ) ) ? $section_value['label'] : ""; ?></h3><?php
+							} else {
+								?>
+								<div class="meta-box-sortables ui-sortable" id="normal-sortables">
+								<div class="postbox" id="<?php echo $section; ?>">
+								<button type="button" class="handlediv" aria-expanded="true">
+									<span class="screen-reader-text"><?php echo ( isset( $section_value['label'] ) ) ? $section_value['label'] : ""; ?></span>
+									<span class="toggle-indicator" aria-hidden="true"></span>
+								</button>
+								<h3 class="hndle ui-sortable-handle" style="cursor: pointer;">
+									<span><?php echo ( isset( $section_value['label'] ) ) ? $section_value['label'] : ""; ?></span>
+								</h3>
+								<div class="inside">
+								<?php
+							}
+							//Start the options
+							foreach ( $section_value['items'] as $item => $item_value ) {
+
+								if ( 'checkbox' == $item_value['type'] ) { ?>
+									<div class="onoffswitch-wrapper">
+										<?php if ( isset( $item_value['tooltip'] ) ) { ?>
+											<span class="tooltip-right"
+											      data-tooltip="<?php echo $item_value['tooltip']; ?>">
+                                                        <i class="dashicons dashicons-editor-help"></i>
+                                                    </span>
+										<?php } ?>
+										<span class="chekbox-title"><?php echo ( isset( $item_value['label'] ) ) ? $item_value['label'] : ''; ?></span>
+
+										<div class="onoffswitch">
+											<div class="epsilon-toggle">
+												<input class="epsilon-toggle__input" type="checkbox" id="<?php echo ( isset( $item_value['options_group'] ) ) ? $item_value['options_group'] . '[' . $item . ']' : $item; ?>" name="<?php echo ( isset( $item_value['options_group'] ) ) ? $item_value['options_group'] . '[' . $item . ']' : $item; ?>" value="1" <?php checked( 1, isset( $sbp_options[ $item ] ) ); ?> >
+												<div class="epsilon-toggle__items">
+													<span class="epsilon-toggle__track"></span>
+													<span class="epsilon-toggle__thumb"></span>
+													<svg class="epsilon-toggle__off" width="6" height="6" aria-hidden="true" role="img" focusable="false" viewBox="0 0 6 6">
+														<path d="M3 1.5c.8 0 1.5.7 1.5 1.5S3.8 4.5 3 4.5 1.5 3.8 1.5 3 2.2 1.5 3 1.5M3 0C1.3 0 0 1.3 0 3s1.3 3 3 3 3-1.3 3-3-1.3-3-3-3z"></path>
+													</svg>
+													<svg class="epsilon-toggle__on" width="2" height="6" aria-hidden="true" role="img" focusable="false" viewBox="0 0 2 6">
+														<path d="M0 0h2v6H0z"></path>
+													</svg>
+												</div>
+											</div>
+											<label for="<?php echo ( isset( $item_value['options_group'] ) ) ? $item_value['options_group'] . '[' . $item . ']' : $item; ?>"></label>
+										</div>
+									</div>
+								<?php }
+								if ( 'select' == $item_value['type'] ) { ?>
+									<p>
+										<?php if ( isset( $item_value['tooltip'] ) ) { ?>
+											<span class="tooltip-right"
+											      data-tooltip="<?php echo $item_value['tooltip']; ?>">
+                                                <i class="dashicons dashicons-editor-help"></i>
+                                            </span>
+										<?php } ?>
+										<label for="<?php echo ( isset( $item_value['options_group'] ) ) ? $item_value['options_group'] . '[' . $item . ']' : $item; ?>" class="<?php echo ( isset( $item_value['label'] ) ) ? 'label-text' : ''; ?>"><?php echo ( isset( $item_value['label'] ) ) ? $item_value['label'] : ''; ?></label>
+										<select id="<?php echo ( isset( $item_value['options_group'] ) ) ? $item_value['options_group'] . '[' . $item . ']' : $item; ?>"
+										        name="<?php echo ( isset( $item_value['options_group'] ) ) ? $item_value['options_group'] . '[' . $item . ']' : $item; ?>">
+											<?php
+											foreach ( $item_value['options'] as $option_k => $op_v ) {
+												?>
+												<option value="<?php echo $option_k; ?>" <?php selected( $option_k, $sbp_options[ $item ], true ); ?> ><?php echo $op_v; ?></option>
+												<?php
+											}
+											?>
+										</select>
+									</p>
+								<?php }
+
+								if ( 'text' == $item_value['type'] ) { ?>
+									<p>
+										<?php
+										$default_value = ( isset( $item_value['default'] ) ) ? $item_value['default'] : "";
+										if ( isset( $item_value['options_group'] ) ) {
+											$op_text = ( isset( $sbp_options[ $item ] ) && "" != $sbp_options[ $item ] ) ? $sbp_options[ $item ] : $default_value;
+										} else {
+											$op_text = ( get_option( $item ) ) ? get_option( $item ) : $default_value;
+										}
+
+										?>
+										<?php if ( isset( $item_value['tooltip'] ) ) { ?>
+											<span class="tooltip-right"
+											      data-tooltip="<?php echo $item_value['tooltip']; ?>">
+                                <i class="dashicons dashicons-editor-help"></i>
+                           </span>
+										<?php } ?>
+										<label for="<?php echo ( isset( $item_value['options_group'] ) ) ? $item_value['options_group'] . '[' . $item . ']' : $item; ?>" class="<?php echo ( isset( $item_value['label'] ) ) ? 'label-text' : ''; ?>"><?php echo ( isset( $item_value['label'] ) ) ? $item_value['label'] : ''; ?></label>
+
+										<input id="<?php echo ( isset( $item_value['options_group'] ) ) ? $item_value['options_group'] . '[' . $item . ']' : $item; ?>"
+										       name="<?php echo ( isset( $item_value['options_group'] ) ) ? $item_value['options_group'] . '[' . $item . ']' : $item; ?>" type="text" value="<?php echo esc_attr( $op_text ); ?>" />
+									</p>
+								<?php }
+
+								if ( 'textarea' == $item_value['type'] ) { ?>
+									<div class="td-border-last"></div>
+									<h4><?php echo ( isset( $item_value['label'] ) ) ? $item_value['label'] : ''; ?></h4>
+									<p>
+                                            <textarea cols="50" rows="3" name="<?php echo ( isset( $item_value['options_group'] ) ) ? $item_value['options_group'] . '[' . $item . ']' : $item; ?>"
+                                                      id="<?php echo $item; ?>"
+                                                      value="<?php echo esc_attr( $css_exceptions ); ?>"><?php echo wp_kses_post( $css_exceptions ); ?></textarea>
+									</p>
+									<p class="description">
+										<?php echo isset( $item_value['description'] ) ? $item_value['description'] : ''; ?>
+									</p>
+								<?php }
+
+								if ( 'guidance' == $item_value['type'] ) {
+									//guidance for General options
+									if ( $item == 'guidance_options_css' ) {
+										?>
+										<div class="td-border-last"></div>
+
+										<p>
+										<h4><?php $item_value['label']; ?></h4>
+										</p>
+
+										<div class="sbp-all-enqueued">
+
+											<div class="sbp-div-head">
+												<div class="sbp-title-scripts"><?php _e( 'CSS Handle', 'speed-booster-pack' ); ?></div>
+											</div>
+
+											<div class="sbp-inline-wrap">
+												<div class="sbp-columns1 sbp-width">
+													<?php print_r( get_option( 'all_theme_styles_handle' ) ); ?>
+												</div>
+											</div>
+										</div>
+										<?php
+									}
+									if ( 'guidance_options_js' == $item ) {
+										?>
+										<div class="td-border-last"></div>
+										<h4><?php echo $item_value['label']; ?></h4>
+										<div class="sbp-all-enqueued">
+											<div class="sbp-div-head">
+												<div class="sbp-title-scripts"><?php _e( 'Script Handle', 'speed-booster-pack' ); ?></div>
+												<div class="sbp-title-scripts"><?php _e( 'Script Path', 'speed-booster-pack' ); ?></div>
+											</div>
+											<div class="sbp-inline-wrap">
+
+												<div class="sbp-columns1 sbp-width">
+													<?php
+													$all_script_handles = get_option( 'all_theme_scripts_handle' );
+
+													$all_script_handles = explode( '<br />', $all_script_handles );
+
+													foreach ( $all_script_handles as $key => $value ) {
+														if ( ! empty( $value ) ) {
+															echo '<p>' . esc_html( $value ) . '</p>';
+														}
+													}
+													?>
+												</div>
+
+												<div class="sbp-columns2 sbp-width">
+													<?php
+													$all_scripts_src = get_option( 'all_theme_scripts_src' );
+
+													$all_scripts_src = explode( '<br />', $all_scripts_src );
+
+													foreach ( $all_scripts_src as $key => $value ) {
+														if ( ! empty( $value ) ) {
+															$value = parse_url( $value );
+															echo '<p>' . esc_html( str_replace( '/wp-content', '', $value['path'] ) ) . '</p>';
+														}
+
+													}
+													?>
+												</div>
+											</div>
+										</div>
+										<?php
+									}
+									if ( isset( $item_value['description_only'] ) && $item_value['description_only'] ) {
+										?>
+										<p class="description"><?php echo $item_value['description']; ?></p>
+										<?php
+									}
+
+								}
+
+							}
+							if ( 'advanced-options' == $k ) {
+								?>      </div>
+								</div>
+								</div>
+							<?php }
+						}
+						?>
+					</div><!-- Advanced Options sections || Sections For General Options -->
+				</div> <!-- Tab sections  -->
+				<?php } ?>
+
+				<div id="optimize-more" class="sb-pack-tab">
+					<div class="feature-section three-col">
+
+					<div class="col sbp-box">
+						<img src="https://ps.w.org/shortpixel-image-optimiser/assets/icon-128x128.png?rev=1038819">
+						<div class="sbp-box__name"><?php esc_html_e( 'ShortPixel Image Optimizer', 'speed-booster-pack' ); ?></div>
+
+						<div class="sbp-box__description">
+							<?php esc_html_e( 'Increase your website’s SEO ranking, number of visitors and ultimately your sales by optimizing any image. ', 'speed-booster-pack' ); ?>
+						</div>
+
+						<div class="sbp-box__action-bar">
+							<span class="sbp-box__action-button">
+								<a class="button" href="<?php echo esc_url( 'https://shortpixel.com/h/af/IVAKFSX31472' ); ?>" target="_blank"><?php esc_html_e( 'Test your site for free', 'speed-booster-pack' ); ?></a>
+							</span>
+						</div>
+					</div>
+
+					<div class="col sbp-box">
+						<img src="https://ps.w.org/optimole-wp/assets/icon-128x128.png?rev=1975706">
+						<div class="sbp-box__name"><?php esc_html_e( 'Optimole', 'speed-booster-pack' ); ?></div>
+						<div class="sbp-box__description">
+							<?php esc_html_e( 'Image optimization & resizing. Image acceleration through CDN. On-the-fly image handling. ', 'speed-booster-pack' ); ?>
+						</div>
+
+						<div class="sbp-box__action-bar">
+							<span class="sbp-box__action-button">
+								<a class="button" href="<?php echo esc_url( 'https://optimole.com' ); ?>" target="_blank"><?php esc_html_e( 'Check it out for free', 'speed-booster-pack' ); ?></a>
+							</span>
+						</div>
+					</div>
+
+
+					<div class="col sbp-box">
+						<img src="<?php echo SPEED_BOOSTER_PACK_URL ?>/inc/images/hostinger-official.jpg">
+						<div class="sbp-box__name"><?php esc_html_e( 'Hostinger', 'speed-booster-pack' ); ?></div>
+
+						<div class="sbp-box__description">
+							<?php esc_html_e( 'They are offering the best cheap WordPress hosting on the market right now at 1.45$ / month', 'speed-booster-pack' ); ?>
+						</div>
+
+						<div class="sbp-box__action-bar">
+							<span class="sbp-box__action-button">
+								<a class="button button-primary" href="<?php echo esc_url( 'https://www.hostg.xyz/SHA' ); ?>" target="_blank"><?php esc_html_e( 'Get a faster host now', 'speed-booster-pack' ); ?></a>
+							</span>
+						</div>
+					</div>
+
+					</div>
+				</div><!--#optimize-more-->
+
+				<div class="textright">
+					<hr />
+					<?php submit_button( '', 'button button-primary button-hero' ); ?>
+				</div>
+
+		</form>
+
+	</div><!--/.sb-pack-->
 </div> <!-- end wrap div -->

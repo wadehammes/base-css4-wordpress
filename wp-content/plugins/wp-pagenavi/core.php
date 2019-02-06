@@ -125,7 +125,7 @@ function wp_pagenavi( $args = array() ) {
 				if ( $larger_page < ($start_page - $half_page_start) && $larger_page_start < $larger_page_to_show ) {
 					$out .= $instance->get_single( $larger_page, $options['page_text'], array(
 						'class' => "{$class_names['smaller']} {$class_names['page']}",
-						'title' => sprintf( __( 'Page %d', 'wp-pagenavi' ), number_format_i18n( $larger_page ) ),
+						'title' => sprintf( __( 'Page %s', 'wp-pagenavi' ), number_format_i18n( $larger_page ) ),
 					) );
 					$larger_page_start++;
 				}
@@ -139,12 +139,12 @@ function wp_pagenavi( $args = array() ) {
 			foreach ( range( $start_page, $end_page ) as $i ) {
 				if ( $i == $paged && !empty( $options['current_text'] ) ) {
 					$current_page_text = str_replace( '%PAGE_NUMBER%', number_format_i18n( $i ), $options['current_text'] );
-					$out .= "<span class='{$class_names['current']}'>$current_page_text</span>";
+					$out .= "<span aria-current='page' class='{$class_names['current']}'>$current_page_text</span>";
 					$timeline = 'larger';
 				} else {
 					$out .= $instance->get_single( $i, $options['page_text'], array(
 						'class' => "{$class_names['page']} {$class_names[$timeline]}",
-						'title' => sprintf( __( 'Page %d', 'wp-pagenavi' ), number_format_i18n( $i ) ),
+						'title' => sprintf( __( 'Page %s', 'wp-pagenavi' ), number_format_i18n( $i ) ),
 					) );
 				}
 			}
@@ -156,7 +156,7 @@ function wp_pagenavi( $args = array() ) {
 				if ( $larger_page > ($end_page + $half_page_end) && $larger_page_end < $larger_page_to_show ) {
 					$larger_page_out .= $instance->get_single( $larger_page, $options['page_text'], array(
 						'class' => "{$class_names['larger']} {$class_names['page']}",
-						'title' => sprintf( __( 'Page %d', 'wp-pagenavi' ), number_format_i18n( $larger_page ) ),
+						'title' => sprintf( __( 'Page %s', 'wp-pagenavi' ), number_format_i18n( $larger_page ) ),
 					) );
 					$larger_page_end++;
 				}
@@ -211,7 +211,7 @@ function wp_pagenavi( $args = array() ) {
 			$out .= "</form>\n";
 			break;
 	}
-	$out = $before . "<" . $wrapper_tag . " class='" . $wrapper_class . "'>\n$out\n</" . $wrapper_tag . ">" . $after;
+	$out = $before . "<" . $wrapper_tag . " class='" . $wrapper_class . "' role='navigation'>\n$out\n</" . $wrapper_tag . ">" . $after;
 
 	$out = apply_filters( 'wp_pagenavi', $out );
 

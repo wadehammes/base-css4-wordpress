@@ -3,9 +3,12 @@
 
 window.onload = function() {
 	checkImageSizes();
-	document.getElementById('wp-admin-bar-resize-detection').onclick = function() {
-		checkImageSizes();
-	};
+	var adminBarButton = document.getElementById('wp-admin-bar-resize-detection');
+	if (adminBarButton) {
+		adminBarButton.onclick = function() {
+			checkImageSizes();
+		};
+	}
 }
 function checkImageSizes() {
     // Find images which have width or height different than their natural
@@ -23,7 +26,6 @@ function checkImageSizes() {
                 if (wrongWidth || wrongHeight) {
                     img.style.border = "3px #3eadc9 dotted";
                     img.style.margin = "-3px";
-                    img.style.background = "black";
                     img.title = "Forced to wrong size: " +
                         img.width + "x" + img.height + ", natural is " +
                         img.naturalWidth + "x" + img.naturalHeight + "!";

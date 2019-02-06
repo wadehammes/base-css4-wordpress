@@ -22,37 +22,46 @@ if (!defined('WORDFENCE_VERSION')) { exit; }
 <ul class="wf-scan-scheduling" data-option="schedMode" data-original-value="<?php echo esc_attr($scanner->schedulingMode()); ?>">
 	<li>
 		<ul class="wf-option wf-option-scan-schedule-mode<?php if (!$scanner->isEnabled()) { echo ' wf-disabled'; } ?>" data-option-value="<?php echo esc_attr(wfScanner::SCAN_SCHEDULING_MODE_AUTOMATIC); ?>">
-			<li class="wf-option-radio-container">
-				<input class="wf-option-radio" type="radio" name="wf-scheduling-mode" id="wf-scheduling-mode-automatic" value="<?php echo esc_attr(wfScanner::SCAN_SCHEDULING_MODE_AUTOMATIC); ?>" <?php echo ($scanner->schedulingMode() == wfScanner::SCAN_SCHEDULING_MODE_AUTOMATIC ? ' checked' : ''); ?><?php if (!$scanner->isEnabled()) { echo ' disabled'; } ?>>
+			<li class="wf-option-radio-container" role="radiogroup">
+				<input class="wf-option-radio" type="radio" name="wf-scheduling-mode" id="wf-scheduling-mode-automatic" value="<?php echo esc_attr(wfScanner::SCAN_SCHEDULING_MODE_AUTOMATIC); ?>" <?php echo ($scanner->schedulingMode() == wfScanner::SCAN_SCHEDULING_MODE_AUTOMATIC ? ' checked' : ''); ?><?php if (!$scanner->isEnabled()) { echo ' disabled'; } ?> aria-labelledby="wf-scheduling-mode-automatic-label">
 				<label for="wf-scheduling-mode-automatic"></label>
 			</li>
-			<li class="wf-option-title"><?php _e('Let Wordfence choose when to scan my site (recommended)', 'wordfence'); ?></li>
+			<li id="wf-scheduling-mode-automatic-label" class="wf-option-title"><?php _e('Let Wordfence choose when to scan my site (recommended)', 'wordfence'); ?></li>
 		</ul>
 	</li>
 	<li>
 		<ul class="wf-option wf-option-scan-schedule-mode<?php if (!wfConfig::p()) { echo ' wf-option-premium'; } ?><?php if (!$scanner->isEnabled()) { echo ' wf-disabled'; } ?>" data-option-value="<?php echo esc_attr(wfScanner::SCAN_SCHEDULING_MODE_MANUAL); ?>" data-show=".wf-scan-scheduling-manual">
 			<li class="wf-option-radio-container">
-				<input class="wf-option-radio" type="radio" name="wf-scheduling-mode" id="wf-scheduling-mode-manual" value="<?php echo esc_attr(wfScanner::SCAN_SCHEDULING_MODE_MANUAL); ?>" <?php echo ($scanner->schedulingMode() == wfScanner::SCAN_SCHEDULING_MODE_MANUAL ? ' checked' : ''); ?><?php if (!wfConfig::p() || !$scanner->isEnabled()) { echo ' disabled'; } ?>>
+				<input class="wf-option-radio" type="radio" name="wf-scheduling-mode" id="wf-scheduling-mode-manual" value="<?php echo esc_attr(wfScanner::SCAN_SCHEDULING_MODE_MANUAL); ?>" <?php echo ($scanner->schedulingMode() == wfScanner::SCAN_SCHEDULING_MODE_MANUAL ? ' checked' : ''); ?><?php if (!wfConfig::p() || !$scanner->isEnabled()) { echo ' disabled'; } ?> aria-labelledby="wf-scheduling-mode-manual-label">
 				<label for="wf-scheduling-mode-manual"></label>
 			</li>
-			<li class="wf-option-title"><?php _e('Manually schedule scans', 'wordfence'); ?><?php if (!wfConfig::p()) { ?>&nbsp;&nbsp;<a href="https://www.wordfence.com/gnl1optionUpgrade/wordfence-signup/" target="_blank" rel="noopener noreferrer" class="wf-premium-link"><?php _e('Premium Feature', 'wordfence'); ?></a><?php } ?></li>
+			<li id="wf-scheduling-mode-manual-label" class="wf-option-title"><?php _e('Manually schedule scans', 'wordfence'); ?><?php if (!wfConfig::p()) { ?>&nbsp;&nbsp;<a href="https://www.wordfence.com/gnl1optionUpgrade/wordfence-signup/" target="_blank" rel="noopener noreferrer" class="wf-premium-link"><?php _e('Premium Feature', 'wordfence'); ?></a><?php } ?></li>
 		</ul>
 		<ul class="wf-scan-scheduling-manual<?php echo ($scanner->schedulingMode() == wfScanner::SCAN_SCHEDULING_MODE_MANUAL ? ' wf-active' : ''); ?>">
 			<li>
 				<strong class="wf-scan-scheduling-manual-presets-label">Shortcuts</strong> 
-				<ul class="wf-scan-scheduling-manual-presets wf-overflow-x-auto-xs" data-option-name="manualScanType" data-original-value="<?php echo esc_attr(wfConfig::get('manualScanType')); ?>">
-					<li class="wf-nowrap <?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_ONCE_DAILY ? 'wf-active' : ''); ?>" data-option-value="<?php echo esc_attr(wfScanner::MANUAL_SCHEDULING_ONCE_DAILY); ?>" data-show=".wf-scan-scheduling-manual-preset-options" data-hide=".wf-scan-scheduling-manual-custom-options"><?php _e('Once Daily', 'wordfence'); ?></li>
-					<li class="wf-nowrap <?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_TWICE_DAILY ? 'wf-active' : ''); ?>" data-option-value="<?php echo esc_attr(wfScanner::MANUAL_SCHEDULING_TWICE_DAILY); ?>" data-show=".wf-scan-scheduling-manual-preset-options" data-hide=".wf-scan-scheduling-manual-custom-options"><?php _e('Twice Daily', 'wordfence'); ?></li>
-					<li class="wf-nowrap <?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_EVERY_OTHER_DAY ? 'wf-active' : ''); ?>" data-option-value="<?php echo esc_attr(wfScanner::MANUAL_SCHEDULING_EVERY_OTHER_DAY); ?>" data-show=".wf-scan-scheduling-manual-preset-options" data-hide=".wf-scan-scheduling-manual-custom-options"><?php _e('Every Other Day', 'wordfence'); ?></li>
-					<li class="wf-nowrap <?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_WEEKDAYS ? 'wf-active' : ''); ?>" data-option-value="<?php echo esc_attr(wfScanner::MANUAL_SCHEDULING_WEEKDAYS); ?>" data-show=".wf-scan-scheduling-manual-preset-options" data-hide=".wf-scan-scheduling-manual-custom-options"><?php _e('Weekdays', 'wordfence'); ?></li>
-					<li class="wf-nowrap <?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_WEEKENDS ? 'wf-active' : ''); ?>" data-option-value="<?php echo esc_attr(wfScanner::MANUAL_SCHEDULING_WEEKENDS); ?>" data-show=".wf-scan-scheduling-manual-preset-options" data-hide=".wf-scan-scheduling-manual-custom-options"><?php _e('Weekends', 'wordfence'); ?></li>
-					<li class="wf-nowrap <?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_ODD_DAYS_WEEKENDS ? 'wf-active' : ''); ?>" data-option-value="<?php echo esc_attr(wfScanner::MANUAL_SCHEDULING_ODD_DAYS_WEEKENDS); ?>" data-show=".wf-scan-scheduling-manual-preset-options" data-hide=".wf-scan-scheduling-manual-custom-options"><?php _e('Odd Days & Weekends', 'wordfence'); ?></li>
-					<li class="wf-nowrap <?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_CUSTOM ? 'wf-active' : ''); ?>" data-option-value="<?php echo esc_attr(wfScanner::MANUAL_SCHEDULING_CUSTOM); ?>" data-show=".wf-scan-scheduling-manual-custom-options" data-hide=".wf-scan-scheduling-manual-preset-options"><?php _e('Custom', 'wordfence'); ?></li>
+				<ul class="wf-scan-scheduling-manual-presets wf-overflow-x-auto-xs" data-option-name="manualScanType" data-original-value="<?php echo esc_attr(wfConfig::get('manualScanType')); ?>" role="radiogroup">
+					<li class="wf-nowrap <?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_ONCE_DAILY ? 'wf-active' : ''); ?>" data-option-value="<?php echo esc_attr(wfScanner::MANUAL_SCHEDULING_ONCE_DAILY); ?>" data-show=".wf-scan-scheduling-manual-preset-options" data-hide=".wf-scan-scheduling-manual-custom-options" role="radio" aria-checked="<?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_ONCE_DAILY ? 'true' : 'false'); ?>" tabindex="0"><?php _e('Once Daily', 'wordfence'); ?></li>
+					<li class="wf-nowrap <?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_TWICE_DAILY ? 'wf-active' : ''); ?>" data-option-value="<?php echo esc_attr(wfScanner::MANUAL_SCHEDULING_TWICE_DAILY); ?>" data-show=".wf-scan-scheduling-manual-preset-options" data-hide=".wf-scan-scheduling-manual-custom-options" role="radio" aria-checked="<?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_TWICE_DAILY ? 'true' : 'false'); ?>" tabindex="0"><?php _e('Twice Daily', 'wordfence'); ?></li>
+					<li class="wf-nowrap <?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_EVERY_OTHER_DAY ? 'wf-active' : ''); ?>" data-option-value="<?php echo esc_attr(wfScanner::MANUAL_SCHEDULING_EVERY_OTHER_DAY); ?>" data-show=".wf-scan-scheduling-manual-preset-options" data-hide=".wf-scan-scheduling-manual-custom-options" role="radio" aria-checked="<?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_EVERY_OTHER_DAY ? 'true' : 'false'); ?>" tabindex="0"><?php _e('Every Other Day', 'wordfence'); ?></li>
+					<li class="wf-nowrap <?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_WEEKDAYS ? 'wf-active' : ''); ?>" data-option-value="<?php echo esc_attr(wfScanner::MANUAL_SCHEDULING_WEEKDAYS); ?>" data-show=".wf-scan-scheduling-manual-preset-options" data-hide=".wf-scan-scheduling-manual-custom-options" role="radio" aria-checked="<?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_WEEKDAYS ? 'true' : 'false'); ?>" tabindex="0"><?php _e('Weekdays', 'wordfence'); ?></li>
+					<li class="wf-nowrap <?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_WEEKENDS ? 'wf-active' : ''); ?>" data-option-value="<?php echo esc_attr(wfScanner::MANUAL_SCHEDULING_WEEKENDS); ?>" data-show=".wf-scan-scheduling-manual-preset-options" data-hide=".wf-scan-scheduling-manual-custom-options" role="radio" aria-checked="<?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_WEEKENDS ? 'true' : 'false'); ?>" tabindex="0"><?php _e('Weekends', 'wordfence'); ?></li>
+					<li class="wf-nowrap <?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_ODD_DAYS_WEEKENDS ? 'wf-active' : ''); ?>" data-option-value="<?php echo esc_attr(wfScanner::MANUAL_SCHEDULING_ODD_DAYS_WEEKENDS); ?>" data-show=".wf-scan-scheduling-manual-preset-options" data-hide=".wf-scan-scheduling-manual-custom-options" role="radio" aria-checked="<?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_ODD_DAYS_WEEKENDS ? 'true' : 'false'); ?>" tabindex="0"><?php _e('Odd Days & Weekends', 'wordfence'); ?></li>
+					<li class="wf-nowrap <?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_CUSTOM ? 'wf-active' : ''); ?>" data-option-value="<?php echo esc_attr(wfScanner::MANUAL_SCHEDULING_CUSTOM); ?>" data-show=".wf-scan-scheduling-manual-custom-options" data-hide=".wf-scan-scheduling-manual-preset-options" role="radio" aria-checked="<?php echo ($scanner->manualSchedulingType() == wfScanner::MANUAL_SCHEDULING_CUSTOM ? 'true' : 'false'); ?>" tabindex="0"><?php _e('Custom', 'wordfence'); ?></li>
 				</ul>
 				<script type="application/javascript">
 					(function($) {
 						$(function() {
 							$('.wf-option-scan-schedule-mode').each(function() {
+								$(this).find('.wf-option-radio').on('keydown', function(e) {
+									if (e.keyCode == 32) {
+										e.preventDefault();
+										e.stopPropagation();
+
+										$(this).trigger('click');
+									}
+								});
+								
 								$(this).find('.wf-option-radio').on('click', function(e) {
 									var optionElement = $(this).closest('.wf-option');
 									if (optionElement.hasClass('wf-option-premium') || optionElement.hasClass('wf-disabled')) {
@@ -91,6 +100,15 @@ if (!defined('WORDFENCE_VERSION')) { exit; }
 							});
 							
 							$('.wf-scan-scheduling-manual-presets > li').each(function(index, element) {
+								$(element).on('keydown', function(e) {
+									if (e.keyCode == 32) {
+										e.preventDefault();
+										e.stopPropagation();
+
+										$(this).trigger('click');
+									}
+								});
+								
 								$(element).on('click', function(e) {
 									e.preventDefault();
 									e.stopPropagation();
@@ -101,7 +119,7 @@ if (!defined('WORDFENCE_VERSION')) { exit; }
 									var value = $(this).data('optionValue');
 
 									control.find('li').each(function() {
-										$(this).toggleClass('wf-active', value == $(this).data('optionValue'));
+										$(this).toggleClass('wf-active', value == $(this).data('optionValue')).attr('aria-checked', value == $(this).data('optionValue') ? 'true' : 'false');
 									});
 
 									var toShow = $(this).data('show');
@@ -148,7 +166,7 @@ if (!defined('WORDFENCE_VERSION')) { exit; }
 								$('.wf-scan-scheduling-manual-presets').each(function() {
 									var originalValue = $(this).data('originalValue');
 									$(this).find('li').each(function() {
-										$(this).toggleClass('wf-active', originalValue == $(this).data('optionValue'));
+										$(this).toggleClass('wf-active', originalValue == $(this).data('optionValue')).attr('aria-checked', originalValue == $(this).data('optionValue') ? 'true' : 'false');
 										if (originalValue == $(this).data('optionValue')) {
 											var toShow = $(this).data('show');
 											if (toShow) {
@@ -226,7 +244,7 @@ if (!defined('WORDFENCE_VERSION')) { exit; }
 									<?php
 									for ($h = 0; $h < 12; $h++) {
 										$active = (isset($sched[$dayNumber]) && $sched[$dayNumber][$h] ? ' wf-active' : '');
-										echo '<li class="wf-schedule-time' . $active . '" data-hour="' . $h . '">' . str_pad($h, 2, '0', STR_PAD_LEFT) . '</li>';
+										echo '<li class="wf-schedule-time' . $active . '" data-hour="' . $h . '" role="checkbox" aria-checked="' . (empty($active) ? 'false' : 'true') . '" tabindex="0">' . str_pad($h, 2, '0', STR_PAD_LEFT) . '</li>';
 									}
 									?>
 								</ul>
@@ -239,7 +257,7 @@ if (!defined('WORDFENCE_VERSION')) { exit; }
 										$h = $i;
 										if ($h == 0) { $h = 12; }
 										$active = (isset($sched[$dayNumber]) && $sched[$dayNumber][$i + 12] ? ' wf-active' : '');
-										echo '<li class="wf-schedule-time' . $active . '" data-hour="' . ($i + 12) . '">' . str_pad($h, 2, '0', STR_PAD_LEFT) . '</li>';
+										echo '<li class="wf-schedule-time' . $active . '" data-hour="' . ($i + 12) . '" role="checkbox" aria-checked="' . (empty($active) ? 'false' : 'true') . '" tabindex="0">' . str_pad($h, 2, '0', STR_PAD_LEFT) . '</li>';
 									}
 									?>
 								</ul>
@@ -251,12 +269,21 @@ if (!defined('WORDFENCE_VERSION')) { exit; }
 				<script type="application/javascript">
 					(function($) {
 						$(function() {
+							$('.wf-schedule-time').on('keydown', function(e) {
+								if (e.keyCode == 32) {
+									e.preventDefault();
+									e.stopPropagation();
+
+									$(this).trigger('click');
+								}
+							});
+							
 							$('.wf-schedule-time').on('click', function(e) {
 								e.preventDefault();
 								e.stopPropagation();
 								
 								var isActive = $(this).hasClass('wf-active');
-								$(this).toggleClass('wf-active', !isActive);
+								$(this).toggleClass('wf-active', !isActive).attr('aria-checked', !isActive ? 'true' : 'false');
 								var originalValue = $('.wf-scan-schedule').data('originalValue');
 								var customSchedule = WFAD.pendingChanges['scanSched'];
 								if (!customSchedule) {
@@ -299,7 +326,7 @@ if (!defined('WORDFENCE_VERSION')) { exit; }
 								$('.wf-schedule-time').each(function() {
 									var day = $(this).closest('.wf-schedule-day').data('day');
 									var hour = $(this).data('hour');
-									$(this).toggleClass('wf-active', !!originalValue[day][hour]);
+									$(this).toggleClass('wf-active', !!originalValue[day][hour]).attr('aria-checked', !!originalValue[day][hour] ? 'true' : 'false');
 								});
 							});
 						});

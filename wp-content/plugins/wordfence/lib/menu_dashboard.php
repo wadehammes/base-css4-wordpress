@@ -4,9 +4,14 @@ $firewall = new wfFirewall();
 $scanner = wfScanner::shared();
 $d = new wfDashboard();
 ?>
-<?php 
+<?php
 if (wfOnboardingController::shouldShowAttempt3()) {
+	echo wfView::create('onboarding/disabled-overlay')->render();
 	echo wfView::create('onboarding/banner')->render();
+}
+else if (wfConfig::get('touppPromptNeeded')) {
+	echo wfView::create('gdpr/disabled-overlay')->render();
+	echo wfView::create('gdpr/banner')->render();
 }
 ?>
 <div class="wrap wordfence" id="wf-dashboard">
@@ -201,7 +206,7 @@ if (wfOnboardingController::shouldShowAttempt3()) {
 											'id' => 'wf-dashboard-option-tools',
 											'img' => 'tools.svg',
 											'title' => __('Tools', 'wordfence'),
-											'subtitle' => __('Powerful tools like 2 factor authentication and password auditing to help lock down your site', 'wordfence'),
+											'subtitle' => __('Powerful tools like 2 factor authentication to help lock down your site', 'wordfence'),
 											'link' => network_admin_url('admin.php?page=WordfenceTools'),
 										))->render();
 										?>
@@ -236,12 +241,12 @@ if (wfOnboardingController::shouldShowAttempt3()) {
 			</div>
 		</div>
 		<div class="wf-row">
-			<div class="wf-col-xs-12 wf-col-sm-6 wf-col-sm-half-padding-right">
+			<div class="wf-col-xs-12 wf-col-lg-6 wf-col-lg-half-padding-right">
 				<!-- begin firewall summary site -->
 				<?php include(dirname(__FILE__) . '/dashboard/widget_localattacks.php'); ?>
 				<!-- end firewall summary site -->
 			</div> <!-- end content block -->
-			<div class="wf-col-xs-12 wf-col-sm-6 wf-col-sm-half-padding-left">
+			<div class="wf-col-xs-12 wf-col-lg-6 wf-col-lg-half-padding-left">
 				<!-- begin total attacks blocked network -->
 				<?php include(dirname(__FILE__) . '/dashboard/widget_networkattacks.php'); ?>
 				<!-- end total attacks blocked network -->
@@ -249,116 +254,6 @@ if (wfOnboardingController::shouldShowAttempt3()) {
 		</div> <!-- end row -->
 	</div> <!-- end container -->
 </div>
-
-<?php if (wfOnboardingController::shouldShowAttempt3() && (isset($_GET['onboarding']) || wfOnboardingController::shouldShowAttempt3Automatically())): ?>
-	<?php wfConfig::set('onboardingAttempt3Initial', true); ?>
-<script type="text/x-jquery-template" id="wfTmpl_onboardingFinal">
-	<?php echo wfView::create('onboarding/modal-final-attempt')->render(); ?>
-</script>
-<script type="application/javascript">
-	(function($) {
-		$(function() {
-			var prompt = $('#wfTmpl_onboardingFinal').tmpl();
-			var promptHTML = $("<div />").append(prompt).html();
-			WFAD.colorboxHTML('800px', promptHTML, {overlayClose: false, closeButton: false, className: 'wf-modal', onComplete: function() {
-				$('#wf-onboarding-alerts').on('change paste keyup', function() {
-					setTimeout(function() {
-						$('#wf-onboarding-continue').toggleClass('wf-disabled', wordfenceExt.parseEmails($('#wf-onboarding-alerts').val()).length == 0);
-					}, 100);
-				}).trigger('change');
-
-				$('#wf-onboarding-continue').on('click', function(e) {
-					e.preventDefault();
-					e.stopPropagation();
-
-					var emails = wordfenceExt.parseEmails($('#wf-onboarding-alerts').val());
-					if (emails.length > 0) {
-						var subscribe = !!$('#wf-onboarding-email-list').is(':checked');
-						wordfenceExt.onboardingProcessEmails(emails, subscribe);
-						
-					<?php if (wfConfig::get('isPaid')): ?>
-						wordfenceExt.setOption('onboardingAttempt3', '<?php echo esc_attr(wfOnboardingController::ONBOARDING_THIRD_LICENSE); ?>');
-						$('#wf-onboarding-banner').slideUp();
-						WFAD.colorboxClose();
-						if (WFAD.tour1) { setTimeout(function() { WFAD.tour1(); }, 500); }
-					<?php else: ?>
-						wordfenceExt.setOption('onboardingAttempt3', '<?php echo esc_attr(wfOnboardingController::ONBOARDING_THIRD_EMAILS); ?>');
-
-						$('#wf-onboarding-final-attempt-1, .wf-modal-footer').fadeOut(400, function() {
-							$('#wf-onboarding-final-attempt-2').fadeIn();
-							$.wfcolorbox.resize();
-						});
-					<?php endif; ?>
-					}
-				});
-
-				$('#wf-onboarding-license input').on('change paste keyup', function() {
-					setTimeout(function() {
-						$('#wf-onboarding-license-install').toggleClass('wf-disabled', $('#wf-onboarding-license input').val().length == 0);
-					}, 100);
-				}).trigger('change');
-
-				$('#wf-onboarding-license-install').on('click', function(e) {
-					e.preventDefault();
-					e.stopPropagation();
-
-					$('#wf-onboarding-license-status').fadeOut();
-
-					var license = $('#wf-onboarding-license input').val();
-					wordfenceExt.onboardingInstallLicense(license,
-						function(res) { //Success
-							if (res.isPaid) {
-								wordfenceExt.setOption('onboardingAttempt3', '<?php echo esc_attr(wfOnboardingController::ONBOARDING_THIRD_LICENSE); ?>');
-								//$('#wf-onboarding-license-status').addClass('wf-green-dark').removeClass('wf-yellow-dark wf-red-dark').text('You have successfully installed a premium license.').fadeIn();
-								//$('#wf-onboarding-license-install').text('Installed').addClass('wf-disabled');
-								//$('#wf-onboarding-license input').attr('disabled', true);
-								$('#wf-onboarding-banner').slideUp();
-								$('#wf-onboarding-final-attempt .wf-modal-header-action-close').off('click');
-								/*$('#wf-onboarding-premium-cta, #wf-onboarding-license-footer, #wf-onboarding-or').fadeOut(400, function() {
-									$('#wf-onboarding-license-finished').fadeIn();
-									$.wfcolorbox.resize();
-								});*/
-								
-								var html = '<div class="wf-modal wf-modal-success"><div class="wf-model-success-wrapper"><div class="wf-modal-header"><div class="wf-modal-header-content"><div class="wf-modal-title"><?php _e('Premium License Installed', 'wordfence'); ?></div></div></div><div class="wf-modal-content"><?php _e('Congratulations! Wordfence Premium is now active on your website. Please note that some Premium features are not enabled by default.', 'wordfence'); ?></div></div><div class="wf-modal-footer"><ul class="wf-onboarding-flex-horizontal wf-onboarding-flex-align-right wf-onboarding-full-width"><li><a href="<?php echo esc_url(network_admin_url('admin.php?page=Wordfence')); ?>" class="wf-onboarding-btn wf-onboarding-btn-primary"><?php _e('Continue', 'wordfence'); ?></a></li></ul></div></div>';
-								$.wfcolorbox({
-									width: (wordfenceExt.isSmallScreen ? '300px' : '500px'),
-									html: html,
-									overlayClose: true,
-									closeButton: false,
-									className: 'wf-modal'
-								});
-								<?php
-								//Congratulations! Wordfence Premium is now active on your website. Please note that some Premium features are not enabled by default. Read this brief article to learn more about <a href="#todo" target="_blank" rel="noopener noreferrer">getting the most out of Wordfence Premium</a>.	
-								?>
-							}
-							else { //Unlikely to happen but possible
-								$('#wf-onboarding-license-status').addClass('wf-yellow-dark').removeClass('wf-green-dark wf-red-dark').text('You have successfully installed a free license.').fadeIn();
-								$.wfcolorbox.resize();
-							}
-						},
-						function(res) { //Error
-							$('#wf-onboarding-license-status').addClass('wf-red-dark').removeClass('wf-green-dark wf-yellow-dark').text(res.error).fadeIn();
-							$.wfcolorbox.resize();
-						});
-				});
-
-				$('#wf-onboarding-no-thanks, #wf-onboarding-final-attempt .wf-modal-header-action-close').on('click', function(e) {
-					e.preventDefault();
-					e.stopPropagation();
-
-					if ($('#wf-onboarding-final-attempt-2').is(':visible')) {
-						wordfenceExt.setOption('onboardingAttempt3', '<?php echo esc_attr(wfOnboardingController::ONBOARDING_THIRD_LICENSE); ?>');
-						$('#wf-onboarding-banner').slideUp();
-					}
-					
-					WFAD.colorboxClose();
-					if (WFAD.tour1) { setTimeout(function() { WFAD.tour1(); }, 500); }
-				});
-			}});
-		});
-	})(jQuery);
-</script>
-<?php endif; ?>
 
 <?php if (wfOnboardingController::willShowNewTour(wfOnboardingController::TOUR_DASHBOARD)): ?>
 <script type="application/javascript">

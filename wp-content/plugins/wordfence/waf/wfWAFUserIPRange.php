@@ -1,4 +1,5 @@
 <?php
+if (!defined('WFWAF_RUN_COMPLETE')) {
 
 /**
  *
@@ -255,4 +256,5 @@ class wfWAFUserIPRange {
 	public function setIPString($ip_string) {
 		$this->ip_string = $this->_sanitizeIPRange($ip_string);
 	}
+}
 }

@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml"  dir="ltr" lang="en-US">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<link rel='stylesheet' id='wordfence-main-style-css'  href='<?php echo wfUtils::getBaseURL(); ?>/css/iptraf.css?ver=<?php echo WORDFENCE_VERSION; ?>' type='text/css' media='all' />
+<link rel='stylesheet' id='wordfence-main-style-css'  href='<?php echo wfUtils::getBaseURL() . wfUtils::versionedAsset('css/iptraf.css'); ?>?ver=<?php echo WORDFENCE_VERSION; ?>' type='text/css' media='all' />
 <body>
 <h1>Wordfence: All recent hits for IP address <?php echo wp_kses($IP, array()); if($reverseLookup){ echo '[' . wp_kses($reverseLookup, array()) . ']'; } ?></h1>
 

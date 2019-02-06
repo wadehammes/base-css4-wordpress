@@ -18,7 +18,7 @@
 					echo esc_html(wfUtils::makeTimeAgo(time() - $l['t']) . ' ago');
 				}
 				else {
-					echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), (int) $l['t']));
+					echo esc_html(wfUtils::formatLocalTime(get_option('date_format') . ' ' . get_option('time_format'), (int) $l['t']));
 				}
 				?></td>
 		</tr>

@@ -15,7 +15,7 @@ if (isset($_GET['source']) && wfPage::isValidPage($_GET['source'])) {
 			
 			//Hash-based option block linking
 			if (window.location.hash) {
-				var hashes = window.location.hash.split('#');
+				var hashes = WFAD.parseHashes();
 				var hash = hashes[hashes.length - 1];
 				var block = $('.wf-block[data-persistence-key="' + hash + '"]');
 				if (block) {
@@ -59,7 +59,12 @@ if (isset($_GET['source']) && wfPage::isValidPage($_GET['source'])) {
 <div class="wf-options-controls-spacer"></div>
 <?php
 if (wfOnboardingController::shouldShowAttempt3()) {
+	echo wfView::create('onboarding/disabled-overlay')->render();
 	echo wfView::create('onboarding/banner')->render();
+}
+else if (wfConfig::get('touppPromptNeeded')) {
+	echo wfView::create('gdpr/disabled-overlay')->render();
+	echo wfView::create('gdpr/banner')->render();
 }
 ?>
 <div class="wrap wordfence">
@@ -143,215 +148,33 @@ if (wfOnboardingController::shouldShowAttempt3()) {
 							</div>
 						</div>
 					</div>
-					<div class="wf-row">
-						<div class="wf-col-xs-12">
-							<div class="wf-block<?php echo (wfPersistenceController::shared()->isActive('wf-scanner-options-schedule') ? ' wf-active' : '') ?>" data-persistence-key="wf-scanner-options-schedule">
-								<div class="wf-block-header">
-									<div class="wf-block-header-content">
-										<div class="wf-block-title">
-											<strong><?php _e('Scan Scheduling', 'wordfence'); ?></strong>
-										</div>
-										<div class="wf-block-header-action"><div class="wf-block-header-action-disclosure"></div></div>
-									</div>
-								</div>
-								<div class="wf-block-content">
-									<ul class="wf-block-list">
-										<?php
-										echo wfView::create('scanner/scan-scheduling', array(
-											'scanner' => $scanner,
-										))->render();
-										?>
-									</ul>
-								</div>
-							</div>
-						</div>
-					</div> <!-- end scan schedule -->
-					<div class="wf-row">
-						<div class="wf-col-xs-12">
-							<div class="wf-block wf-always-active">
-								<div class="wf-block-header">
-									<div class="wf-block-header-content">
-										<div class="wf-block-title">
-											<strong><?php _e('Basic Scan Type Options', 'wordfence'); ?></strong>
-										</div>
-									</div>
-								</div>
-								<div class="wf-block-content">
-									<?php
-									echo wfView::create('scanner/scan-type', array(
-										'scanner' => $scanner,
-									))->render();
-									?>
-								</div>
-							</div>
-						</div>
-					</div> <!-- end scan type -->
-					<div class="wf-row">
-						<div class="wf-col-xs-12">
-							<div class="wf-block<?php echo (wfPersistenceController::shared()->isActive('wf-scanner-options-general') ? ' wf-active' : '') ?>" data-persistence-key="wf-scanner-options-general"> 
-								<div class="wf-block-header">
-									<div class="wf-block-header-content">
-										<div class="wf-block-title">
-											<strong><?php _e('General Options', 'wordfence'); ?></strong>
-										</div>
-										<div class="wf-block-header-action"><div class="wf-block-header-action-disclosure"></div></div>
-									</div>
-								</div>
-								<div class="wf-block-content">
-									<ul class="wf-block-list">
-									<?php
-									$options = array(
-										array('key' => 'scansEnabled_checkGSB', 'label' => __('Check if this website is on a domain blacklist', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_CHECK_SITE_BLACKLISTED), 'premium' => true, 'subtitleHTML' => __('<em>Reputation check</em>', 'wordfence')),
-										array('key' => 'spamvertizeCheck', 'label' => __('Check if this website is being "Spamvertised"', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_CHECK_SITE_SPAMVERTIZED), 'premium' => true, 'subtitleHTML' => __('<em>Reputation check</em>', 'wordfence')),
-										array('key' => 'checkSpamIP', 'label' => __('Check if this website IP is generating spam', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_CHECK_IP_SPAMMING), 'premium' => true, 'subtitleHTML' => __('<em>Reputation check</em>', 'wordfence')),
-										array('key' => 'scansEnabled_checkHowGetIPs', 'label' => __('Scan for misconfigured How does Wordfence get IPs', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_CHECK_MISCONFIGURED_HOW_GET_IPS)),
-										array('key' => 'scansEnabled_checkReadableConfig', 'label' => __('Scan for publicly accessible configuration, backup, or log files', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_PUBLIC_CONFIG)),
-										array('key' => 'scansEnabled_suspectedFiles', 'label' => __('Scan for publicly accessible quarantined files', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_PUBLIC_QUARANTINED)),
-										array('key' => 'scansEnabled_core', 'label' => __('Scan core files against repository versions for changes', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_CORE_CHANGES)),
-										array('key' => 'scansEnabled_themes', 'label' => __('Scan theme files against repository versions for changes', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_THEME_CHANGES)),
-										array('key' => 'scansEnabled_plugins', 'label' => __('Scan plugin files against repository versions for changes', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_PLUGIN_CHANGES)),
-										array('key' => 'scansEnabled_coreUnknown', 'label' => __('Scan wp-admin and wp-includes for files not bundled with WordPress', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_UNKNOWN_CORE)),
-										array('key' => 'scansEnabled_malware', 'label' => __('Scan for signatures of known malicious files', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_MALWARE_HASHES)),
-										array('key' => 'scansEnabled_fileContents', 'label' => __('Scan file contents for backdoors, trojans and suspicious code', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_MALWARE_SIGNATURES)),
-										array('key' => 'scansEnabled_fileContentsGSB', 'label' => __('Scan file contents for malicious URLs', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_MALWARE_URLS)),
-										array('key' => 'scansEnabled_posts', 'label' => __('Scan posts for known dangerous URLs and suspicious content', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_POST_URLS)),
-										array('key' => 'scansEnabled_comments', 'label' => __('Scan comments for known dangerous URLs and suspicious content', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_COMMENT_URLS)),
-										array('key' => 'scansEnabled_suspiciousOptions', 'label' => __('Scan WordPress core, plugin, and theme options for known dangerous URLs and suspicious content', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_MALWARE_OPTIONS)),
-										array('key' => 'scansEnabled_oldVersions', 'label' => __('Scan for out of date, abandoned, and vulnerable plugins, themes, and WordPress versions', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_UPDATES)),
-										array('key' => 'scansEnabled_suspiciousAdminUsers', 'label' => __('Scan for admin users created outside of WordPress', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_UNKNOWN_ADMINS)),
-										array('key' => 'scansEnabled_passwds', 'label' => __('Check the strength of passwords', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_PASSWORD_STRENGTH)),
-										array('key' => 'scansEnabled_diskSpace', 'label' => __('Monitor disk space', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_DISK_SPACE)),
-										array('key' => 'scansEnabled_dns', 'label' => __('Scan for unauthorized DNS changes', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_DNS_CHANGES)),
-										array('key' => 'other_scanOutside', 'label' => __('Scan files outside your WordPress installation', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_OUTSIDE_WORDPRESS)),
-										array('key' => 'scansEnabled_scanImages', 'label' => __('Scan images, binary, and other files as if they were executable', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_IMAGES_EXECUTABLE)),
-										array('key' => 'scansEnabled_highSense', 'label' => __('Enable HIGH SENSITIVITY scanning (may give false positives)', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_HIGH_SENSITIVITY)),
-									);
-									foreach ($options as $o):
-									?>
-										<li>
-											<?php
-											if (isset($o['view'])) {
-												echo wfView::create($o['view'], array(
-													'optionName' => $o['key'],
-													'value' => wfConfig::get($o['key']) ? 1 : 0,
-													'title' => $o['label'],
-													'helpLink' => $o['helpLink'],
-													'premium' => isset($o['premium']) && $o['premium'],
-												))->render();
-											}
-											else {
-												echo wfView::create('options/option-toggled', array(
-													'optionName' => $o['key'],
-													'enabledValue' => 1,
-													'disabledValue' => 0,
-													'value' => wfConfig::get($o['key']) ? 1 : 0,
-													'title' => $o['label'],
-													'subtitleHTML' => isset($o['subtitleHTML']) ? $o['subtitleHTML'] : null, 
-													'helpLink' => $o['helpLink'],
-													'premium' => isset($o['premium']) && $o['premium'],
-												))->render();
-											}
-											?>
-										</li>
-									<?php endforeach; ?>
-									</ul>
-								</div>
-							</div>
-						</div>
-					</div> <!-- end general options -->
-					<div class="wf-row">
-						<div class="wf-col-xs-12">
-							<div class="wf-block<?php echo (wfPersistenceController::shared()->isActive('wf-scanner-options-performance') ? ' wf-active' : '') ?>" data-persistence-key="wf-scanner-options-performance"> 
-								<div class="wf-block-header">
-									<div class="wf-block-header-content">
-										<div class="wf-block-title">
-											<strong><?php _e('Performance Options', 'wordfence'); ?></strong>
-										</div>
-										<div class="wf-block-header-action"><div class="wf-block-header-action-disclosure"></div></div>
-									</div>
-								</div>
-								<div class="wf-block-content">
-									<ul class="wf-block-list">
-										<?php
-										$options = array(
-											array('key' => 'lowResourceScansEnabled', 'label' => __('Use low resource scanning (reduces server load by lengthening the scan duration)', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_LOW_RESOURCE)),
-											array('key' => 'scan_maxIssues', 'label' => __('Limit the number of issues sent in the scan results email', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_LIMIT_ISSUES), 'view' => 'options/option-text', 'parameters' => array('subtitle' => __('0 or empty means unlimited issues will be sent', 'wordfence'))),
-											array('key' => 'scan_maxDuration', 'label' => __('Time limit that a scan can run in seconds', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_OVERALL_TIME_LIMIT), 'view' => 'options/option-text', 'parameters' => array('subtitle' => sprintf(__('0 or empty means the default of %s will be used', 'wordfence'), wfUtils::makeDuration(WORDFENCE_DEFAULT_MAX_SCAN_TIME)))),
-											array('key' => 'maxMem', 'label' => __('How much memory should Wordfence request when scanning', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_MEMORY_LIMIT), 'view' => 'options/option-text', 'parameters' => array('subtitle' => __('Memory size in megabytes', 'wordfence'))),
-											array('key' => 'maxExecutionTime', 'label' => __('Maximum execution time for each scan stage ', 'wordfence'), 'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_STAGE_TIME_LIMIT), 'view' => 'options/option-text', 'parameters' => array('subtitle' => sprintf(__('Blank for default. Must be greater than %d and 10-20 or higher is recommended for most servers', 'wordfence'), intval(WORDFENCE_SCAN_MIN_EXECUTION_TIME) - 1))),
-										);
-										foreach ($options as $o):
-											?>
-											<li>
-												<?php
-												if (isset($o['view']) && $o['view'] == 'options/option-text') {
-													if (!isset($o['parameters'])) { $o['parameters'] = array(); }
-													echo wfView::create($o['view'], array_merge(array(
-														'textOptionName' => $o['key'],
-														'textValue' => wfConfig::get($o['key']),
-														'title' => $o['label'],
-														'helpLink' => $o['helpLink'],
-													), $o['parameters']))->render();
-												}
-												else {
-													echo wfView::create('options/option-toggled', array(
-														'optionName' => $o['key'],
-														'enabledValue' => 1,
-														'disabledValue' => 0,
-														'value' => wfConfig::get($o['key']) ? 1 : 0,
-														'title' => $o['label'],
-														'helpLink' => $o['helpLink'],
-														'disabled' => isset($o['disabled']) ? $o['disabled'] : false,
-													))->render();
-												}
-												?>
-											</li>
-										<?php endforeach; ?>
-									</ul>
-								</div>
-							</div>
-						</div>
-					</div> <!-- end performance options -->
-					<div class="wf-row">
-						<div class="wf-col-xs-12">
-							<div class="wf-block<?php echo (wfPersistenceController::shared()->isActive('wf-scanner-options-custom') ? ' wf-active' : '') ?>" data-persistence-key="wf-scanner-options-custom">
-								<div class="wf-block-header">
-									<div class="wf-block-header-content">
-										<div class="wf-block-title">
-											<strong><?php _e('Advanced Scan Options', 'wordfence'); ?></strong>
-										</div>
-										<div class="wf-block-header-action"><div class="wf-block-header-action-disclosure"></div></div>
-									</div>
-								</div>
-								<div class="wf-block-content">
-									<ul class="wf-block-list">
-										<li>
-											<?php
-											echo wfView::create('options/option-textarea', array(
-												'textOptionName' => 'scan_exclude',
-												'textValue' => wfUtils::cleanupOneEntryPerLine(wfConfig::get('scan_exclude')),
-												'title' => __('Exclude files from scan that match these wildcard patterns (one per line)', 'wordfence'),
-												'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_EXCLUDE_PATTERNS),
-												'noSpacer' => true,
-											))->render();
-											?>
-										</li>
-										<li>
-											<?php
-											echo wfView::create('options/option-textarea', array(
-												'textOptionName' => 'scan_include_extra',
-												'textValue' => wfConfig::get('scan_include_extra'),
-												'title' => __('Additional scan signatures (one per line)', 'wordfence'),
-												'helpLink' => wfSupportController::supportURL(wfSupportController::ITEM_SCAN_OPTION_CUSTOM_MALWARE_SIGNATURES),
-												'noSpacer' => true,
-											))->render();
-											?>
-										</li>
-									</ul>
-								</div>
-							</div>
-						</div>
-					</div> <!-- end custom scan options -->
+					<?php
+					echo wfView::create('scanner/options-group-scan-schedule', array(
+						'scanner' => $scanner,
+						'stateKey' => 'wf-scanner-options-schedule',
+					))->render();
+					
+					echo wfView::create('scanner/options-group-basic', array(
+						'scanner' => $scanner,
+						'stateKey' => 'wf-scanner-options-basic',
+						'collapseable' => false,
+					))->render();
+					
+					echo wfView::create('scanner/options-group-general', array(
+						'scanner' => $scanner,
+						'stateKey' => 'wf-scanner-options-general',
+					))->render();
+					
+					echo wfView::create('scanner/options-group-performance', array(
+						'scanner' => $scanner,
+						'stateKey' => 'wf-scanner-options-performance',
+					))->render();
+					
+					echo wfView::create('scanner/options-group-advanced', array(
+						'scanner' => $scanner,
+						'stateKey' => 'wf-scanner-options-custom',
+					))->render();
+					?>
 				</div> <!-- end wf-scan-options block -->
 			</div> <!-- end content block -->
 		</div> <!-- end row -->

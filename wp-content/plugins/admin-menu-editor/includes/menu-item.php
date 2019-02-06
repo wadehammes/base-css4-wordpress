@@ -26,6 +26,7 @@ abstract class ameMenuItem {
 		'options-general.php' => true, 'options-media.php' => true, 'options-permalink.php' => true,
 		'options-reading.php' => true, 'options-writing.php' => true, 'plugin-editor.php' => true,
 		'plugin-install.php' => true, 'plugins.php' => true, 'post-new.php' => true, 'profile.php' => true,
+		'privacy.php' => true,
 		'theme-editor.php' => true, 'themes.php' => true, 'tools.php' => true, 'update-core.php' => true,
 		'upload.php' => true, 'user-new.php' => true, 'users.php' => true, 'widgets.php' => true,
 	);

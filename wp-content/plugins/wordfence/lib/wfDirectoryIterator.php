@@ -13,6 +13,10 @@ abstract class wfDirectoryIterator {
 	 * @var int
 	 */
 	private $directory_limit;
+	
+	
+	private $directories_entered = array();
+	private $directories_processed = array();
 
 	/**
 	 * @var callback
@@ -49,12 +53,21 @@ abstract class wfDirectoryIterator {
 				continue;
 			}
 			$file_path = $dir . '/' . $file;
-			if (is_dir($file_path)) {
+			$real_path = realpath($file_path);
+			if (isset($this->directories_processed[$real_path]) || isset($this->directories_entered[$real_path])) { //Already processed or being processed, possibly a recursive symlink
+				continue;
+			}
+			
+			else if (is_dir($file_path)) {
+				$this->directories_entered[$real_path] = 1;
 				if ($this->scan($file_path) === false) {
 					closedir($handle);
 					return false;
 				}
-			} else {
+				$this->directories_processed[$real_path] = 1;
+				unset($this->directories_entered[$real_path]);
+			}
+			else {
 				if ($this->file($file_path) === false) {
 					closedir($handle);
 					return false;

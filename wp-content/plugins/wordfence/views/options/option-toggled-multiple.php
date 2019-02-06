@@ -20,16 +20,24 @@ if (!defined('WORDFENCE_VERSION')) { exit; }
  * @var bool $premium If defined, the options will be tagged as premium only and not allow its values to change for free users.
  */
 ?>
-<ul class="wf-option wf-option-toggled-multiple<?php if (!wfConfig::p() && isset($premium) && $premium) { echo ' wf-option-premium'; } ?>">
-	<li class="wf-option-title"><?php echo esc_html($title); ?><?php if (!wfConfig::p() && isset($premium) && $premium) { echo ' <a href="https://www.wordfence.com/gnl1optionUpgrade/wordfence-signup/" target="_blank" rel="noopener noreferrer" class="wf-premium-link">' . __('Premium Feature', 'wordfence') . '</a>'; } ?><?php if (isset($helpLink)) { echo ' <a href="' . esc_attr($helpLink) . '"  target="_blank" rel="noopener noreferrer" class="wf-inline-help"><i class="wf-fa wf-fa-question-circle-o" aria-hidden="true"></i></a>'; } ?></li>
-	<li class="wf-option-checkboxes">
-		<?php
-		foreach ($options as $o):
-		?>
-		<ul data-option="<?php echo esc_attr($o['name']); ?>" data-enabled-value="<?php echo esc_attr($o['enabledValue']); ?>" data-disabled-value="<?php echo esc_attr($o['disabledValue']); ?>" data-original-value="<?php echo esc_attr($o['value'] == $o['enabledValue'] ? $o['enabledValue'] : $o['disabledValue']); ?>">
-			<li class="wf-option-checkbox<?php echo ($o['value'] == $o['enabledValue'] ? ' wf-checked' : ''); ?>"><i class="wf-ion-ios-checkmark-empty" aria-hidden="true"></i></li>
-			<li class="wf-option-title"><?php echo esc_html($o['title']); ?></li>
+<ul<?php if (isset($id)) { echo ' id="' . esc_attr($id) . '"'; } ?> class="wf-option wf-option-toggled-multiple<?php if (!wfConfig::p() && isset($premium) && $premium) { echo ' wf-option-premium'; } ?>">
+	<?php if (!isset($noSpacer) || !$noSpacer): ?>
+	<li class="wf-option-spacer"></li>
+	<?php endif; ?>
+	<li class="wf-option-content">
+		<ul>
+			<li class="wf-option-title"><?php echo (!empty($title)) ? esc_html($title) : ''; echo (!empty($htmlTitle)) ? wp_kses($htmlTitle, 'post') : ''; ?><?php if (!wfConfig::p() && isset($premium) && $premium) { echo ' <a href="https://www.wordfence.com/gnl1optionUpgrade/wordfence-signup/" target="_blank" rel="noopener noreferrer" class="wf-premium-link">' . __('Premium Feature', 'wordfence') . '</a>'; } ?><?php if (isset($helpLink)) { echo ' <a href="' . esc_attr($helpLink) . '"  target="_blank" rel="noopener noreferrer" class="wf-inline-help"><i class="wf-fa wf-fa-question-circle-o" aria-hidden="true"></i></a>'; } ?></li>
+			<li class="wf-option-checkboxes">
+				<?php
+				foreach ($options as $o):
+					$id = 'wf-option-' . preg_replace('/[^a-z0-9]/i', '-', $o['name']);
+					?>
+					<ul id="<?php echo esc_attr($id); ?>" data-option="<?php echo esc_attr($o['name']); ?>" data-enabled-value="<?php echo esc_attr($o['enabledValue']); ?>" data-disabled-value="<?php echo esc_attr($o['disabledValue']); ?>" data-original-value="<?php echo esc_attr($o['value'] == $o['enabledValue'] ? $o['enabledValue'] : $o['disabledValue']); ?>">
+						<li class="wf-option-checkbox<?php echo ($o['value'] == $o['enabledValue'] ? ' wf-checked' : ''); ?>" role="checkbox" aria-checked="<?php echo ($o['value'] == $o['enabledValue'] ? 'true' : 'false'); ?>" tabindex="0" aria-labelledby="<?php echo esc_attr($id); ?>-label"><i class="wf-ion-ios-checkmark-empty" aria-hidden="true"></i></li>
+						<li id="<?php echo esc_attr($id); ?>-label" class="wf-option-title"><?php echo esc_html($o['title']); ?></li>
+					</ul>
+				<?php endforeach; ?>
+			</li>
 		</ul>
-		<?php endforeach; ?>
 	</li>
 </ul>

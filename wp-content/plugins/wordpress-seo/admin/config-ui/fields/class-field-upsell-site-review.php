@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO plugin file.
+ *
  * @package WPSEO\Admin\ConfigurationUI
  */
 
@@ -7,6 +9,18 @@
  * Class WPSEO_Config_Field_Upsell_Site_Review
  */
 class WPSEO_Config_Field_Upsell_Site_Review extends WPSEO_Config_Field {
+
+	/**
+	 * HTML tags allowed in the upsell site review text.
+	 *
+	 * @var array
+	 */
+	private $allowed_html = array(
+		'a' => array(
+			'href'   => array(),
+			'target' => array( '_blank' ),
+		),
+	);
 
 	/**
 	 * WPSEO_Config_Field_Upsell_Site_Review constructor.
@@ -22,14 +36,7 @@ class WPSEO_Config_Field_Upsell_Site_Review extends WPSEO_Config_Field {
 			'</a>'
 		);
 
-		$html = '<p>' .
-				wp_kses( $upsell_text, array(
-					'a' => array(
-						'href'   => array(),
-						'target' => array( '_blank' ),
-					),
-				) ) .
-				'</p>';
+		$html = '<p>' . wp_kses( $upsell_text, $this->allowed_html ) . '</p>';
 
 		$this->set_property( 'html', $html );
 	}

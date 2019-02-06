@@ -120,50 +120,11 @@ echo wfView::create('common/section-title', array(
 				<div id="wfTwoFacUsers"></div>
 			</div>
 		</div>
-		<div class="wf-row">
-			<div class="wf-col-xs-12">
-				<div class="wf-block<?php echo(wfPersistenceController::shared()->isActive('wf-2fa-options') ? ' wf-active' : '') ?>" data-persistence-key="<?php echo esc_attr('wf-2fa-options') ?>">
-					<div class="wf-block-header">
-						<div class="wf-block-header-content">
-							<div class="wf-block-title">
-								<strong><?php _e('Security Options', 'wordfence') ?></strong>
-							</div>
-							<div class="wf-block-header-action">
-								<div class="wf-block-header-action-disclosure"></div>
-							</div>
-						</div>
-					</div>
-					<div class="wf-block-content">
-						<ul class="wf-block-list">
-							<li>
-								<?php
-								echo wfView::create('options/option-toggled', array(
-									'optionName'    => 'loginSec_requireAdminTwoFactor',
-									'enabledValue'  => 1,
-									'disabledValue' => 0,
-									'value'         => wfConfig::get('loginSec_requireAdminTwoFactor') ? 1 : 0,
-									'htmlTitle'     => sprintf(__('<strong>Require Cellphone Sign-in for all Administrators<a href="%s" target="_blank" rel="noopener noreferrer" class="wfhelp wf-inline-help"></a></strong><br><em>Note:</em> This setting requires at least one administrator to have Cellphone Sign-in enabled. On multisite, this option applies only to super admins.', 'wordfence'), esc_url($helpLink)),
-								))->render();
-								?>
-							</li>
-							<li>
-								<?php
-								$allowSeparatePrompt = ini_get('output_buffering') > 0;
-								echo wfView::create('options/option-toggled', array(
-									'optionName'    => 'loginSec_enableSeparateTwoFactor',
-									'enabledValue'  => 1,
-									'disabledValue' => 0,
-									'value'         => wfConfig::get('loginSec_enableSeparateTwoFactor') ? 1 : 0,
-									'htmlTitle'     => sprintf(__('<strong>Enable Separate Prompt for Two Factor Code<a href="%s" target="_blank" rel="noopener noreferrer" class="wfhelp wf-inline-help"></a></strong><br><em>Note:</em> This setting changes the behavior for obtaining the two factor authentication code from using the password field to showing a separate prompt. If your theme overrides the default login page, you may not be able to use this option.', 'wordfence'), $helpLink) .
-										($allowSeparatePrompt ? '' : __('<br><strong>This setting will be ignored because the PHP configuration option <code>output_buffering</code> is off.</strong>', 'wordfence')),
-								))->render();
-								?>
-							</li>
-						</ul>
-					</div>
-				</div>
-			</div>
-		</div>
+		<?php
+		echo wfView::create('tools/options-group-2fa', array(
+			'stateKey' => 'wf-2fa-options',
+		))->render();
+		?>
 
 		<script type="text/javascript">
 			jQuery('.twoFactorOption').on('click', function() {

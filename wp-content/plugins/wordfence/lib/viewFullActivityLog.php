@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml"  dir="ltr" lang="en-US">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<link rel='stylesheet' id='wordfence-main-style-css'  href='<?php echo wfUtils::getBaseURL(); ?>/css/fullLog.css?ver=<?php echo WORDFENCE_VERSION; ?>' type='text/css' media='all' />
+<link rel='stylesheet' id='wordfence-main-style-css'  href='<?php echo wfUtils::getBaseURL() . wfUtils::versionedAsset('css/fullLog.css'); ?>?ver=<?php echo WORDFENCE_VERSION; ?>' type='text/css' media='all' />
 <style type="text/css">
 
 </style>
@@ -13,7 +13,7 @@
 $db = new wfDB();
 global $wpdb;
 $debugOn = wfConfig::get('debugOn', 0);
-$table = $wpdb->base_prefix . 'wfStatus';
+$table = wfDB::networkTable('wfStatus');
 $offset = 0;
 $timeOffset = 3600 * get_option('gmt_offset');
 $q = $db->querySelect("SELECT ctime, level, type, msg FROM {$table} ORDER BY ctime DESC LIMIT %d, 100", $offset);

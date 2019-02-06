@@ -13,5 +13,9 @@ echo wfView::create('scanner/issue-base', array(
 		'{{if data.fileExists}}<a target="_blank" class="wf-btn wf-btn-default wf-btn-callout-subtle" rel="noopener noreferrer" href="${WFAD.makeViewFileLink(data.file)}">' . __('View File', 'wordfence') . '</a>{{/if}}',
 		'{{if data.canDelete}}<a href="#" class="wf-btn wf-btn-default wf-btn-callout-subtle wf-issue-control-delete-file">' . __('Delete File', 'wordfence') . '</a>{{/if}}',
 		'<a href="#" class="wf-btn wf-btn-default wf-btn-callout-subtle wf-issue-control-mark-fixed">' . __('Mark as Fixed', 'wordfence') . '</a>',
-	)
+	),
+	'textOutput' => (isset($textOutput) ? $textOutput : null),
+	'textOutputDetailPairs' => array(
+		__('Details', 'wordfence') => '$longMsg',
+	),
 ))->render();

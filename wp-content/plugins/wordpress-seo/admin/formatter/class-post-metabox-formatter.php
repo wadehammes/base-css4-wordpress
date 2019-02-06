@@ -1,5 +1,7 @@
 <?php
 /**
+ * WPSEO plugin file.
+ *
  * @package WPSEO\Admin\Formatter
  */
 
@@ -12,11 +14,6 @@ class WPSEO_Post_Metabox_Formatter implements WPSEO_Metabox_Formatter_Interface 
 	 * @var WP_Post
 	 */
 	private $post;
-
-	/**
-	 * @var array Array with the WPSEO_Titles options.
-	 */
-	protected $options;
 
 	/**
 	 * @var string The permalink to follow.
@@ -32,7 +29,6 @@ class WPSEO_Post_Metabox_Formatter implements WPSEO_Metabox_Formatter_Interface 
 	 */
 	public function __construct( $post, array $options, $structure ) {
 		$this->post      = $post;
-		$this->options   = $options;
 		$this->permalink = $structure;
 	}
 
@@ -157,10 +153,16 @@ class WPSEO_Post_Metabox_Formatter implements WPSEO_Metabox_Formatter_Interface 
 	/**
 	 * Retrieves the title template.
 	 *
-	 * @return string
+	 * @return string The title template.
 	 */
 	private function get_title_template() {
-		return $this->get_template( 'title' );
+		$title = $this->get_template( 'title' );
+
+		if ( $title === '' ) {
+			return '%%title%% %%sep%% %%sitename%%';
+		}
+
+		return $title;
 	}
 
 	/**
@@ -182,8 +184,8 @@ class WPSEO_Post_Metabox_Formatter implements WPSEO_Metabox_Formatter_Interface 
 	private function get_template( $template_option_name ) {
 		$needed_option = $template_option_name . '-' . $this->post->post_type;
 
-		if ( isset( $this->options[ $needed_option ] ) && $this->options[ $needed_option ] !== '' ) {
-			return $this->options[ $needed_option ];
+		if ( WPSEO_Options::get( $needed_option, '' ) !== '' ) {
+			return WPSEO_Options::get( $needed_option );
 		}
 
 		return '';
@@ -210,9 +212,8 @@ class WPSEO_Post_Metabox_Formatter implements WPSEO_Metabox_Formatter_Interface 
 	 * @return bool
 	 */
 	private function is_show_date_enabled() {
-		$post_type = $this->post->post_type;
-		$key       = sprintf( 'showdate-%s', $post_type );
+		$key = sprintf( 'showdate-%s', $this->post->post_type );
 
-		return isset( $this->options[ $key ] ) && true === $this->options[ $key ];
+		return WPSEO_Options::get( $key, true );
 	}
 }

@@ -1,7 +1,8 @@
 <?php
 /**
- * @package    WPSEO
- * @subpackage Internal
+ * WPSEO plugin file.
+ *
+ * @package WPSEO\Internal
  */
 
 /**
@@ -10,88 +11,117 @@
 class WPSEO_Upgrade {
 
 	/**
-	 * Holds the Yoast SEO options
-	 *
-	 * @var array
-	 */
-	private $options = array();
-
-	/**
 	 * Class constructor
 	 */
 	public function __construct() {
-		$this->options = WPSEO_Options::get_option( 'wpseo' );
+		$version = WPSEO_Options::get( 'version' );
 
 		WPSEO_Options::maybe_set_multisite_defaults( false );
 
-		if ( version_compare( $this->options['version'], '1.5.0', '<' ) ) {
-			$this->upgrade_15( $this->options['version'] );
+		if ( version_compare( $version, '1.5.0', '<' ) ) {
+			$this->upgrade_15( $version );
 		}
 
-		if ( version_compare( $this->options['version'], '2.0', '<' ) ) {
+		if ( version_compare( $version, '2.0', '<' ) ) {
 			$this->upgrade_20();
 		}
 
-		if ( version_compare( $this->options['version'], '2.1', '<' ) ) {
+		if ( version_compare( $version, '2.1', '<' ) ) {
 			$this->upgrade_21();
 		}
 
-		if ( version_compare( $this->options['version'], '2.2', '<' ) ) {
+		if ( version_compare( $version, '2.2', '<' ) ) {
 			$this->upgrade_22();
 		}
 
-		if ( version_compare( $this->options['version'], '2.3', '<' ) ) {
+		if ( version_compare( $version, '2.3', '<' ) ) {
 			$this->upgrade_23();
 		}
 
-		if ( version_compare( $this->options['version'], '3.0', '<' ) ) {
+		if ( version_compare( $version, '3.0', '<' ) ) {
 			$this->upgrade_30();
 		}
 
-		if ( version_compare( $this->options['version'], '3.3', '<' ) ) {
+		if ( version_compare( $version, '3.3', '<' ) ) {
 			$this->upgrade_33();
 		}
 
-		if ( version_compare( $this->options['version'], '3.6', '<' ) ) {
+		if ( version_compare( $version, '3.6', '<' ) ) {
 			$this->upgrade_36();
 		}
 
-		if ( version_compare( $this->options['version'], '4.0', '<' ) ) {
+		if ( version_compare( $version, '4.0', '<' ) ) {
 			$this->upgrade_40();
 		}
 
-		if ( version_compare( $this->options['version'], '4.4', '<' ) ) {
+		if ( version_compare( $version, '4.4', '<' ) ) {
 			$this->upgrade_44();
 		}
 
-		if ( version_compare( $this->options['version'], '4.7', '<' ) ) {
+		if ( version_compare( $version, '4.7', '<' ) ) {
 			$this->upgrade_47();
 		}
 
-		if ( version_compare( $this->options['version'], '4.9', '<' ) ) {
+		if ( version_compare( $version, '4.9', '<' ) ) {
 			$this->upgrade_49();
 		}
 
-		if ( version_compare( $this->options['version'], '5.0', '<' ) ) {
+		if ( version_compare( $version, '5.0', '<' ) ) {
 			$this->upgrade_50();
 		}
 
-		if ( version_compare( $this->options['version'], '5.0', '>=' )
-			&& version_compare( $this->options['version'], '5.1', '<' )
+		if ( version_compare( $version, '5.0', '>=' )
+			&& version_compare( $version, '5.1', '<' )
 		) {
 			$this->upgrade_50_51();
 		}
 
-		if ( version_compare( $this->options['version'], '5.5', '<' ) ) {
+		if ( version_compare( $version, '5.5', '<' ) ) {
 			$this->upgrade_55();
 		}
 
-		if ( version_compare( $this->options['version'], '5.6', '<' ) ) {
+		if ( version_compare( $version, '5.6', '<' ) ) {
 			$this->upgrade_56();
 		}
 
-		if ( version_compare( $this->options['version'], '6.1', '<' ) ) {
+		if ( version_compare( $version, '6.1', '<' ) ) {
 			$this->upgrade_61();
+		}
+
+		if ( version_compare( $version, '6.3', '<' ) ) {
+			$this->upgrade_63();
+		}
+
+		if ( version_compare( $version, '7.0-RC0', '<' ) ) {
+			$this->upgrade_70();
+		}
+
+		if ( version_compare( $version, '7.1-RC0', '<' ) ) {
+			$this->upgrade_71();
+		}
+
+		if ( version_compare( $version, '7.3-RC0', '<' ) ) {
+			$this->upgrade_73();
+		}
+
+		if ( version_compare( $version, '7.4-RC0', '<' ) ) {
+			$this->upgrade_74();
+		}
+
+		if ( version_compare( $version, '7.5.3', '<' ) ) {
+			$this->upgrade_753();
+		}
+
+		if ( version_compare( $version, '7.7-RC0', '<' ) ) {
+			$this->upgrade_77();
+		}
+
+		if ( version_compare( $version, '7.7.2-RC0', '<' ) ) {
+			$this->upgrade_772();
+		}
+
+		if ( version_compare( $version, '9.0-RC0', '<' ) ) {
+			$this->upgrade90();
 		}
 
 		// Since 3.7.
@@ -103,9 +133,21 @@ class WPSEO_Upgrade {
 		 *
 		 * @api        string - The current version of Yoast SEO
 		 */
-		do_action( 'wpseo_run_upgrade', $this->options['version'] );
+		do_action( 'wpseo_run_upgrade', $version );
 
 		$this->finish_up();
+	}
+
+	/**
+	 * Runs the needed cleanup after an update, setting the DB version to latest version, flushing caches etc.
+	 */
+	protected function finish_up() {
+		WPSEO_Options::set( 'version', WPSEO_VERSION );
+
+		add_action( 'shutdown', 'flush_rewrite_rules' );                     // Just flush rewrites, always, to at least make them work after an upgrade.
+		WPSEO_Sitemaps_Cache::clear();                                       // Flush the sitemap cache.
+
+		WPSEO_Options::ensure_options_exist();                               // Make sure all our options always exist - issue #1245.
 	}
 
 	/**
@@ -129,7 +171,11 @@ class WPSEO_Upgrade {
 		 */
 		delete_option( 'wpseo_ms' );
 
-		$this->move_pinterest_option();
+		$wpseo = $this->get_option_from_database( 'wpseo' );
+		$this->save_option_setting( $wpseo, 'pinterestverify' );
+
+		// Re-save option to trigger sanitization.
+		$this->cleanup_option_data( 'wpseo' );
 	}
 
 	/**
@@ -162,10 +208,7 @@ class WPSEO_Upgrade {
 		// Unschedule our tracking.
 		wp_clear_scheduled_hook( 'yoast_tracking' );
 
-		// Clear the tracking settings, the seen about setting and the ignore tour setting.
-		$options = get_option( 'wpseo' );
-		unset( $options['tracking_popup_done'], $options['yoast_tracking'], $options['seen_about'], $options['ignore_tour'] );
-		update_option( 'wpseo', $options );
+		$this->cleanup_option_data( 'wpseo' );
 	}
 
 	/**
@@ -208,7 +251,7 @@ class WPSEO_Upgrade {
 	}
 
 	/**
-	 * Performs upgrade functions to Yoast SEO 3.0
+	 * Performs upgrade functions to Yoast SEO 3.0.
 	 */
 	private function upgrade_30() {
 		// Remove the meta fields for sitemap prio.
@@ -216,7 +259,7 @@ class WPSEO_Upgrade {
 	}
 
 	/**
-	 * Performs upgrade functions to Yoast SEO 3.3
+	 * Performs upgrade functions to Yoast SEO 3.3.
 	 */
 	private function upgrade_33() {
 		// Notification dismissals have been moved to User Meta instead of global option.
@@ -224,7 +267,7 @@ class WPSEO_Upgrade {
 	}
 
 	/**
-	 * Performs upgrade functions to Yoast SEO 3.6
+	 * Performs upgrade functions to Yoast SEO 3.6.
 	 */
 	private function upgrade_36() {
 		global $wpdb;
@@ -234,61 +277,24 @@ class WPSEO_Upgrade {
 	}
 
 	/**
-	 * Move the pinterest verification option from the wpseo option to the wpseo_social option
-	 */
-	private function move_pinterest_option() {
-		$options_social = get_option( 'wpseo_social' );
-
-		if ( isset( $option_wpseo['pinterestverify'] ) ) {
-			$options_social['pinterestverify'] = $option_wpseo['pinterestverify'];
-			unset( $option_wpseo['pinterestverify'] );
-			update_option( 'wpseo_social', $options_social );
-			update_option( 'wpseo', $option_wpseo );
-		}
-	}
-
-	/**
-	 * Runs the needed cleanup after an update, setting the DB version to latest version, flushing caches etc.
-	 */
-	private function finish_up() {
-		$this->options = WPSEO_Options::get_option( 'wpseo' );              // Re-get to make sure we have the latest version.
-		update_option( 'wpseo', $this->options );                           // This also ensures the DB version is equal to WPSEO_VERSION.
-
-		add_action( 'shutdown', 'flush_rewrite_rules' );                    // Just flush rewrites, always, to at least make them work after an upgrade.
-		WPSEO_Sitemaps_Cache::clear();                                 // Flush the sitemap cache.
-
-		WPSEO_Options::ensure_options_exist();                              // Make sure all our options always exist - issue #1245.
-	}
-
-	/**
 	 * Removes the about notice when its still in the database.
 	 */
 	private function upgrade_40() {
-		$center       = Yoast_Notification_Center::get();
-		$notification = $center->get_notification_by_id( 'wpseo-dismiss-about' );
-
-		if ( $notification ) {
-			$center->remove_notification( $notification );
-		}
+		$center = Yoast_Notification_Center::get();
+		$center->remove_notification_by_id( 'wpseo-dismiss-about' );
 	}
 
 	/**
 	 * Moves the content-analysis-active and keyword-analysis-acive options from wpseo-titles to wpseo.
 	 */
 	private function upgrade_44() {
-		$option_titles = WPSEO_Options::get_option( 'wpseo_titles' );
-		$option_wpseo  = WPSEO_Options::get_option( 'wpseo' );
+		$wpseo_titles = $this->get_option_from_database( 'wpseo_titles' );
 
-		if ( isset( $option_titles['content-analysis-active'] ) && isset( $option_titles['keyword-analysis-active'] ) ) {
-			$option_wpseo['content_analysis_active'] = $option_titles['content-analysis-active'];
-			unset( $option_titles['content-analysis-active'] );
+		$this->save_option_setting( $wpseo_titles, 'content-analysis-active', 'content_analysis_active' );
+		$this->save_option_setting( $wpseo_titles, 'keyword-analysis-active', 'keyword_analysis_active' );
 
-			$option_wpseo['keyword_analysis_active'] = $option_titles['keyword-analysis-active'];
-			unset( $option_titles['keyword-analysis-active'] );
-
-			update_option( 'wpseo_titles', $option_titles );
-			update_option( 'wpseo', $option_wpseo );
-		}
+		// Remove irrelevant content from the option.
+		$this->cleanup_option_data( 'wpseo_titles' );
 	}
 
 	/**
@@ -301,7 +307,7 @@ class WPSEO_Upgrade {
 		$wpdb->query(
 			$wpdb->prepare(
 				'UPDATE ' . $wpdb->postmeta . ' SET meta_key = %s WHERE meta_key = "yst_is_cornerstone"',
-				WPSEO_Cornerstone::META_NAME
+				WPSEO_Cornerstone_Filter::META_NAME
 			)
 		);
 	}
@@ -323,12 +329,16 @@ class WPSEO_Upgrade {
 		$meta_key = $wpdb->get_blog_prefix() . Yoast_Notification_Center::STORAGE_KEY;
 
 		$usermetas = $wpdb->get_results(
-			$wpdb->prepare('
+			$wpdb->prepare(
+				'
 				SELECT user_id, meta_value
 				FROM ' . $wpdb->usermeta . '
-				WHERE meta_key = %s AND meta_value LIKE "%%wpseo-dismiss-about%%"
-				', $meta_key ),
-				ARRAY_A
+				WHERE meta_key = %s AND meta_value LIKE %s
+				',
+				$meta_key,
+				'%wpseo-dismiss-about%'
+			),
+			ARRAY_A
 		);
 
 		if ( empty( $usermetas ) ) {
@@ -393,7 +403,7 @@ class WPSEO_Upgrade {
 	}
 
 	/**
-	 * Register new capabilities and roles
+	 * Register new capabilities and roles.
 	 */
 	private function upgrade_55() {
 		// Register roles.
@@ -438,5 +448,348 @@ class WPSEO_Upgrade {
 
 		$meta_storage = new WPSEO_Meta_Storage();
 		$wpdb->query( 'DELETE FROM ' . $meta_storage->get_table_name() );
+	}
+
+	/**
+	 * Removes some no longer used options for noindexing subpages and for meta keywords and its associated templates.
+	 *
+	 * @return void
+	 */
+	private function upgrade_63() {
+		$this->cleanup_option_data( 'wpseo_titles' );
+	}
+
+	/**
+	 * Perform the 7.0 upgrade, moves settings around, deletes several options.
+	 *
+	 * @return void
+	 */
+	private function upgrade_70() {
+
+		$wpseo_permalinks    = $this->get_option_from_database( 'wpseo_permalinks' );
+		$wpseo_xml           = $this->get_option_from_database( 'wpseo_xml' );
+		$wpseo_rss           = $this->get_option_from_database( 'wpseo_rss' );
+		$wpseo               = $this->get_option_from_database( 'wpseo' );
+		$wpseo_internallinks = $this->get_option_from_database( 'wpseo_internallinks' );
+
+		// Move some permalink settings, then delete the option.
+		$this->save_option_setting( $wpseo_permalinks, 'redirectattachment', 'disable-attachment' );
+		$this->save_option_setting( $wpseo_permalinks, 'stripcategorybase' );
+
+		// Move one XML sitemap setting, then delete the option.
+		$this->save_option_setting( $wpseo_xml, 'enablexmlsitemap', 'enable_xml_sitemap' );
+
+
+		// Move the RSS settings to the search appearance settings, then delete the RSS option.
+		$this->save_option_setting( $wpseo_rss, 'rssbefore' );
+		$this->save_option_setting( $wpseo_rss, 'rssafter' );
+
+		$this->save_option_setting( $wpseo, 'company_logo' );
+		$this->save_option_setting( $wpseo, 'company_name' );
+		$this->save_option_setting( $wpseo, 'company_or_person' );
+		$this->save_option_setting( $wpseo, 'person_name' );
+
+		// Remove the website name and altername name as we no longer need them.
+		$this->cleanup_option_data( 'wpseo' );
+
+		// All the breadcrumbs settings have moved to the search appearance settings.
+		foreach ( array_keys( $wpseo_internallinks ) as $key ) {
+			$this->save_option_setting( $wpseo_internallinks, $key );
+		}
+
+		// Convert hidden metabox options to display metabox options.
+		$title_options = get_option( 'wpseo_titles' );
+
+		foreach ( $title_options as $key => $value ) {
+			if ( strpos( $key, 'hideeditbox-tax-' ) === 0 ) {
+				$taxonomy = substr( $key, strlen( 'hideeditbox-tax-' ) );
+				WPSEO_Options::set( 'display-metabox-tax-' . $taxonomy, ! $value );
+				continue;
+			}
+
+			if ( strpos( $key, 'hideeditbox-' ) === 0 ) {
+				$post_type = substr( $key, strlen( 'hideeditbox-' ) );
+				WPSEO_Options::set( 'display-metabox-pt-' . $post_type, ! $value );
+				continue;
+			}
+		}
+
+		// Cleanup removed options.
+		delete_option( 'wpseo_xml' );
+		delete_option( 'wpseo_permalinks' );
+		delete_option( 'wpseo_rss' );
+		delete_option( 'wpseo_internallinks' );
+
+		// Remove possibly present plugin conflict notice for plugin that was removed from the list of conflicting plugins.
+		$yoast_plugin_conflict = WPSEO_Plugin_Conflict::get_instance();
+		$yoast_plugin_conflict->clear_error( 'header-footer/plugin.php' );
+
+		// Moves the user meta for excluding from the XML sitemap to a noindex.
+		global $wpdb;
+		$wpdb->query( "UPDATE $wpdb->usermeta SET meta_key = 'wpseo_noindex_author' WHERE meta_key = 'wpseo_excludeauthorsitemap'" );
+	}
+
+	/**
+	 * Perform the 7.1 upgrade.
+	 *
+	 * @return void
+	 */
+	private function upgrade_71() {
+		$this->cleanup_option_data( 'wpseo_social' );
+
+		// Move the breadcrumbs setting and invert it.
+		$title_options = $this->get_option_from_database( 'wpseo_titles' );
+
+		if ( array_key_exists( 'breadcrumbs-blog-remove', $title_options ) ) {
+			WPSEO_Options::set( 'breadcrumbs-display-blog-page', ! $title_options['breadcrumbs-blog-remove'] );
+
+			$this->cleanup_option_data( 'wpseo_titles' );
+		}
+	}
+
+	/**
+	 * Perform the 7.3 upgrade.
+	 *
+	 * @return void
+	 */
+	private function upgrade_73() {
+		global $wpdb;
+		// We've moved the cornerstone checkbox to our proper namespace.
+		$wpdb->query( "UPDATE $wpdb->postmeta SET meta_key = '_yoast_wpseo_is_cornerstone' WHERE meta_key = '_yst_is_cornerstone'" );
+
+		// Remove the previous Whip dismissed message, as this is a new one regarding PHP 5.2.
+		delete_option( 'whip_dismiss_timestamp' );
+	}
+
+	/**
+	 * Performs the 7.4 upgrade.
+	 *
+	 * @return void
+	 */
+	private function upgrade_74() {
+		$this->remove_sitemap_validators();
+	}
+
+	/**
+	 * Performs the 7.5.3 upgrade.
+	 *
+	 * When upgrading purging media is potentially relevant.
+	 *
+	 * @return void
+	 */
+	private function upgrade_753() {
+		// Only when attachments are not disabled.
+		if ( WPSEO_Options::get( 'disable-attachment' ) === true ) {
+			return;
+		}
+
+		// Only when attachments are not no-indexed.
+		if ( WPSEO_Options::get( 'noindex-attachment' ) === true ) {
+			return;
+		}
+
+		// Set purging relevancy.
+		WPSEO_Options::set( 'is-media-purge-relevant', true );
+	}
+
+	/**
+	 * Performs the 7.7 upgrade.
+	 *
+	 * @return void
+	 */
+	private function upgrade_77() {
+		// Remove all OpenGraph content image cache.
+		$this->delete_post_meta( '_yoast_wpseo_post_image_cache' );
+	}
+
+	/**
+	 * Performs the 7.7.2 upgrade.
+	 *
+	 * @return void
+	 */
+	private function upgrade_772() {
+		if ( WPSEO_Utils::is_woocommerce_active() ) {
+			$this->migrate_woocommerce_archive_setting_to_shop_page();
+		}
+	}
+
+	/**
+	 * Performs the 9.0 upgrade.
+	 *
+	 * @return void
+	 */
+	private function upgrade90() {
+		global $wpdb;
+
+		// Invalidate all sitemap cache transients.
+		WPSEO_Sitemaps_Cache_Validator::cleanup_database();
+
+		// Removes all scheduled tasks for hitting the sitemap index.
+		wp_clear_scheduled_hook( 'wpseo_hit_sitemap_index' );
+
+		$wpdb->query( 'DELETE FROM ' . $wpdb->options . ' WHERE option_name LIKE "wpseo_sitemap_%"' );
+	}
+
+	/**
+	 * Removes the post meta fields for a given meta key.
+	 *
+	 * @param string $meta_key The meta key.
+	 *
+	 * @return void
+	 */
+	private function delete_post_meta( $meta_key ) {
+		global $wpdb;
+
+		$deleted = $wpdb->delete( $wpdb->postmeta, array( 'meta_key' => $meta_key ), array( '%s' ) );
+
+		if ( $deleted ) {
+			wp_cache_set( 'last_changed', microtime(), 'posts' );
+		}
+	}
+
+	/**
+	 * Removes all sitemap validators.
+	 *
+	 * This should be executed on every upgrade routine until we have removed the sitemap caching in the database.
+	 *
+	 * @return void
+	 */
+	private function remove_sitemap_validators() {
+		global $wpdb;
+
+		// Remove all sitemap validators.
+		$wpdb->query( "DELETE FROM $wpdb->options WHERE option_name LIKE 'wpseo_sitemap%validator%'" );
+	}
+
+	/**
+	 * Retrieves the option value directly from the database.
+	 *
+	 * @param string $option_name Option to retrieve.
+	 *
+	 * @return array|mixed The content of the option if exists, otherwise an empty array.
+	 */
+	protected function get_option_from_database( $option_name ) {
+		global $wpdb;
+
+		// Load option directly from the database, to avoid filtering and sanitization.
+		$sql     = $wpdb->prepare( 'SELECT option_value FROM ' . $wpdb->options . ' WHERE option_name = %s', $option_name );
+		$results = $wpdb->get_results( $sql, ARRAY_A );
+		if ( ! empty( $results ) ) {
+			return maybe_unserialize( $results[0]['option_value'] );
+		}
+
+		return array();
+	}
+
+	/**
+	 * Cleans the option to make sure only relevant settings are there.
+	 *
+	 * @param string $option_name Option name save.
+	 *
+	 * @return void
+	 */
+	protected function cleanup_option_data( $option_name ) {
+		$data = get_option( $option_name, array() );
+		if ( ! is_array( $data ) || $data === array() ) {
+			return;
+		}
+
+		/*
+		 * Clean up the option by re-saving it.
+		 *
+		 * The option framework will remove any settings that are not configured
+		 * for this option, removing any migrated settings.
+		 */
+		update_option( $option_name, $data );
+	}
+
+	/**
+	 * Saves an option setting to where it should be stored.
+	 *
+	 * @param array       $source_data    The option containing the value to be migrated.
+	 * @param string      $source_setting Name of the key in the "from" option.
+	 * @param string|null $target_setting Name of the key in the "to" option.
+	 *
+	 * @return void
+	 */
+	protected function save_option_setting( $source_data, $source_setting, $target_setting = null ) {
+		if ( $target_setting === null ) {
+			$target_setting = $source_setting;
+		}
+
+		if ( isset( $source_data[ $source_setting ] ) ) {
+			WPSEO_Options::set( $target_setting, $source_data[ $source_setting ] );
+		}
+	}
+
+	/**
+	 * Migrates WooCommerce archive settings to the WooCommerce Shop page meta-data settings.
+	 *
+	 * If no Shop page is defined, nothing will be migrated.
+	 *
+	 * @return void
+	 */
+	private function migrate_woocommerce_archive_setting_to_shop_page() {
+		$shop_page_id = wc_get_page_id( 'shop' );
+
+		if ( $shop_page_id === -1 ) {
+			return;
+		}
+
+		$title = WPSEO_Meta::get_value( 'title', $shop_page_id );
+
+		if ( empty( $title ) ) {
+			$option_title = WPSEO_Options::get( 'title-ptarchive-product' );
+
+			WPSEO_Meta::set_value(
+				'title',
+				$option_title,
+				$shop_page_id
+			);
+
+			WPSEO_Options::set( 'title-ptarchive-product', '' );
+		}
+
+		$meta_description = WPSEO_Meta::get_value( 'metadesc', $shop_page_id );
+
+		if ( empty( $meta_description ) ) {
+			$option_metadesc = WPSEO_Options::get( 'metadesc-ptarchive-product' );
+
+			WPSEO_Meta::set_value(
+				'metadesc',
+				$option_metadesc,
+				$shop_page_id
+			);
+
+			WPSEO_Options::set( 'metadesc-ptarchive-product', '' );
+		}
+
+		$bc_title = WPSEO_Meta::get_value( 'bctitle', $shop_page_id );
+
+		if ( empty( $bc_title ) ) {
+			$option_bctitle = WPSEO_Options::get( 'bctitle-ptarchive-product' );
+
+			WPSEO_Meta::set_value(
+				'bctitle',
+				$option_bctitle,
+				$shop_page_id
+			);
+
+			WPSEO_Options::set( 'bctitle-ptarchive-product', '' );
+		}
+
+		$noindex = WPSEO_Meta::get_value( 'meta-robots-noindex', $shop_page_id );
+
+		if ( $noindex === '0' ) {
+			$option_noindex = WPSEO_Options::get( 'noindex-ptarchive-product' );
+
+			WPSEO_Meta::set_value(
+				'meta-robots-noindex',
+				$option_noindex,
+				$shop_page_id
+			);
+
+			WPSEO_Options::set( 'noindex-ptarchive-product', false );
+		}
 	}
 }

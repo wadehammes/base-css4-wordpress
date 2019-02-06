@@ -63,11 +63,11 @@ var W3tc_Lightbox = {
 			if (typeof ga != 'undefined') {
 				var w3tc_action = this.options.url.match(/w3tc_action=([^&]+)/);
 				if (w3tc_action && w3tc_action[1])
-					ga('send', 'pageview', 'overlays/' + w3tc_action[1]);
+					w3tc_ga('send', 'pageview', 'overlays/' + w3tc_action[1]);
 				else {
 					var w3tc_action = this.options.url.match(/&(w3tc_[^&]+)&/);
 					if (w3tc_action && w3tc_action[1])
-						ga('send', 'pageview', 'overlays/' + w3tc_action[1]);
+						w3tc_ga('send', 'pageview', 'overlays/' + w3tc_action[1]);
 				}
 			}
 		}
@@ -89,6 +89,11 @@ var W3tc_Lightbox = {
 	resize: function() {
 		var width = (this.options.width ? this.options.width : this.window.width() * this.options.widthPercent);
 		var height = (this.options.height ? this.options.height : this.window.height() * this.options.heightPercent);
+
+		if (!this.options.maxWidth)
+			this.options.maxWidth = this.window.width();
+		if (!this.options.maxHeight)
+			this.options.maxHeight = this.window.height();
 
 		if (this.options.maxWidth && width > this.options.maxWidth) {
 			width = this.options.maxWidth;
@@ -400,6 +405,8 @@ function w3tc_lightbox_buy_plugin(nonce) {
 	W3tc_Lightbox.open({
 		width: 800,
 		minHeight: 350,
+		maxWidth: jQuery(window).width() - 40,
+		maxHeight: jQuery(window).height() - 40,
 		url: 'admin.php?page=w3tc_dashboard&w3tc_licensing_buy_plugin&_wpnonce=' + nonce,
 		callback: function(lightbox) {
 			var w3tc_license_listener = function(event) {

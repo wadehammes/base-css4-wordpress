@@ -1,4 +1,5 @@
 <?php
+if (defined('WFWAF_VERSION') && !defined('WFWAF_RUN_COMPLETE')) {
 
 class wfWAFHTTP {
 
@@ -437,4 +438,5 @@ class wfWAFHTTPTransportStreams extends wfWAFHTTPTransport {
 }
 
 class wfWAFHTTPTransportException extends wfWAFException {
+}
 }

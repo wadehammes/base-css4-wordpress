@@ -1,4 +1,5 @@
 <?php
+if (defined('WFWAF_VERSION') && !defined('WFWAF_RUN_COMPLETE')) {
 
 interface wfWAFLexerInterface {
 
@@ -13,7 +14,8 @@ class wfWAFRuleLexer implements wfWAFLexerInterface {
 	const MATCH_DOUBLE_STRING_LITERAL = '/"([^#"\\\\]*(?:\\\\.[^#"\\\\]*)*)"/As';
 	const MATCH_NUMBER_LITERAL = '/-?\d+(\.\d+)?/';
 	const MATCH_DOT = '/\./';
-	const MATCH_COMPARISON_OPERATOR = '/\|\||&&/';
+	const MATCH_AND_COMPARISON_OPERATOR = '/&&/';
+	const MATCH_OR_COMPARISON_OPERATOR = '/\|\|/';
 	const MATCH_OPEN_PARENTHESIS = '/\(/';
 	const MATCH_CLOSE_PARENTHESIS = '/\)/';
 	const MATCH_COMMA = '/,/';
@@ -98,7 +100,8 @@ class wfWAFRuleLexer implements wfWAFLexerInterface {
 			else if (($match = $this->scanner->scan(self::MATCH_DOUBLE_STRING_LITERAL)) !== null) return $this->createToken(self::T_DOUBLE_STRING_LITERAL, $match);
 			else if (($match = $this->scanner->scan(self::MATCH_NUMBER_LITERAL)) !== null) return $this->createToken(self::T_NUMBER_LITERAL, $match);
 			else if (($match = $this->scanner->scan(self::MATCH_DOT)) !== null) return $this->createToken(self::T_DOT, $match);
-			else if (($match = $this->scanner->scan(self::MATCH_COMPARISON_OPERATOR)) !== null) return $this->createToken(self::T_COMPARISON_OPERATOR, $match);
+			else if (($match = $this->scanner->scan(self::MATCH_AND_COMPARISON_OPERATOR)) !== null) return $this->createToken(self::T_COMPARISON_OPERATOR, $match);
+			else if (($match = $this->scanner->scan(self::MATCH_OR_COMPARISON_OPERATOR)) !== null) return $this->createToken(self::T_COMPARISON_OPERATOR, $match);
 			else if (($match = $this->scanner->scan(self::MATCH_OPEN_PARENTHESIS)) !== null) return $this->createToken(self::T_OPEN_PARENTHESIS, $match);
 			else if (($match = $this->scanner->scan(self::MATCH_CLOSE_PARENTHESIS)) !== null) return $this->createToken(self::T_CLOSE_PARENTHESIS, $match);
 			else if (($match = $this->scanner->scan(self::MATCH_COMMA)) !== null) return $this->createToken(self::T_COMMA, $match);
@@ -431,8 +434,10 @@ class wfWAFBaseParser {
 class wfWAFStringScanner {
 
 	private $string;
+	private $remainingStringCache;
 	private $length;
 	private $pointer;
+	private $remainingStringCachePointer;
 	private $prevPointer;
 	private $match;
 	private $captures;
@@ -516,13 +521,20 @@ class wfWAFStringScanner {
 	 * @return string
 	 */
 	public function getRemainingString() {
-		return wfWAFUtils::substr($this->getString(), $this->getPointer());
+		$pointer = $this->getPointer();
+		if ($pointer === $this->remainingStringCachePointer && is_string($this->remainingStringCache)) {
+			return $this->remainingStringCache;
+		}
+		$this->remainingStringCache = wfWAFUtils::substr($this->getString(), $pointer);
+		$this->remainingStringCachePointer = $pointer;
+		return $this->remainingStringCache;
 	}
 
 	/**
 	 * @return $this
 	 */
 	public function reset() {
+		$this->remainingStringCache = false;
 		$this->setState(array(), 0, 0);
 		return $this;
 	}
@@ -675,5 +687,4 @@ class wfWAFStringScanner {
 		$this->captures = $captures;
 	}
 }
-
-
+}
