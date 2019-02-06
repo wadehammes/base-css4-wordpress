@@ -26,6 +26,10 @@ function base_scripts_and_styles() {
 
     // Add FontAwesome
     wp_enqueue_style( 'font-awesome-5', 'https://pro.fontawesome.com/releases/v5.7.1/css/all.css', array(), '5.7.1', 'all' );
+
+    if (is_user_logged_in()) {
+      wp_enqueue_style( 'dashicons' );
+    }
   }
 }
 add_action('wp_enqueue_scripts', 'base_scripts_and_styles', 999);
