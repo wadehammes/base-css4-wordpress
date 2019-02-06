@@ -19,7 +19,7 @@
 			div.style.display = "none";
 			site.parentNode.insertBefore(div, site.nextSibling);
 		}
-		xhr.open("get", "/sprites.svg", true);
+		xhr.open("get", "<?php echo get_template_directory_uri(); ?>/library/svg/sprite.svg", true);
 		xhr.send();
 	</script>
 

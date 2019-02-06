@@ -19,10 +19,12 @@ var gulp = require("gulp"),
   babel = require("gulp-babel"),
   browserSync = require("browser-sync").create();
 
+console.log(noop);
+
 // Read our Settings Configuration
 var settings = JSON.parse(fs.readFileSync("./settings.json"));
 
-// Process arguments passed to Gulp CLI (like env --production)
+// Process arguments passed to Gulp CLI (like gulp --production)
 var args = minimist(process.argv);
 
 var config = {

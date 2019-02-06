@@ -174,4 +174,12 @@ function remove_empty_tags_recursive ($str, $repto = NULL) {
     $str
   );
 }
+
+function add_font_awesome_5_cdn_attributes( $html, $handle ) {
+    if ( 'font-awesome-5' === $handle ) {
+        return str_replace( "media='all'", "media='all' integrity='sha384-6jHF7Z3XI3fF4XZixAuSu0gGKrXwoX/w3uFPxC56OtjChio7wtTGJWRW53Nhx6Ev' crossorigin='anonymous'", $html );
+    }
+    return $html;
+}
+add_filter( 'style_loader_tag', 'add_font_awesome_5_cdn_attributes', 10, 2 );
 ?>
