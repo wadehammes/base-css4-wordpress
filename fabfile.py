@@ -35,20 +35,6 @@ st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
 
 ### Server Commands ###
 @task
-def server_update():
-    """ Updates server with new packages """
-    with settings(warn_only=True):
-        with cd(env.work_dir):
-            check = raw_input('\nWarning you are about to deploy code to {}.\n'.format(
-                env.environment) + 'Please confirm the environment that you wish to '
-                'push to if you want continue: ')
-
-            if check == env.environment:
-                run('sudo apt-get -y update')
-                run('sudo apt-get -y upgrade')
-                run('sudo apt-get -y dist-upgrade')
-
-@task
 def update():
     """ Updates NPM modules with new packages """
     with cd(env.work_dir):
@@ -67,20 +53,6 @@ def status():
     """ Navigates to the site directory and executes `git status` """
     with cd(env.work_dir):
         run('git status')
-
-@task
-def pull(branch):
-    """ Navigates to the site directory and executes `git pull` """
-    with cd(env.work_dir):
-        run('git add .')
-        run('git pull origin {}'.format(branch))
-        run('sudo gulp build --production')
-
-@task
-def push(branch):
-    """ Navigates to the site directory and executes `git push origin <branch>` """
-    with cd(env.work_dir):
-        run('git push origin {}'.format(branch))
 
 @task
 def deploy(branch='master'):
