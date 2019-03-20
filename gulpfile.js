@@ -57,7 +57,7 @@ var phpPath = themeBase + themeName + "/**/*.php";
 /*=============================
 =            Tasks            =
 =============================*/
-// Compile, prefix, minify and move our SCSS files
+// Compile, prefix, minify and move our CSS files
 gulp.task("stylesheets", function() {
   var processors = [
     require("postcss-import")(),
