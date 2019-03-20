@@ -18,18 +18,6 @@
     <!-- TYPEKIT ACCOUNT -->
     <!-- typekit css link here -->
 
-    <!-- HTML5SHIV -->
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.2/html5shiv.min.js"></script>
-
-    <!-- DETECT SMART BROWSERS -->
-    <script type="text/javascript" defer="defer">
-        // Detects if visibilityState exists, which 99% means this browsers is modern with modern features
-        if ("visibilityState" in document) {
-            var doc = document.getElementsByTagName("html");
-            doc[0].className = "modern-browser";
-        }
-    </script>
-
     <!-- LOAD WP ENQUEUES -->
     <?php wp_head(); ?>
 
