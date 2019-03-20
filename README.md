@@ -76,6 +76,8 @@ define('EMPTY_TRASH_DAYS', 60);
 define('DISABLE_WP_CRON', 'true');
 ```
 
+**Once this is setup, please add `fabfile.py` to the `.gitignore` in order to add your SSH info**
+
 ## Using this to build
 
 All theme dev is done in the `assets/` directory within `base` theme. For more information on BASSCSS (our primary framework), see http://basscss.com, and for more info on using CSS4 now, visit the CSS Next website at http://cssnext.io.
