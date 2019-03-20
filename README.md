@@ -19,6 +19,10 @@ Run Gulp:
 $ gulp
 ```
 
+## Create config file
+
+Rename `wp-config-sample.php` to `wp-config.php`
+
 ## Launching Wordpress
 
 Currently, we run everything in a MAMP environment on OSX. For other computer types, skip this step.
@@ -118,7 +122,7 @@ Next, install Fabric:
 pip install fabric
 ```
 
-**Once this is setup, please add `fabfile.py` to the `.gitignore` in order to hidegio your SSH info**
+**Once this is setup, please add `fabfile.py` to the `.gitignore` in order to hidegio your SSH info**g
 
 ### Fabric Commands
 
