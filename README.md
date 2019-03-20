@@ -1,7 +1,9 @@
 # Base CSS4 Wordpress Starter
 
 ## USE -- install [NPM](http://nodejs.org/download/):
-Clone this repo into your code directory and remove the .git file:
+
+Clone this repo into your code directory and remove the .git file(s):
+
 ```
 $ cd your/development/directory/
 $ git clone git@github.com:TrackMaven/base-css4-wordpress.git
@@ -12,20 +14,9 @@ $ npm install
 ```
 
 Run Gulp:
+
 ```
 $ gulp
-```
-
-Your project should compile successfully.
-
-### In order to update packages:
-```
-$ npm run-script update
-```
-
-### To fix breaking npm builds
-```
-$ npm rebuild
 ```
 
 ## Launching Wordpress
@@ -33,9 +24,11 @@ $ npm rebuild
 Currently, we run everything in a MAMP environment on OSX. For other computer types, skip this step.
 
 ### Install Mamp
+
 To get up and running, you will need to setup an environment using MAMP, [download it here](https://www.mamp.info/en/).
 
 Once installed, point your MAMP to the repo, and then visit it in your browser at:
+
 ```
 http://localhost:8888/
 ```
@@ -50,13 +43,14 @@ You will also need to create a `settings.json` file in the root of your reposito
 
 This allows our browser-sync task to properly proxy so we can use MAMP plus the goodness of Browser-Sync.
 
-**NOTE: if you plan to create a custom hostname for this in MAMP, like `trackmaven-marketing.local:8888`, then you need to update this file to reflect that change**
+**NOTE: if you plan to create a custom hostname for this in MAMP, like `mysite.local:8888`, then you need to update this file to reflect that change**
 
 You will then be asked to start setting up your config files. At this point, you should use MAMP to acces your local databases (click the MySQL tab, and launch PHPMyAdmin, and create a new database), and fill out the respective information into the config setup.
 
 Once you are setup and logged in, upgrade Wordpress to the latest version, and then click Appearance -> Themes, and Activate the Base Joints theme. You should now see a bare website at the url above.
 
 ### Add your local URL to wp-config.php
+
 Open `wp-config.php` and add to line 22:
 
 ```
@@ -65,6 +59,7 @@ define('WP_HOME', '<your local URL here>');
 ```
 
 ### Add other wp-config goodies
+
 Add to line 44:
 
 ```
@@ -88,9 +83,11 @@ All theme dev is done in the `assets/` directory within `base` theme. For more i
 To include new CSS files outside of the BASSCSS defaults, comment out modules, or add optional modules, please see `assets/css/base.css`.
 
 ## Deploying
+
 We use Fabric to deploy. You will need to have your public SSH key set up in AWS, work with Wade or an engineer to get that completed.
 
 In the `fabfile.py`, add your environment hosts:
+
 ```python
 @task
 def dev():
@@ -110,28 +107,33 @@ def prod():
 ```
 
 First, install `pip`:
+
 ```
 sudo easy_install pip
 ```
 
 Next, install Fabric:
+
 ```
 pip install fabric
 ```
 
 ### Fabric Commands
+
 Deploy():
+
 ```
 fab <environment> deploy:<branch name>
 ```
 
 Using this command, you will first pass an envirment to deploy to, either `dev` or `prod`. You will then supply a branch.
 
-*Note:* production only takes `master` as a branch.
+_Note:_ production only takes `master` as a branch.
 
 When you hit enter, it will ask you to confirm the enviroment by typing the name of it in the raw input. Hit enter again and your deploy will run.
 
 Status():
+
 ```
 fab <environment> status
 ```
