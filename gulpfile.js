@@ -41,11 +41,6 @@ var stylePathWatch = themeBase + themeName + "/assets/css/**/*.css";
 var stylePathDest = themeBase + themeName + "/library/css/";
 
 // Script Path
-var scriptsPathSrc = [
-  themeBase + themeName + "/assets/js/_lib/**/*.js",
-  themeBase + themeName + "/assets/js/_src/**/*.js",
-  themeBase + themeName + "/assets/js/application.js"
-];
 var scriptsPathWatch = themeBase + themeName + "/assets/js/**/*.js";
 var scriptsPathDest = themeBase + themeName + "/library/js/";
 
@@ -94,7 +89,11 @@ gulp.task("stylesheets", function() {
     .pipe(postcss(processors))
     .pipe(sourcemaps.write("."))
     .pipe(gulp.dest(stylePathDest))
-    .pipe(config.production ? noop({objectMode: true}) : browserSync.reload({ stream: true }));
+    .pipe(
+      config.production
+        ? noop({ objectMode: true })
+        : browserSync.reload({ stream: true })
+    );
 });
 
 // Compile (in order), concatenate, minify, rename and move our JS files
@@ -110,7 +109,11 @@ gulp.task("scripts", function() {
     .pipe(concat("application.js", { newLine: ";" }))
     .pipe(uglify())
     .pipe(gulp.dest(scriptsPathDest))
-    .pipe(config.production ? noop({objectMode: true}) : browserSync.reload({ stream: true }));
+    .pipe(
+      config.production
+        ? noop({ objectMode: true })
+        : browserSync.reload({ stream: true })
+    );
 });
 
 gulp.task("svgs", function() {
@@ -134,7 +137,7 @@ gulp.task("svgs", function() {
     )
     .pipe(svgstore({ inlineSvg: true }))
     .pipe(gulp.dest(svgDest))
-    .pipe(config.production ? noop({objectMode: true}) : browserSync.stream())
+    .pipe(config.production ? noop({ objectMode: true }) : browserSync.stream())
     .on("end", function() {
       fs.renameSync(svgDest + "/svg.svg", svgDest + "/sprite.svg");
     });
@@ -167,6 +170,7 @@ gulp.task("serve", ["stylesheets", "scripts", "svgs"], function() {
   gulp.watch(scriptsPathWatch, ["scripts"]);
   gulp.watch(scriptsPathWatch, ["svgs"]);
   gulp.watch(phpPath).on("change", browserSync.reload);
+  gulp.watch(stylePathDest + "base.css").on("change", browserSync.reload);
 });
 
 /*===================================
