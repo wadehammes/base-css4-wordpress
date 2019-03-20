@@ -8,7 +8,6 @@ var gulp = require("gulp"),
   concat = require("gulp-concat"),
   uglify = require("gulp-uglify"),
   svgmin = require("gulp-svgmin"),
-  imagemin = require("gulp-imagemin"),
   noop = require("through2"),
   minimist = require("minimist"),
   streamqueue = require("streamqueue"),
@@ -146,17 +145,6 @@ gulp.task("svgs", function() {
 /*========================================
 =            Standalone Tasks            =
 ========================================*/
-// Optimize images
-gulp.task("img-opt", function() {
-  return gulp
-    .src(imgPathWatch)
-    .pipe(
-      imagemin({
-        progressive: true
-      })
-    )
-    .pipe(gulp.dest(imgDest));
-});
 
 // Browser Sync
 gulp.task("serve", ["stylesheets", "scripts", "svgs"], function() {
@@ -173,22 +161,9 @@ gulp.task("serve", ["stylesheets", "scripts", "svgs"], function() {
   gulp.watch(stylePathDest + "base.css").on("change", browserSync.reload);
 });
 
-/*===================================
-=            Watch Tasks            =
-===================================*/
-gulp.task("watch-images", function() {
-  gulp.watch(imgPathWatch, ["img-opt"]);
-});
-
 /*==========================================
 =            Run the Gulp Tasks            =
 ==========================================*/
-gulp.task("default", [
-  "stylesheets",
-  "scripts",
-  "svgs",
-  "watch-images",
-  "serve"
-]);
+gulp.task("default", ["stylesheets", "scripts", "svgs", "serve"]);
 gulp.task("build", ["stylesheets", "scripts", "svgs"]);
 gulp.task("images", ["img-opt"]);
