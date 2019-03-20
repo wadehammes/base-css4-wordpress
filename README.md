@@ -76,7 +76,7 @@ define('EMPTY_TRASH_DAYS', 60);
 define('DISABLE_WP_CRON', 'true');
 ```
 
-**Once this is setup, please add `fabfile.py` to the `.gitignore` in order to add your SSH info**
+**Once this is setup, please add `fabfile.py` to the `.gitignore` in order to hide your SSH info**
 
 ## Using this to build
 
