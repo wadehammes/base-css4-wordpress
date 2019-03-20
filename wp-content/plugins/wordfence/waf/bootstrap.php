@@ -436,27 +436,33 @@ class wfWAFWordPress extends wfWAF {
 		/**
 		 * Removed sending attack data. Attack data is sent in @see wordfence::veryFirstAction
 		 */
-		$cron = (array) $this->getStorageEngine()->getConfig('cron', null, 'livewaf');
+		$storage = $this->getStorageEngine();
+		$cron = (array) $storage->getConfig('cron', null, 'livewaf');
+		$run = array();
+		$updated = false;
 		if (is_array($cron)) {
 			/** @var wfWAFCronEvent $event */
 			$cronDeduplication = array();
 			foreach ($cron as $index => $event) {
 				$event->setWaf($this);
 				if ($event->isInPast()) {
-					$event->fire();
+					$run[$index] = $event;
 					$newEvent = $event->reschedule();
 					$className = get_class($newEvent);
 					if ($newEvent instanceof wfWAFCronEvent && $newEvent !== $event && !in_array($className, $cronDeduplication)) {
 						$cron[$index] = $newEvent;
 						$cronDeduplication[] = $className;
+						$updated = true;
 					} else {
 						unset($cron[$index]);
+						$updated = true;
 					}
 				}
 				else {
 					$className = get_class($event);
 					if (in_array($className, $cronDeduplication)) {
 						unset($cron[$index]);
+						$updated = true;
 					}
 					else {
 						$cronDeduplication[] = $className;
@@ -464,7 +470,15 @@ class wfWAFWordPress extends wfWAF {
 				}
 			}
 		}
-		$this->getStorageEngine()->setConfig('cron', $cron, 'livewaf');
+		$storage->setConfig('cron', $cron, 'livewaf');
+		
+		if ($updated && method_exists($storage, 'saveConfig')) {
+			$storage->saveConfig('livewaf');
+		}
+		
+		foreach ($run as $index => $event) {
+			$event->fire();
+		}
 	}
 
 	/**

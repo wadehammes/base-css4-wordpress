@@ -162,6 +162,15 @@ class amePluginVisibility extends amePersistentModule {
 			return $plugins;
 		}
 
+		$editableProperties = array(
+			'Name' => 'name',
+			'Description' => 'description',
+			'Author' => 'author',
+			'PluginURI' => 'siteUrl',
+			'AuthorURI' => 'siteUrl',
+			'Version' => 'version',
+		);
+
 		$pluginFileNames = array_keys($plugins);
 		foreach($pluginFileNames as $fileName) {
 			//Remove all hidden plugins.
@@ -170,14 +179,12 @@ class amePluginVisibility extends amePersistentModule {
 				continue;
 			}
 
-			//Set custom names and descriptions.
-			$customName = ameUtils::get($settings, array('plugins', $fileName, 'customName'), '');
-			$customDescription = ameUtils::get($settings, array('plugins', $fileName, 'customDescription'), '');
-			if ( $customName !== '' ) {
-				$plugins[$fileName]['Name'] = $customName;
-			}
-			if ( $customDescription !== '' ) {
-				$plugins[$fileName]['Description'] = $customDescription;
+			//Set custom names, descriptions, and other properties.
+			foreach($editableProperties as $header => $property) {
+				$customValue = ameUtils::get($settings, array('plugins', $fileName, 'custom' . ucfirst($property)), '');
+				if ( $customValue !== '' ) {
+					$plugins[$fileName][$header] = $customValue;
+				}
 			}
 		}
 
@@ -324,12 +331,13 @@ class amePluginVisibility extends amePersistentModule {
 
 			$plugins[] = array(
 				'fileName' => $pluginFile,
-				'name' => $header['Name'],
-				'description' => isset($header['Description']) ? $header['Description'] : '',
 				'isActive' => $isActive || $isActiveForNetwork,
 
-				'customName' => '',
-				'customDescription' => '',
+				'name' => $header['Name'],
+				'description' => isset($header['Description']) ? $header['Description'] : '',
+				'author' => isset($header['Author']) ? $header['Author'] : '',
+				'siteUrl' => isset($header['PluginURI']) ? $header['PluginURI'] : '',
+				'version' => isset($header['Version']) ? $header['Version'] : '',
 			);
 		}
 

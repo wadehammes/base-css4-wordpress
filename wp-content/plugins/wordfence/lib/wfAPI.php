@@ -221,6 +221,11 @@ class wfAPI {
 		}
 		return wp_http_supports(array('ssl'));
 	}
+	
+	public function getTextImageURL($text) {
+		$apiURL = $this->getAPIURL();
+		return rtrim($apiURL, '/') . '/v' . WORDFENCE_API_VERSION . '/?' . $this->makeAPIQueryString() . '&' . self::buildQuery(array('action' => 'image', 'txt' => base64_encode($text)));
+	}
 }
 
 class wfAPICallSSLUnavailableException extends Exception {

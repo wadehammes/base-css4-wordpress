@@ -66,6 +66,33 @@ class wfRateLimit {
 		return $_cachedHuman404s;
 	}
 	
+	/**
+	 * Returns whether or not humans and bots have the same rate limits configured.
+	 *
+	 * @return bool
+	 */
+	public static function identicalHumanBotRateLimits() {
+		$humanViews = self::humanViewsRateLimit();
+		$crawlerViews = self::crawlerViewsRateLimit();
+		if ($humanViews->isEnabled() != $crawlerViews->isEnabled()) {
+			return false;
+		}
+		if ($humanViews->limit() != $crawlerViews->limit()) {
+			return false;
+		}
+		
+		$human404s = self::human404sRateLimit();
+		$crawler404s = self::crawler404sRateLimit();
+		if ($human404s->isEnabled() != $crawler404s->isEnabled()) {
+			return false;
+		}
+		if ($human404s->limit() != $crawler404s->limit()) {
+			return false;
+		}
+		
+		return true;
+	}
+	
 	public static function mightRateLimit($hitType) {
 		if (!wfConfig::get('firewallEnabled')) {
 			return false;
@@ -177,6 +204,22 @@ class wfRateLimit {
 				return wfConfig::get('max404Humans') != 'DISABLED' && wfConfig::getInt('max404Humans') > 0;
 		}
 		return true;
+	}
+	
+	public function limit() {
+		switch ($this->_type) {
+			case self::TYPE_GLOBAL:
+				return wfConfig::getInt('maxGlobalRequests');
+			case self::TYPE_CRAWLER_VIEWS:
+				return wfConfig::getInt('maxRequestsCrawlers');
+			case self::TYPE_CRAWLER_404S:
+				return wfConfig::getInt('max404Crawlers');
+			case self::TYPE_HUMAN_VIEWS:
+				return wfConfig::getInt('maxRequestsHumans');
+			case self::TYPE_HUMAN_404S:
+				return wfConfig::getInt('max404Humans');
+		}
+		return -1;
 	}
 	
 	public function shouldEnforce($hitType) {

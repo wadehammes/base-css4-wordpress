@@ -6,7 +6,7 @@ if (!defined('WORDFENCE_VERSION')) { exit; }
 	<li class="wf-option-subtitle"><?php echo ($firewall->isSubDirectoryInstallation() ? __('You are currently running the WAF from another WordPress installation. These rules can be disabled or enabled once you configure the firewall to run correctly on this site.', 'wordfence') : ''); ?></li>
 	<li id="waf-rules-wrapper" class="wf-add-top"></li>
 	<?php if (!WFWAF_SUBDIRECTORY_INSTALL): ?>
-	<li>
+	<li id="waf-rules-manual-update">
 		<ul class="wf-option wf-option-footer wf-padding-no-bottom">
 			<li><a class="wf-btn wf-btn-default waf-rules-refresh" href="#"><?php _e('Manually Refresh Rules', 'wordfence'); ?></a>&nbsp;&nbsp;</li>
 			<li class="wf-padding-add-top-xs-small"><em id="waf-rules-next-update"></em></li>
@@ -29,9 +29,11 @@ if (!defined('WORDFENCE_VERSION')) { exit; }
 			if (is_array($cron)) {
 				/** @var wfWAFCronEvent $event */
 				foreach ($cron as $index => $event) {
-					$event->setWaf(wfWAF::getInstance());
-					if (!$event->isInPast()) {
-						$nextUpdate = min($nextUpdate, $event->getFireTime());
+					if ($event instanceof wfWAFCronFetchRulesEvent) {
+						$event->setWaf(wfWAF::getInstance());
+						if (!$event->isInPast()) {
+							$nextUpdate = min($nextUpdate, $event->getFireTime());
+						}
 					}
 				}
 			}

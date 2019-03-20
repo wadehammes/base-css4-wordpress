@@ -218,41 +218,7 @@ function ewww_image_optimizer_count_optimized( $gallery ) {
 	$attachment_query_count = 0;
 	switch ( $gallery ) {
 		case 'media':
-			/*
-			$ids    = array();
-			$resume = get_option( 'ewww_image_optimizer_bulk_resume' );
-			// See if we were given attachment IDs to work with via GET/POST.
-			if ( false && ! empty( $_REQUEST['ids'] ) || $resume ) {
-				ewwwio_debug_message( 'we have received attachment ids via $_REQUEST' );
-				// Retrieve the attachment IDs that were pre-loaded in the database.
-				if ( 'scanning' == $resume ) {
-					ewwwio_debug_message( 'still scanning media - phase 1' );
-					$finished       = (array) get_option( 'ewww_image_optimizer_bulk_attachments' );
-					$remaining      = (array) get_option( 'ewww_image_optimizer_scanning_attachments' );
-					$attachment_ids = array_merge( $finished, $remaining );
-				} elseif ( $resume ) {
-					// This shouldn't ever happen, but doesn't hurt to account for the use case, just in case something changes in the future.
-					ewwwio_debug_message( 'this is the improbable, but it happened' );
-					$attachment_ids = get_option( 'ewww_image_optimizer_bulk_attachments' );
-				} else {
-					ewwwio_debug_message( 'we really did get attachments via $_REQUEST, or so we think' );
-					$attachment_ids = get_option( 'ewww_image_optimizer_scanning_attachments' );
-				}
-				if ( ! empty( $attachment_ids ) ) {
-					$full_count = count( $attachment_ids );
-				} else {
-					$full_count = $wpdb->get_var( "SELECT COUNT(ID) FROM $wpdb->posts WHERE (post_type = 'attachment' OR post_type = 'ims_image') AND (post_mime_type LIKE '%%image%%' OR post_mime_type LIKE '%%pdf%%')" );
-				}
-			} else {
-			*/
-				/* $full_count = $wpdb->get_var( "SELECT COUNT(ID) FROM $wpdb->posts WHERE (post_type = 'attachment' OR post_type = 'ims_image') AND (post_mime_type LIKE '%%image%%' OR post_mime_type LIKE '%%pdf%%')" ); */
-
-				/*
-				$full_count = $wpdb->get_var( "SELECT COUNT(attachment_id) FROM $wpdb->ewwwio_queue WHERE gallery = 'media'" );
-			}
-			*/
 			return ewww_image_optimizer_count_attachments();
-			/* return $full_count; */
 			break;
 		case 'ngg':
 			// See if we were given attachment IDs to work with via GET/POST.
@@ -279,6 +245,8 @@ function ewww_image_optimizer_count_optimized( $gallery ) {
 					if ( class_exists( 'Ngg_Serializable' ) ) {
 						$serializer = new Ngg_Serializable();
 						$meta       = $serializer->unserialize( $attachment );
+					} elseif ( class_exists( 'C_NextGen_Serializable' ) ) {
+						$meta = C_NextGen_Serializable::unserialize( $attachment );
 					} else {
 						$meta = unserialize( $attachment );
 					}
@@ -401,11 +369,6 @@ function ewww_image_optimizer_bulk_script( $hook ) {
 		update_option( 'ewww_image_optimizer_bulk_resume', '' );
 		update_option( 'ewww_image_optimizer_aux_resume', '' );
 
-		/*
-		REMOVE
-		update_option( 'ewww_image_optimizer_scanning_attachments', '', false );
-		update_option( 'ewww_image_optimizer_bulk_attachments', '', false );
-		*/
 		ewww_image_optimizer_delete_queue_images();
 		ewww_image_optimizer_delete_pending();
 	}
@@ -417,11 +380,6 @@ function ewww_image_optimizer_bulk_script( $hook ) {
 	$resume   = get_option( 'ewww_image_optimizer_bulk_resume' );
 	$scanning = get_option( 'ewww_image_optimizer_aux_resume' );
 	if ( ! $resume && ! $scanning ) {
-		/*
-		REMOVE
-		update_option( 'ewww_image_optimizer_scanning_attachments', '', false );
-		update_option( 'ewww_image_optimizer_bulk_attachments', '', false );
-		*/
 		ewwwio_debug_message( 'not resuming/scanning, so clearing any pending images in both tables' );
 		ewww_image_optimizer_delete_queue_images();
 		ewww_image_optimizer_delete_pending();
@@ -458,10 +416,6 @@ function ewww_image_optimizer_bulk_script( $hook ) {
 	} elseif ( 'scanning' == $resume ) {
 		ewwwio_debug_message( 'scanning, nothing doing' );
 		// TODO: do nothing...
-		// Retrieve the attachment IDs that have not been finished from the 'scanning attachments' option.
-		/* $attachments = get_option( 'ewww_image_optimizer_scanning_attachments' ); */
-
-		/* $attachment_count = ewww_image_optimizer_count_unscanned_attachments( 'media' ); */
 	} elseif ( $scanning || $resume ) {
 		ewwwio_debug_message( 'resuming, nothing doing' );
 		/* $attachments = array(); */
@@ -482,6 +436,10 @@ function ewww_image_optimizer_bulk_script( $hook ) {
 		/* update_option( 'ewww_image_optimizer_scanning_attachments', $attachments, false ); */
 	} else {
 		$attachment_count = ewww_image_optimizer_count_unscanned_attachments();
+	}
+	if ( empty( $attachment_count ) && ! ewww_image_optimizer_count_attachments() ) {
+		update_option( 'ewww_image_optimizer_bulk_resume', '' );
+		update_option( 'ewww_image_optimizer_aux_resume', '' );
 	}
 	wp_enqueue_script( 'ewwwbulkscript', plugins_url( '/includes/eio.js', __FILE__ ), array( 'jquery', 'jquery-ui-slider', 'jquery-ui-progressbar', 'postbox', 'dashboard' ), EWWW_IMAGE_OPTIMIZER_VERSION );
 	// Number of images in the ewwwio_table (previously optimized images).
@@ -680,7 +638,8 @@ function ewww_image_optimizer_media_scan( $hook = '' ) {
 		$ewwwdb = $wpdb;
 	}
 	global $optimized_list;
-	/* $queued_ids            = array(); */
+	$queued_ids            = array();
+	$skipped_ids           = array();
 	$tiny_notice           = '';
 	$image_count           = 0;
 	$attachments_processed = 0;
@@ -760,13 +719,6 @@ function ewww_image_optimizer_media_scan( $hook = '' ) {
 			}
 		}
 		if ( ! empty( $attachment_ids ) && is_array( $attachment_ids ) ) {
-			/*
-			$selected_ids = null;
-			ewwwio_debug_message( 'remaining items: ' . count( $attachment_ids ) );
-			// Retrieve the attachment IDs that were pre-loaded in the database.
-			$selected_ids = array_splice( $attachment_ids, 0, $max_query );
-			array_walk( $selected_ids, 'intval' );
-			*/
 			ewwwio_debug_message( 'selected items: ' . count( $attachment_ids ) );
 			$attachments_in = implode( ',', $attachment_ids );
 		} else {
@@ -774,9 +726,6 @@ function ewww_image_optimizer_media_scan( $hook = '' ) {
 			ewwwio_ob_clean();
 			die( ewwwio_json_encode( array( 'error' => esc_html__( 'List of attachment IDs not found.', 'ewww-image-optimizer' ) ) ) );
 		}
-
-		// $selected_ids = $attachment_ids; // Might just be able to change everything over to $attachment_ids.
-		/* $failsafe_selected_ids = $selected_ids; */
 
 		$attachment_meta = ewww_image_optimizer_fetch_metadata_batch( $attachments_in );
 		$attachments_in  = null;
@@ -797,7 +746,6 @@ function ewww_image_optimizer_media_scan( $hook = '' ) {
 			if ( 0 == $attachments_processed % 5 && ( microtime( true ) - $started > apply_filters( 'ewww_image_optimizer_timeout', 22 ) || ! ewwwio_check_memory_available( 2194304 ) ) ) {
 				ewwwio_debug_message( 'time exceeded, or memory exceeded' );
 				ewww_image_optimizer_debug_log();
-				/* $attachment_ids = array_merge( $failsafe_selected_ids, $attachment_ids ); */
 				if ( defined( 'WP_CLI' ) && WP_CLI ) {
 					if ( is_array( $optimized_list ) ) {
 						set_transient( 'ewww_image_optimizer_low_memory_mode', 'low_memory', 600 ); // Keep us in low memory mode for up to 10 minutes.
@@ -809,13 +757,12 @@ function ewww_image_optimizer_media_scan( $hook = '' ) {
 				}
 			}
 			ewww_image_optimizer_debug_log();
-			/* array_shift( $failsafe_selected_ids ); */
 			clearstatcache();
 			$pending     = false;
 			$remote_file = false;
 			if ( in_array( $selected_id, $bad_attachments ) ) { // a known broken attachment, which would mean we already tried this once before...
 				ewwwio_debug_message( "skipping bad attachment $selected_id" );
-				ewww_image_optimizer_delete_queued_image( $selected_id );
+				$skipped_ids[] = $selected_id;
 				continue;
 			}
 			if ( ! empty( $attachment_meta[ $selected_id ]['tinypng'] ) && empty( $_REQUEST['ewww_force'] ) ) {
@@ -823,7 +770,7 @@ function ewww_image_optimizer_media_scan( $hook = '' ) {
 				if ( ! $tiny_notice ) {
 					$tiny_notice = esc_html__( 'Images compressed by TinyJPG and TinyPNG have been skipped, refresh and use the Force Re-optimize option to override.', 'ewww-image-optimizer' );
 				}
-				ewww_image_optimizer_delete_queued_image( $selected_id );
+				$skipped_ids[] = $selected_id;
 				continue;
 			}
 			if ( empty( $attachment_meta[ $selected_id ]['meta'] ) ) {
@@ -867,7 +814,7 @@ function ewww_image_optimizer_media_scan( $hook = '' ) {
 			}
 
 			if ( ! in_array( $mime, $enabled_types ) ) {
-				ewww_image_optimizer_delete_queued_image( $selected_id );
+				$skipped_ids[] = $selected_id;
 				continue;
 			}
 			ewwwio_debug_message( "id: $selected_id and type: $mime" );
@@ -877,27 +824,27 @@ function ewww_image_optimizer_media_scan( $hook = '' ) {
 			list( $file_path, $upload_path ) = ewww_image_optimizer_attachment_path( $meta, $selected_id, $attached_file, false );
 
 			// Run a quick fix for as3cf files.
-			if ( class_exists( 'Amazon_S3_And_CloudFront' ) && strpos( $file_path, 's3' ) === 0 ) {
+			if ( class_exists( 'Amazon_S3_And_CloudFront' ) && ewww_image_optimizer_stream_wrapped( $file_path ) ) {
 				ewww_image_optimizer_check_table_as3cf( $meta, $selected_id, $file_path );
 			}
 			ewww_image_optimizer_debug_log();
-			if ( ( strpos( $file_path, 's3' ) === 0 || ! is_file( $file_path ) ) && ( class_exists( 'WindowsAzureStorageUtil' ) || class_exists( 'Amazon_S3_And_CloudFront' ) ) ) {
+			if ( ( ewww_image_optimizer_stream_wrapped( $file_path ) || ! is_file( $file_path ) ) && ( class_exists( 'WindowsAzureStorageUtil' ) || class_exists( 'Amazon_S3_And_CloudFront' ) ) ) {
 				// Construct a $file_path and proceed IF a supported CDN plugin is installed.
 				ewwwio_debug_message( 'Azure or S3 detected and no local file found' );
 				$file_path = get_attached_file( $selected_id );
-				if ( strpos( $file_path, 's3' ) === 0 ) {
+				if ( ewww_image_optimizer_stream_wrapped( $file_path ) ) {
 					$file_path = get_attached_file( $selected_id, true );
 				}
 				ewwwio_debug_message( "remote file possible: $file_path" );
 				if ( ! $file_path ) {
 					ewwwio_debug_message( 'no file found on remote storage, bailing' );
-					ewww_image_optimizer_delete_queued_image( $selected_id );
+					$skipped_ids[] = $selected_id;
 					continue;
 				}
 				$remote_file = true;
 			} elseif ( ! $file_path ) {
 				ewwwio_debug_message( "no file path for $selected_id" );
-				ewww_image_optimizer_delete_queued_image( $selected_id );
+				$skipped_ids[] = $selected_id;
 				continue;
 			}
 			ewww_image_optimizer_debug_log();
@@ -1022,7 +969,7 @@ function ewww_image_optimizer_media_scan( $hook = '' ) {
 			foreach ( $attachment_images as $size => $file_path ) {
 				ewwwio_debug_message( "here is a path $file_path" );
 				ewww_image_optimizer_debug_log();
-				if ( ! $remote_file && strpos( $file_path, 's3' ) !== 0 && ! defined( 'EWWW_IMAGE_OPTIMIZER_RELATIVE' ) ) {
+				if ( ! $remote_file && ! ewww_image_optimizer_stream_wrapped( $file_path ) && ! defined( 'EWWW_IMAGE_OPTIMIZER_RELATIVE' ) ) {
 					$file_path = realpath( $file_path );
 				}
 				if ( empty( $file_path ) ) {
@@ -1176,10 +1123,9 @@ function ewww_image_optimizer_media_scan( $hook = '' ) {
 			if ( $pending ) {
 				ewwwio_debug_message( "$selected_id added to queue" );
 				ewww_image_optimizer_debug_log();
-				/* $queued_ids[] = $selected_id; */
-				ewww_image_optimizer_update_scanned_image( $selected_id );
+				$queued_ids[] = $selected_id;
 			} else {
-				ewww_image_optimizer_delete_queued_image( $selected_id );
+				$skipped_ids[] = $selected_id;
 			}
 			$attachment_images = array();
 			ewwwio_debug_message( 'checking for bad attachment' );
@@ -1188,7 +1134,6 @@ function ewww_image_optimizer_media_scan( $hook = '' ) {
 				ewwwio_debug_message( 'found bad attachment, bailing to reset the counter' );
 				ewww_image_optimizer_debug_log();
 				if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
-					/* $attachment_ids = array_merge( $failsafe_selected_ids, $attachment_ids ); */
 					break 2;
 				}
 			}
@@ -1197,56 +1142,31 @@ function ewww_image_optimizer_media_scan( $hook = '' ) {
 		ewwwio_debug_message( 'finished foreach of attachment_ids' );
 		ewww_image_optimizer_debug_log();
 
-		/*
-		REMOVE
-		update_option( 'ewww_image_optimizer_scanning_attachments', $attachment_ids, false );
-		$attachments_queued = get_option( 'ewww_image_optimizer_bulk_attachments' );
-		if ( empty( $attachments_queued ) || ! is_array( $attachments_queued ) ) {
-			ewwwio_debug_message( 'storing queued attachments in bulk_attachments' );
-			ewww_image_optimizer_debug_log();
-			update_option( 'ewww_image_optimizer_bulk_attachments', $queued_ids, false );
-		} else {
-			ewwwio_debug_message( 'storing queued attachments in bulk_attachments, merged with existing' );
-			ewww_image_optimizer_debug_log();
-			update_option( 'ewww_image_optimizer_bulk_attachments', array_merge( $attachments_queued, $queued_ids ), false );
-		}
-		$queued_ids = array();
-		*/
+		ewww_image_optimizer_update_scanned_images( $queued_ids );
+		ewww_image_optimizer_delete_queued_images( $skipped_ids );
+		$queued_ids  = array();
+		$skipped_ids = array();
+
 		ewwwio_debug_message( 'finished a loop in the while, going back for more possibly' );
 		$attachment_ids = ewww_image_optimizer_get_unscanned_attachments( 'media', $max_query );
 		ewww_image_optimizer_debug_log();
 	} // End while().
 	ewwwio_debug_message( 'done for this request, wrapping up' );
 	ewww_image_optimizer_debug_log();
+
 	if ( ! empty( $images ) ) {
 		ewww_image_optimizer_mass_insert( $wpdb->ewwwio_images, $images, $field_formats );
 	}
-	if ( ! empty( $reset_images ) ) {
-		/* $ewwwdb->query( "UPDATE $ewwwdb->ewwwio_images SET pending = 1, updated = updated WHERE id IN (" . implode( ',', $reset_images ) . ')' ); */
-	}
 	ewww_image_optimizer_reset_images( $reset_images );
+	ewww_image_optimizer_update_scanned_images( $queued_ids );
+	ewww_image_optimizer_delete_queued_images( $skipped_ids );
+
 	if ( 250 > $attachments_processed ) { // in-memory table is too slow.
 		ewwwio_debug_message( 'using in-memory table is too slow, switching to plan b' );
 		set_transient( 'ewww_image_optimizer_low_memory_mode', 'slow_list', 600 ); // Put it in low memory mode for at least 10 minutes.
 	}
 	ewww_image_optimizer_debug_log();
 
-	/*
-	REMOVE
-	update_option( 'ewww_image_optimizer_scanning_attachments', $attachment_ids, false );
-	if ( ! empty( $queued_ids ) ) {
-		$attachments_queued = get_option( 'ewww_image_optimizer_bulk_attachments' );
-		if ( empty( $attachments_queued ) || ! is_array( $attachments_queued ) ) {
-			ewwwio_debug_message( 'storing queued attachments in bulk_attachments' );
-			ewww_image_optimizer_debug_log();
-			update_option( 'ewww_image_optimizer_bulk_attachments', $queued_ids, false );
-		} else {
-			ewwwio_debug_message( 'storing queued attachments in bulk_attachments, merged with existing' );
-			ewww_image_optimizer_debug_log();
-			update_option( 'ewww_image_optimizer_bulk_attachments', array_merge( $attachments_queued, $queued_ids ), false );
-		}
-	}
-	*/
 	$elapsed = microtime( true ) - $started;
 	ewwwio_debug_message( "counting images took $elapsed seconds" );
 	ewwwio_memory( __FUNCTION__ );
@@ -1700,7 +1620,7 @@ function ewww_image_optimizer_bulk_loop( $hook = '', $delay = 0 ) {
 		}
 		// When an image (attachment) is done, pull the next attachment ID off the stack.
 		if ( ( 'full' == $next_image->resize || empty( $next_image->resize ) ) && ! empty( $attachment ) && $attachment != $next_image->attachment_id ) {
-			ewww_image_optimizer_delete_queued_image( $attachment );
+			ewww_image_optimizer_delete_queued_images( array( $attachment ) );
 			$attachment = (int) array_shift( $attachments ); // Pull the first image off the stack.
 			if ( ! empty( $attachments ) && is_array( $attachments ) ) {
 				$attachment = (int) $attachments[0]; // Then grab the next one (if any are left).
@@ -1732,7 +1652,7 @@ function ewww_image_optimizer_bulk_loop( $hook = '', $delay = 0 ) {
 		global $ewww_debug;
 		$debug_button       = esc_html__( 'Show Debug Output', 'ewww-image-optimizer' );
 		$debug_id           = uniqid();
-		$output['results'] .= "<button type='button' class='ewww-show-debug-meta button button-secondary' data-id='$debug_id'>$debug_button</button><div class='ewww-debug-meta-$debug_id' style='background-color:#ffff99;display:none;'>$ewww_debug</div>";
+		$output['results'] .= "<button type='button' class='ewww-show-debug-meta button button-secondary' data-id='$debug_id'>$debug_button</button><div class='ewww-debug-meta-$debug_id' style='background-color:#f1f1f1;display:none;'>$ewww_debug</div>";
 	}
 	if ( ! empty( $next_image->file ) ) {
 		$next_file = esc_html( $next_image->file );

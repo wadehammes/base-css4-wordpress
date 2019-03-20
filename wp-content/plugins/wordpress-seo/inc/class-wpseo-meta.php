@@ -655,7 +655,8 @@ class WPSEO_Meta {
 			if ( $custom[ self::$meta_prefix . $key ][0] === $unserialized ) {
 				return $custom[ self::$meta_prefix . $key ][0];
 			}
-			else {
+
+			if ( isset( self::$fields_index[ self::$meta_prefix . $key ] ) ) {
 				$field_def = self::$meta_fields[ self::$fields_index[ self::$meta_prefix . $key ]['subset'] ][ self::$fields_index[ self::$meta_prefix . $key ]['key'] ];
 				if ( isset( $field_def['serialized'] ) && $field_def['serialized'] === true ) {
 					// Ok, serialize value expected/allowed.
@@ -668,13 +669,12 @@ class WPSEO_Meta {
 		if ( isset( self::$defaults[ self::$meta_prefix . $key ] ) ) {
 			return self::$defaults[ self::$meta_prefix . $key ];
 		}
-		else {
-			/*
-			 * Shouldn't ever happen, means not one of our keys as there will always be a default available
-			 * for all our keys.
-			 */
-			return '';
-		}
+
+		/*
+		 * Shouldn't ever happen, means not one of our keys as there will always be a default available
+		 * for all our keys.
+		 */
+		return '';
 	}
 
 	/**
@@ -689,6 +689,12 @@ class WPSEO_Meta {
 	 * @return bool   whether the value was changed
 	 */
 	public static function set_value( $key, $meta_value, $post_id ) {
+		/*
+		 * Slash the data, because `update_metadata` will unslash it and we have already unslashed it.
+		 * Related issue: https://github.com/Yoast/YoastSEO.js/issues/2158
+		 */
+		$meta_value = wp_slash( $meta_value );
+
 		return update_post_meta( $post_id, self::$meta_prefix . $key, $meta_value );
 	}
 
@@ -980,22 +986,6 @@ class WPSEO_Meta {
 	}
 
 	/**
-	 * Get a value from $_POST for a given key
-	 * Returns the $_POST value if exists, returns an empty string if key does not exist
-	 *
-	 * @static
-	 *
-	 * @param  string $key Key of the value to get from $_POST.
-	 *
-	 * @return string      Returns $_POST value, which will be a string the majority of the time
-	 *                     Will return empty string if key does not exists in $_POST
-	 */
-	public static function get_post_value( $key ) {
-		// @codingStandardsIgnoreLine
-		return ( array_key_exists( $key, $_POST ) ) ? $_POST[ $key ] : '';
-	}
-
-	/**
 	 * Counts the total of all the keywords being used for posts except the given one
 	 *
 	 * @param string  $keyword The keyword to be counted.
@@ -1042,5 +1032,28 @@ class WPSEO_Meta {
 		$get_posts = new WP_Query( $query );
 
 		return $get_posts->posts;
+	}
+
+	/* ********************* DEPRECATED METHODS ********************* */
+
+	/**
+	 * Get a value from $_POST for a given key
+	 * Returns the $_POST value if exists, returns an empty string if key does not exist
+	 *
+	 * @static
+	 *
+	 * @deprecated 9.6
+	 * @codeCoverageIgnore
+	 *
+	 * @param  string $key Key of the value to get from $_POST.
+	 *
+	 * @return string      Returns $_POST value, which will be a string the majority of the time
+	 *                     Will return empty string if key does not exists in $_POST
+	 */
+	public static function get_post_value( $key ) {
+		_deprecated_function( __METHOD__, 'WPSEO 9.6' );
+
+		// @codingStandardsIgnoreLine
+		return ( array_key_exists( $key, $_POST ) ) ? $_POST[ $key ] : '';
 	}
 } /* End of class */

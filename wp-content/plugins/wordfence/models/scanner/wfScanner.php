@@ -155,12 +155,15 @@ class wfScanner {
 	 */
 	public static function quickScanTypeOptions() {
 		$oldVersions = true;
+		$wafStatus = true;
 		if (wfConfig::get('scanType') == self::SCAN_TYPE_CUSTOM) { //Obey the setting in custom if that's the true scan type
 			$oldVersions = wfConfig::get('scansEnabled_oldVersions');
+			$wafStatus = wfConfig::get('scansEnabled_wafStatus');
 		}
 		
 		return array_merge(self::_inactiveScanOptions(), array(
 			'scansEnabled_oldVersions' => $oldVersions,
+			'scansEnabled_wafStatus' => $wafStatus,
 		));
 	}
 	
@@ -177,6 +180,7 @@ class wfScanner {
 			'scansEnabled_fileContentsGSB' => true,
 			'scansEnabled_suspiciousOptions' => true,
 			'scansEnabled_oldVersions' => true,
+			'scansEnabled_wafStatus' => true,
 			'lowResourceScansEnabled' => true,
 			'scan_exclude' => wfConfig::get('scan_exclude', ''),
 			'scan_include_extra' => wfConfig::get('scan_include_extra', ''),
@@ -209,6 +213,7 @@ class wfScanner {
 			'scansEnabled_suspiciousAdminUsers' => true,
 			'scansEnabled_passwds' => true,
 			'scansEnabled_diskSpace' => true,
+			'scansEnabled_wafStatus' => true,
 			'scansEnabled_dns' => true,
 			'scan_exclude' => wfConfig::get('scan_exclude', ''),
 			'scan_include_extra' => wfConfig::get('scan_include_extra', ''),
@@ -243,6 +248,7 @@ class wfScanner {
 			'scansEnabled_suspiciousAdminUsers' => true,
 			'scansEnabled_passwds' => true,
 			'scansEnabled_diskSpace' => true,
+			'scansEnabled_wafStatus' => true,
 			'scansEnabled_dns' => true,
 			'other_scanOutside' => true,
 			'scansEnabled_scanImages' => true,
@@ -298,6 +304,7 @@ class wfScanner {
 			'scansEnabled_suspiciousAdminUsers' => false,
 			'scansEnabled_passwds' => false,
 			'scansEnabled_diskSpace' => false,
+			'scansEnabled_wafStatus' => false,
 			'scansEnabled_dns' => false,
 			'other_scanOutside' => false,
 			'scansEnabled_scanImages' => false,
@@ -352,6 +359,7 @@ class wfScanner {
 			'lowResourceScansEnabled' => 0,
 			'scan_exclude' => 0,
 			'scansEnabled_geoipSupport' => 0,
+			'scansEnabled_wafStatus' => 0,
 		);
 	}
 	
@@ -496,6 +504,7 @@ class wfScanner {
 				$options = array(
 					'scansEnabled_checkHowGetIPs',
 					'scansEnabled_diskSpace',
+					'scansEnabled_wafStatus',
 					'scansEnabled_dns',
 					'scansEnabled_geoipSupport',
 				);
@@ -857,6 +866,7 @@ class wfScanner {
 			'checkHowGetIPs' => array('scansEnabled_checkHowGetIPs'),
 			'dns' => array('scansEnabled_dns'),
 			'diskSpace' => array('scansEnabled_diskSpace'),
+			'wafStatus' => array('scansEnabled_wafStatus'),
 			'geoipSupport' => array('scansEnabled_geoipSupport'),
 			'knownFiles' => ($this->scanType() != self::SCAN_TYPE_QUICK), //Always runs except for quick, options are scansEnabled_core, scansEnabled_themes, scansEnabled_plugins, scansEnabled_coreUnknown, scansEnabled_malware
 			'checkReadableConfig' => array('scansEnabled_checkReadableConfig'),

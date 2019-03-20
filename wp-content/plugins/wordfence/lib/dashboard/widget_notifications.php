@@ -1,6 +1,6 @@
 <?php if (!defined('WORDFENCE_VERSION')) { exit; } ?>
-<div class="wf-row">
-	<div class="wf-col-xs-12 <?php if (wfCentral::isSupported() && wfConfig::get('showWfCentralUI', false)): ?>wf-col-lg-6 wf-col-lg-half-padding-right<?php else: ?>wf-col-lg-12<?php endif ?>">
+<div class="wf-flex-row wf-flex-row-full-height wf-flex-row-vertical-xs">
+	<div class="wf-flex-col-xs-100 <?php if (wfCentral::isSupported() && wfConfig::get('showWfCentralUI', false)): ?>wf-flex-col-lg-50 wf-col-lg-half-padding-right wf-dashboard-item-flex-wrapper<?php endif ?>">
 		<div class="wf-dashboard-item active">
 			<div class="wf-dashboard-item-inner">
 				<div class="wf-dashboard-item-content">
@@ -29,66 +29,35 @@
 		</div>
 	</div>
 	<?php if (wfCentral::isSupported() && wfConfig::get('showWfCentralUI', false)): ?>
-	<div class="wf-col-xs-12 wf-col-lg-6 wf-col-lg-half-padding-left">
-		<div class="wf-dashboard-item active">
-			<?php if ($d->wordfenceCentralConnected): ?>
-				<div class="wf-dashboard-item-inner">
-					<div class="wf-dashboard-item-content">
-						<div class="wf-dashboard-item-title">
-							<strong>Wordfence Central Activated</strong>
-						</div>
-					</div>
-				</div>
-				<div class="wf-dashboard-item-extra">
-					<ul class="wf-dashboard-item-list">
-						<li>
-							<div class="wf-row">
-								<p class="wf-col-md-9">
-									<?php printf(__('Connected by %s on %s', 'wordfence'), esc_html($d->wordfenceCentralConnectEmail), esc_html(date_i18n(get_option('date_format'), $d->wordfenceCentralConnectTime))) ?>
-
-								</p>
-								<p class="wf-col-md-3 wf-right-md wf-right-lg">
-									<a href="admin.php?page=WordfenceCentral"><strong><?php _e('Disconnect', 'wordfence') ?></strong></a>
-								</p>
-							</div>
-						</li>
-					</ul>
-				</div>
-
-			<?php elseif ($d->wordfenceCentralDisconnected): ?>
-				<div class="wf-dashboard-item-inner">
-					<div class="wf-dashboard-item-content">
-						<div class="wf-dashboard-item-title">
-							<strong><?php _e('Wordfence Central Deactivated', 'wordfence') ?></strong>
-						</div>
-					</div>
-				</div>
-
-				<div class="wf-dashboard-item-extra">
-					<ul class="wf-dashboard-item-list">
-						<li>
-							<div class="wf-row">
-								<p class="wf-col-md-9">
-									Disconnected by <?php echo esc_html($d->wordfenceCentralDisconnectEmail) ?> on <?php echo esc_html(date_i18n(get_option('date_format'), $d->wordfenceCentralDisconnectTime)) ?>
-								</p>
-								<p class="wf-col-md-3 wf-right-md wf-right-lg">
-									<a href="<?php echo esc_url(WORDFENCE_CENTRAL_URL_SEC) ?>"><strong><?php _e('Visit Cental', 'wordfence') ?></strong></a>
-								</p>
-							</div>
-						</li>
-					</ul>
-				</div>
-			<?php else: ?>
+		<div class="wf-flex-col-xs-100 wf-flex-col-lg-50 wf-col-lg-half-padding-left wf-dashboard-item-flex-wrapper wf-central-connected">
+			<div class="wf-dashboard-item active wf-flex-row-1">
 				<div class="wf-central-dashboard">
 					<img class="wf-central-dashboard-logo" src="<?php echo wfUtils::getBaseURL() ?>/images/wf-central-logo.svg" alt="Wordfence Central">
 					<div class="wf-central-dashboard-copy">
-						<p><?php _e('Wordfence Central allows you to manage Wordfence on multiple sites from one location. It makes security monitoring and configuring Wordfence easier.', 'wordfence') ?></p>
-						<p><a href="https://www.wordfence.com/help/central"><?php _e('Get Started', 'wordfence') ?></a></p>
+						<p><strong><?php _e('Wordfence Central Status', 'wordfence') ?></strong></p>
+						<p><?php
+							if ($d->wordfenceCentralConnected) {
+								printf(__('Connected by %s on %s', 'wordfence'), esc_html($d->wordfenceCentralConnectEmail), esc_html(date_i18n(get_option('date_format'), $d->wordfenceCentralConnectTime)));
+							} elseif ($d->wordfenceCentralDisconnected) {
+								printf(__('Disconnected by %s on %s', 'wordfence'), esc_html($d->wordfenceCentralDisconnectEmail), esc_html(date_i18n(get_option('date_format'), $d->wordfenceCentralDisconnectTime)));
+							} else {
+								_e('Wordfence Central allows you to manage Wordfence on multiple sites from one location. It makes security monitoring and configuring Wordfence easier.', 'wordfence');
+							}
+						?></p>
+						<div class="wf-flex-row">
+							<p class="wf-flex-row-1">
+								<?php if ($d->wordfenceCentralConnected): ?>
+									<a href="#" class="wf-central-disconnect"><strong><?php _e('Disconnect This Site', 'wordfence') ?></strong></a>
+								<?php else: ?>
+									<a href="<?php echo WORDFENCE_CENTRAL_URL_SEC ?>?newsite=<?php echo esc_attr(home_url()) ?>"><strong><?php _e($d->wordfenceCentralDisconnected ? 'Reconnect This Site' : 'Connect This Site', 'wordfence') ?></strong></a>
+								<?php endif; ?>
+							</p>
+							<p class="wf-flex-row-1 wf-right"><a href="<?php echo esc_url(WORDFENCE_CENTRAL_URL_SEC) ?>" target="_blank" rel="noopener noreferrer"><strong><?php _e('Visit Wordfence Central', 'wordfence') ?></strong></a></p>
+						</div>
 					</div>
 				</div>
-			<?php endif ?>
+			</div>
 		</div>
-	</div>
 	<?php endif ?>
 </div>
 <script type="application/javascript">
@@ -112,5 +81,42 @@
 				//Do nothing
 			});
 		});
+
+		$('.wf-central-disconnect').on('click', function(e) {
+			e.preventDefault();
+
+			var prompt = $('#wfTmpl_wfCentralDisconnectPrompt').tmpl();
+			var promptHTML = $("<div />").append(prompt).html();
+			WFAD.colorboxHTML('400px', promptHTML, {
+				overlayClose: false, closeButton: false, className: 'wf-modal', onComplete: function() {
+					$('#wf-central-prompt-cancel').on('click', function(e) {
+						e.preventDefault();
+						e.stopPropagation();
+
+						WFAD.colorboxClose();
+					});
+
+					$('#wf-central-prompt-disconnect').on('click', function(e) {
+						e.preventDefault();
+						e.stopPropagation();
+						WFAD.ajax('wordfence_wfcentral_disconnect', {}, function(response) {
+							window.location.reload(true);
+						});
+					});
+				}
+			});
+
+			return false;
+		});
 	})(jQuery);
-</script> 
+</script>
+<script type="text/x-jquery-template" id="wfTmpl_wfCentralDisconnectPrompt">
+	<?php
+	echo wfView::create('common/modal-prompt', array(
+		'title'            => __('Confirm Disconnect', 'wordfence'),
+		'message'          => __('Are you sure you want to disconnect your site from Wordfence Central?', 'wordfence'),
+		'primaryButton'    => array('id' => 'wf-central-prompt-cancel', 'label' => __('Cancel', 'wordfence'), 'link' => '#'),
+		'secondaryButtons' => array(array('id' => 'wf-central-prompt-disconnect', 'label' => __('Disconnect', 'wordfence'), 'link' => '#')),
+	))->render();
+	?>
+</script>

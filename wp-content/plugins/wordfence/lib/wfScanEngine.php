@@ -1409,6 +1409,29 @@ class wfScanEngine {
 		wfIssues::statusEnd($this->statusIDX['diskSpace'], $haveIssues);
 		$this->scanController->completeStage(wfScanner::STAGE_SERVER_STATE, $haveIssues);
 	}
+	private function scan_wafStatus() {
+		$this->statusIDX['wafStatus'] = wfIssues::statusStart(__('Checking Web Application Firewall status', 'wordfence'));
+		$this->scanController->startStage(wfScanner::STAGE_SERVER_STATE);
+		
+		$haveIssues = wfIssues::STATUS_SECURE;
+		$added = false;
+		$firewall = new wfFirewall();
+		if (wfConfig::get('waf_status') !== $firewall->firewallMode() && $firewall->firewallMode() == wfFirewall::FIREWALL_MODE_DISABLED) {
+			$added = $this->addIssue('wafStatus',
+				wfIssues::SEVERITY_CRITICAL,
+				'wafStatus',
+				'wafStatus' . $firewall->firewallMode(),
+				__('Web Application Firewall is disabled', 'wordfence'),
+				sprintf(__('Wordfence\'s Web Application Firewall has been unexpectedly disabled. If you see a notice at the top of the Wordfence admin pages that says "The Wordfence Web Application Firewall cannot run," click the link in that message to rebuild the configuration. If this does not work, you may need to fix file permissions. <a href="%s" target="_blank" rel="noopener noreferrer">More Details</a>', 'wordfence'), wfSupportController::esc_supportURL(wfSupportController::ITEM_SCAN_RESULT_WAF_DISABLED)),
+				array('wafStatus' => $firewall->firewallMode(), 'wafStatusDisplay' => $firewall->displayText())
+			);
+		}
+		
+		if ($added == wfIssues::ISSUE_ADDED || $added == wfIssues::ISSUE_UPDATED) { $haveIssues = wfIssues::STATUS_PROBLEM; }
+		else if ($haveIssues != wfIssues::STATUS_SECURE && ($added == wfIssues::ISSUE_IGNOREP || $added == wfIssues::ISSUE_IGNOREC)) { $haveIssues = wfIssues::STATUS_IGNORED; }
+		wfIssues::statusEnd($this->statusIDX['wafStatus'], $haveIssues);
+		$this->scanController->completeStage(wfScanner::STAGE_SERVER_STATE, $haveIssues);
+	}
 	private function scan_dns(){
 		if(! function_exists('dns_get_record')){
 			$this->status(1, 'info', "Skipping DNS scan because this system does not support dns_get_record()");

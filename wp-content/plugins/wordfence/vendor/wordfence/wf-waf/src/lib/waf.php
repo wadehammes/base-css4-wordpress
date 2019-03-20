@@ -182,31 +182,44 @@ auEa+7b+FGTKs7dUo2BNGR7OVifK4GZ8w/ajS0TelhrSRi3BBQCGXLzUO/UURUAh
 	public function runCron() {
 		if (!wfWAFStorageFile::allowFileWriting()) { return false; }
 		
+		$storage = $this->getStorageEngine();
+		
 		if ((
-				$this->getStorageEngine()->getConfig('attackDataNextInterval', null, 'transient') === null ||
-				$this->getStorageEngine()->getConfig('attackDataNextInterval', time() + 0xffff, 'transient') <= time()
+				$storage->getConfig('attackDataNextInterval', null, 'transient') === null ||
+				$storage->getConfig('attackDataNextInterval', time() + 0xffff, 'transient') <= time()
 			) &&
-			$this->getStorageEngine()->hasPreviousAttackData(microtime(true) - (60 * 5))
+			$storage->hasPreviousAttackData(microtime(true) - (60 * 5))
 		) {
 			$this->sendAttackData();
 		}
-		$cron = $this->getStorageEngine()->getConfig('cron', null, 'livewaf');
+		$cron = $storage->getConfig('cron', null, 'livewaf');
+		$run = array();
+		$updated = false;
 		if (is_array($cron)) {
 			/** @var wfWAFCronEvent $event */
 			foreach ($cron as $index => $event) {
 				$event->setWaf($this);
 				if ($event->isInPast()) {
-					$event->fire();
+					$run[$index] = $event;
 					$newEvent = $event->reschedule();
 					if ($newEvent instanceof wfWAFCronEvent && $newEvent !== $event) {
 						$cron[$index] = $newEvent;
+						$updated = true;
 					} else {
 						unset($cron[$index]);
 					}
 				}
 			}
 		}
-		$this->getStorageEngine()->setConfig('cron', $cron, 'livewaf');
+		$storage->setConfig('cron', $cron, 'livewaf');
+		
+		if ($updated && method_exists($storage, 'saveConfig')) {
+			$storage->saveConfig('livewaf');
+		}
+		
+		foreach ($run as $index => $event) {
+			$event->fire();
+		}
 	}
 
 	/**
@@ -1853,6 +1866,11 @@ class wfWAFCronFetchRulesEvent extends wfWAFCronEvent {
 			error_log($e->getMessage());
 			$success = false;
 		}
+		
+		if ($success) {
+			$waf->getStorageEngine()->setConfig('lastRuleUpdateCheck', time(), 'transient');
+		}
+		
 		return $success;
 	}
 

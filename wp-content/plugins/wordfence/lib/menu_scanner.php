@@ -256,6 +256,7 @@ echo wfView::create('scanner/issue-publiclyAccessible')->render();
 echo wfView::create('scanner/issue-coreUnknown')->render();
 echo wfView::create('scanner/issue-dnsChange')->render();
 echo wfView::create('scanner/issue-diskSpace')->render();
+echo wfView::create('scanner/issue-wafStatus')->render();
 echo wfView::create('scanner/issue-geoipSupport')->render();
 echo wfView::create('scanner/issue-easyPassword')->render();
 echo wfView::create('scanner/issue-commentBadURL')->render();

@@ -31,7 +31,7 @@ else if (wfConfig::get('touppPromptNeeded')) {
 		</div>
 		<div class="wf-row">
 			<div class="wf-col-xs-12">
-				<div class="wf-block wf-active">
+				<div class="wf-block wf-active wf-add-bottom">
 					<div class="wf-block-content">
 						<ul class="wf-block-list">
 							<li>
@@ -195,7 +195,7 @@ else if (wfConfig::get('touppPromptNeeded')) {
 		<!-- end notifications -->
 		<div class="wf-row">
 			<div class="wf-col-xs-12">
-				<div class="wf-block wf-active">
+				<div class="wf-block wf-active wf-add-bottom">
 					<div class="wf-block-content">
 						<ul class="wf-block-list">
 							<li>
@@ -420,5 +420,50 @@ else if (wfConfig::get('touppPromptNeeded')) {
 		</div>
 		<div id="wf-tour-close"><a href="#"><i class="wf-fa wf-fa-times-circle" aria-hidden="true"></i></a></div>
 	</div>
+</script>
+<?php endif; ?>
+<?php
+$hostSetting = false;
+$recordAll = wfConfig::liveTrafficEnabled($hostSetting);
+
+if ($recordAll && !$hostSetting && !wfUtils::truthyToBoolean(wfConfig::get('switchLiveTrafficSecurityOnlyChoice'))):
+?>
+<script type="application/javascript">
+	(function($) {
+		$(function() {
+			var prompt = $('#wfLiveTrafficMigration').tmpl();
+			var promptHTML = $("<div />").append(prompt).html();
+			WFAD.colorboxHTML((WFAD.isSmallScreen ? '300px' : '700px'), promptHTML, {overlayClose: false, closeButton: false, className: 'wf-modal', onComplete: function() {
+				$('#wf-livetrafficmigrate-no').on('click', function(e) {
+					e.preventDefault();
+					e.stopPropagation();
+
+					wordfenceExt.switchLiveTrafficSecurityOnlyChoice('no');
+					WFAD.colorboxClose();
+				});
+
+				$('#wf-livetrafficmigrate-yes').on('click', function(e) {
+					e.preventDefault();
+					e.stopPropagation();
+
+					wordfenceExt.switchLiveTrafficSecurityOnlyChoice('yes');
+					WFAD.colorboxClose();
+				});
+			}});
+		});
+	})(jQuery);
+</script>
+<script type="text/x-jquery-template" id="wfLiveTrafficMigration">
+	<?php
+	echo wfView::create('common/modal-prompt', array(
+		'title' => __('Recommended Settings Change', 'wordfence'),
+		'messageHTML' => '<p>' . __('Greetings! The default configuration for Wordfence Live Traffic has changed. The new default saves only logins and blocked requests, while this site is currently recording all traffic. Would you like to change to the new default?', 'wordfence') . '</p>' . (!wfRateLimit::identicalHumanBotRateLimits() ? '<p>' . __('Rate limiting based on type of request (human vs crawler) may be less accurate because this prevents loading the extra JavaScript used for that identification.', 'wordfence') . '</p>' : ''),
+		'primaryButton' => array('id' => 'wf-livetrafficmigrate-yes', 'label' => __('Yes Please', 'wordfence'), 'link' => '#', 'type' => 'wf-btn-primary'),
+		'secondaryButtons' => array(
+			array('id' => 'wf-livetrafficmigrate-no', 'label' => __('No Thanks', 'wordfence'), 'link' => '#', 'type' => 'wf-btn-default'),
+			array('id' => 'wf-livetrafficmigrate-learn', 'label' => __('Learn More', 'wordfence'), 'link' => wfSupportController::supportURL(wfSupportController::ITEM_NOTICE_SWITCH_LIVE_TRAFFIC), 'type' => 'wf-btn-default', 'target' => '_blank', 'rel' => 'noopener noreferrer'),
+		),
+	))->render();
+	?>
 </script>
 <?php endif; ?>

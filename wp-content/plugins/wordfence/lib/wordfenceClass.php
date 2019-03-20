@@ -171,7 +171,6 @@ class wordfence {
 		try {
 			$keyType = wfAPI::KEY_TYPE_FREE;
 			$keyData = $api->call('ping_api_key', array(), array('supportHash' => wfConfig::get('supportHash', ''), 'whitelistHash' => wfConfig::get('whitelistHash', '')));
-			wfConfig::set('useNoc3Secure', isset($keyData['n3']) ? wfUtils::truthyToBoolean($keyData['n3']) : false);
 			if (isset($keyData['_isPaidKey'])) {
 				$keyType = wfConfig::get('keyType');
 			}
@@ -240,7 +239,6 @@ class wordfence {
 		}
 		catch(Exception $e){
 			wordfence::status(4, 'error', "Could not verify Wordfence License: " . $e->getMessage());
-			wfConfig::set('useNoc3Secure', false);
 		}
 		
 		$allowMySQLi = wfConfig::testDB();
@@ -982,13 +980,15 @@ SQL
 		// Set the default scan options based on scan type.
 		if (!wfConfig::get('config720Migration', false)) {
 			// Replace critical/warning checkboxes with setting based on numeric severity value.
-			$alertOnCritical = wfConfig::get('alertOn_critical');
-			$alertOnWarnings = wfConfig::get('alertOn_warnings');
-			wfConfig::set('alertOn_scanIssues', $alertOnCritical || $alertOnWarnings);
-			if ($alertOnCritical && ! $alertOnWarnings) {
-				wfConfig::set('alertOn_severityLevel', wfIssues::SEVERITY_HIGH);
-			} else {
-				wfConfig::set('alertOn_severityLevel', wfIssues::SEVERITY_LOW);
+			if (wfConfig::hasCachedOption('alertOn_critical') && wfConfig::hasCachedOption('alertOn_warnings')) {
+				$alertOnCritical = wfConfig::get('alertOn_critical');
+				$alertOnWarnings = wfConfig::get('alertOn_warnings');
+				wfConfig::set('alertOn_scanIssues', $alertOnCritical || $alertOnWarnings);
+				if ($alertOnCritical && ! $alertOnWarnings) {
+					wfConfig::set('alertOn_severityLevel', wfIssues::SEVERITY_HIGH);
+				} else {
+					wfConfig::set('alertOn_severityLevel', wfIssues::SEVERITY_LOW);
+				}
 			}
 
 			// Update severity for existing issues where they are still using the old severity values.
@@ -1020,6 +1020,12 @@ SQL
 			}
 
 			wfConfig::set('config720Migration', true);
+		}
+		
+		//7.2.3
+		if (wfConfig::get('waf_status') === false) {
+			$firewall = new wfFirewall();
+			$firewall->syncStatus(true);
 		}
 
 		//Check the How does Wordfence get IPs setting
@@ -1198,6 +1204,8 @@ SQL
 			add_filter('rest_request_before_callbacks', 'wordfence::jsonAPIAuthorFilter', 99, 3);
 			add_filter('rest_post_dispatch', 'wordfence::jsonAPIAdjustHeaders', 99, 3);
 		}
+		
+		add_filter('rest_dispatch_request', 'wordfence::_filterCentralFromLiveTraffic', 99, 4);
 
 		// Change GoDaddy's limit login mu-plugin since it can interfere with the two factor auth message.
 		if (self::hasGDLimitLoginsMUPlugin()) {
@@ -2016,6 +2024,9 @@ SQL
 								$waf->getStorageEngine()->setConfig('wafStatus', 'enabled');
 								$waf->getStorageEngine()->setConfig('learningModeGracePeriodEnabled', 0);
 								$waf->getStorageEngine()->unsetConfig('learningModeGracePeriod');
+								
+								$firewall = new wfFirewall();
+								$firewall->syncStatus(true);
 							}
 						}
 					}
@@ -2321,6 +2332,12 @@ SQL
 		}
 		
 		return $response;
+	}
+	public static function _filterCentralFromLiveTraffic($dispatch_result, $request, $route, $handler) {
+		if (preg_match('~^/wordfence/v\d+/~i', $route)) {
+			self::getLog()->canLogHit = false;
+		}
+		return $dispatch_result;
 	}
 	public static function showTwoFactorField() {
 		$existingContents = ob_get_contents();
@@ -2901,7 +2918,7 @@ SQL
 		}
 		
 		try {
-			$response = wp_remote_post((wfConfig::get('useNoc3Secure') ? WORDFENCE_HACKATTEMPT_URL_SEC : WORDFENCE_HACKATTEMPT_URL) . 'multipleHackAttempts/?k=' . rawurlencode(wfConfig::get('apiKey')) . '&t=brute', array(
+			$response = wp_remote_post(WORDFENCE_HACKATTEMPT_URL_SEC . 'multipleHackAttempts/?k=' . rawurlencode(wfConfig::get('apiKey')) . '&t=brute', array(
 				'timeout' => 1,
 				'user-agent' => "Wordfence.com UA " . (defined('WORDFENCE_VERSION') ? WORDFENCE_VERSION : '[Unknown version]'),
 				'body' => 'IPs=' . rawurlencode(json_encode($toSend)),
@@ -2973,7 +2990,7 @@ SQL
 			$toSend = array_values($toSend);
 			
 			try {
-				$response = wp_remote_post((wfConfig::get('useNoc3Secure') ? WORDFENCE_HACKATTEMPT_URL_SEC : WORDFENCE_HACKATTEMPT_URL) . 'multipleHackAttempts/?k=' . rawurlencode(wfConfig::get('apiKey')) . '&t=brute', array(
+				$response = wp_remote_post(WORDFENCE_HACKATTEMPT_URL_SEC . 'multipleHackAttempts/?k=' . rawurlencode(wfConfig::get('apiKey')) . '&t=brute', array(
 					'timeout' => 1,
 					'user-agent' => "Wordfence.com UA " . (defined('WORDFENCE_VERSION') ? WORDFENCE_VERSION : '[Unknown version]'),
 					'body' => 'IPs=' . rawurlencode(json_encode($toSend)),
@@ -3029,7 +3046,7 @@ SQL
 		}
 		
 		try {
-			$result = wp_remote_get((wfConfig::get('useNoc3Secure') ? WORDFENCE_HACKATTEMPT_URL_SEC : WORDFENCE_HACKATTEMPT_URL) . 'hackAttempt/?k=' . rawurlencode(wfConfig::get('apiKey')) . 
+			$result = wp_remote_get(WORDFENCE_HACKATTEMPT_URL_SEC . 'hackAttempt/?k=' . rawurlencode(wfConfig::get('apiKey')) . 
 																			'&IP=' . rawurlencode(filter_var($IP, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) ? wfUtils::inet_aton($IP) : wfUtils::inet_pton($IP)) . 
 																			'&t=' . rawurlencode($hitType) .
 																			'&type=' . $endpointType, 
@@ -3706,6 +3723,16 @@ SQL
 		}
 		else {
 			wfConfig::set('misconfiguredHowGetIPsChoice' . WORDFENCE_VERSION, '1');
+		}
+		return array('ok' => 1);
+	}
+	public static function ajax_switchLiveTrafficSecurityOnlyChoice_callback() {
+		$choice = $_POST['choice'];
+		if ($choice == 'yes') {
+			wfConfig::set('liveTrafficEnabled', false);
+		}
+		else {
+			wfConfig::set('switchLiveTrafficSecurityOnlyChoice', '1');
 		}
 		return array('ok' => 1);
 	}
@@ -5531,7 +5558,7 @@ HTML;
 			'activityLogUpdate', 'ticker', 'loadIssues', 'updateIssueStatus', 'deleteIssue', 'updateAllIssues',
 			'avatarLookup', 'reverseLookup', 'unlockOutIP', 'unblockRange', 'whois', 'recentTraffic', 'unblockIP',
 			'blockIP', 'permBlockIP', 'loadStaticPanel', 'updateIPPreview', 'downloadHtaccess', 'downloadLogFile', 'checkHtaccess',
-			'updateConfig', 'autoUpdateChoice', 'misconfiguredHowGetIPsChoice', 'dismissAdminNotice',
+			'updateConfig', 'autoUpdateChoice', 'misconfiguredHowGetIPsChoice', 'switchLiveTrafficSecurityOnlyChoice', 'dismissAdminNotice',
 			'killScan', 'saveCountryBlocking', 'tourClosed',
 			'downgradeLicense', 'addTwoFactor', 'twoFacActivate', 'twoFacDel',
 			'loadTwoFactor', 'sendTestEmail',
@@ -5748,6 +5775,61 @@ HTML;
 			$warningAdded = true;
 		}
 		
+		//Check WAF rules status
+		$firewall = new wfFirewall();
+		if ($firewall->firewallMode() != wfFirewall::FIREWALL_MODE_DISABLED) {
+			try {
+				$lastChecked = (int) wfWAF::getInstance()->getStorageEngine()->getConfig('lastRuleUpdateCheck', null, 'transient');
+				$lastUpdated = (int) wfWAF::getInstance()->getStorageEngine()->getConfig('rulesLastUpdated', null, 'transient');
+				$threshold = time() - (86400 * (wfConfig::get('isPaid') ? 2.5 : 9)); //Refresh rate + 2 days
+				if ($lastChecked > 0 && $lastUpdated > 0 && $lastChecked < $threshold) {
+					$nextUpdate = PHP_INT_MAX;
+					$cron = (array) wfWAF::getInstance()->getStorageEngine()->getConfig('cron', null, 'livewaf');
+					if (is_array($cron)) {
+						/** @var wfWAFCronEvent $event */
+						foreach ($cron as $index => $event) {
+							if ($event instanceof wfWAFCronFetchRulesEvent) {
+								$event->setWaf(wfWAF::getInstance());
+								if (!$event->isInPast()) {
+									$nextUpdate = min($nextUpdate, $event->getFireTime());
+								}
+							}
+						}
+					}
+					
+					$message = sprintf(__('The last rules update for the Wordfence Web Application Firewall was unsuccessful. The last successful update check was %s, so this site may be missing new rules added since then.', 'wordfence'), wfUtils::formatLocalTime(get_option('date_format') . ' ' . get_option('time_format'), $lastChecked));
+					
+					if (!$firewall->isSubDirectoryInstallation()) {
+						if ($nextUpdate < PHP_INT_MAX) {
+							$message .= ' ' . sprintf(__('You may wait for the next automatic attempt at %s or try to <a href="%s">Manually Update</a> by clicking the "Manually Refresh Rules" button below the Rules list.', 'wordfence'), wfUtils::formatLocalTime(get_option('date_format') . ' ' . get_option('time_format'), $nextUpdate), esc_url(network_admin_url('admin.php?page=WordfenceWAF&subpage=waf_options#wf-option-wafRules')));
+						}
+						else {
+							$message .= ' ' . sprintf(__('You may wait for the next automatic attempt or try to <a href="%s">Manually Update</a> by clicking the "Manually Refresh Rules" button below the Rules list.', 'wordfence'), esc_url(network_admin_url('admin.php?page=WordfenceWAF&subpage=waf_options#waf-rules-next-update')));
+						}
+					}
+					else {
+						if ($nextUpdate < PHP_INT_MAX) {
+							$message .= ' ' . sprintf(__('You may wait for the next automatic attempt at %s or log into the parent site to manually update by clicking the "Manually Refresh Rules" button below the Rules list.', 'wordfence'), wfUtils::formatLocalTime(get_option('date_format') . ' ' . get_option('time_format'), $nextUpdate));
+						}
+						else {
+							$message .= ' ' . __('You may wait for the next automatic attempt or log into the parent site to manually update by clicking the "Manually Refresh Rules" button below the Rules list.', 'wordfence');
+						}
+					}
+					
+					wfAdminNoticeQueue::addAdminNotice(wfAdminNotice::SEVERITY_CRITICAL, $message, 'waf-rules-failed');
+				}
+				else {
+					wfAdminNoticeQueue::removeAdminNotice(false, 'waf-rules-failed');
+				}
+			}
+			catch (wfWAFStorageFileException $e) {
+				error_log($e->getMessage());
+			}
+		}
+		else {
+			wfAdminNoticeQueue::removeAdminNotice(false, 'waf-rules-failed');
+		}
+		
 		if (wfAdminNoticeQueue::enqueueAdminNotices()) {
 			$warningAdded = true;
 		}
@@ -5789,18 +5871,15 @@ HTML;
 
 		if (!empty($_GET['page']) && $_GET['page'] === 'WordfenceWAF' && !empty($_GET['wafconfigrebuild']) && !WFWAF_SUBDIRECTORY_INSTALL) {
 			check_admin_referer('wafconfigrebuild', 'waf-nonce');
-
-			$storage = wfWAF::getInstance()->getStorageEngine();
-			if ($storage instanceof wfWAFStorageFile && method_exists($storage, 'removeConfigFiles')) {
-				$storage->removeConfigFiles();
-				if (function_exists('network_admin_url') && is_multisite()) {
-					$wafMenuURL = network_admin_url('admin.php?page=WordfenceWAF');
-				} else {
-					$wafMenuURL = admin_url('admin.php?page=WordfenceWAF');
-				}
-				wp_redirect($wafMenuURL);
-				exit;
+			
+			wfWAF::getInstance()->uninstall();
+			if (function_exists('network_admin_url') && is_multisite()) {
+				$wafMenuURL = network_admin_url('admin.php?page=WordfenceWAF');
+			} else {
+				$wafMenuURL = admin_url('admin.php?page=WordfenceWAF');
 			}
+			wp_redirect($wafMenuURL);
+			exit;
 		}
 		
 		$notificationCount = count(wfNotification::notifications());
@@ -5825,7 +5904,7 @@ HTML;
 		}
 		add_submenu_page('Wordfence', 'Help', 'Help', 'activate_plugins', 'WordfenceSupport', 'wordfence::menu_support');
 		if (wfCentral::isSupported()) {
-			add_submenu_page(wfConfig::get('showWfCentralUI', false) ? 'Wordfence' : null, 'Wordfence Central', 'Wordfence Central', 'activate_plugins', 'WordfenceCentral', 'wordfence::menu_wordfence_central');
+			add_submenu_page(null, 'Wordfence Central', 'Wordfence Central', 'activate_plugins', 'WordfenceCentral', 'wordfence::menu_wordfence_central');
 		}
 
 		if (wfConfig::get('isPaid')) { 
@@ -6614,6 +6693,8 @@ to your httpd.conf if using Apache, or find documentation on how to disable dire
 							wfWAF::getInstance()->getStorageEngine()->unsetConfig('learningModeGracePeriod');
 						}
 						wfWAF::getInstance()->getStorageEngine()->setConfig('wafStatus', $_POST['wafStatus']);
+						$firewall = new wfFirewall();
+						$firewall->syncStatus(true);
 					}
 
 					break;

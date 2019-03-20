@@ -56,12 +56,12 @@ function ewww_image_optimizer_aux_images() {
 		'<div class="tablenav-pages ewww-aux-table">' .
 		'<span class="displaying-num ewww-aux-table"></span>' . "\n" .
 		'<span id="paginator" class="pagination-links ewww-aux-table">' . "\n" .
-		'<a id="first-images" class="first-page" style="display:none">&laquo;</a>' . "\n" .
-		'<a id="prev-images" class="prev-page" style="display:none">&lsaquo;</a>' . "\n";
+		'<a id="first-images" class="tablenav-pages-navspan button first-page" style="display:none">&laquo;</a>' . "\n" .
+		'<a id="prev-images" class="tablenav-pages-navspan button prev-page" style="display:none">&lsaquo;</a>' . "\n";
 	$output .= esc_html__( 'page', 'ewww-image-optimizer' ) . ' <span class="current-page"></span> ' . esc_html__( 'of', 'ewww-image-optimizer' ) . "\n";
 	$output .= '<span class="total-pages"></span>' . "\n" .
-		'<a id="next-images" class="next-page" style="display:none">&rsaquo;</a>' . "\n" .
-		'<a id="last-images" class="last-page" style="display:none">&raquo;</a>' .
+		'<a id="next-images" class="tablenav-pages-navspan button next-page" style="display:none">&rsaquo;</a>' . "\n" .
+		'<a id="last-images" class="tablenav-pages-navspan button last-page" style="display:none">&raquo;</a>' .
 		'</span>' .
 		'</div>' .
 		'</div>' .
@@ -75,13 +75,13 @@ function ewww_image_optimizer_aux_images() {
 	if ( ewww_image_optimizer_get_option( 'ewww_image_optimizer_debug' ) ) {
 		global $ewww_debug;
 		ewww_image_optimizer_options( 'debug-silent' );
-		$output .= '<p style="clear:both"><b>' . esc_html__( 'Debugging Information', 'ewww-image-optimizer' ) . ':</b> <button id="ewww-copy-debug" class="button button-secondary">' . esc_html__( 'Copy', 'ewww-image-optimizer' ) . '</button>';
+		$output .= '<p style="clear:both"><b>' . esc_html__( 'Debugging Information', 'ewww-image-optimizer' ) . ':</b> <button id="ewww-copy-debug" class="button button-secondary" type="button">' . esc_html__( 'Copy', 'ewww-image-optimizer' ) . '</button>';
 		if ( is_file( EWWW_IMAGE_OPTIMIZER_PLUGIN_PATH . 'debug.log' ) ) {
 			$debug_log_url = plugins_url( '/debug.log', __FILE__ );
 			$output       .= "&emsp;<a href='$debug_log_url'>" . esc_html( 'View Debug Log', 'ewww-image-optimizer' ) . "</a> - <a href='admin.php?action=ewww_image_optimizer_delete_debug_log'>" . esc_html( 'Remove Debug Log', 'ewww-image-optimizer' ) . '</a>';
 		}
 		$output           .= '</p>';
-		$output           .= '<div id="ewww-debug-info" style="background:#ffff99;margin-left:-20px;padding:10px" contenteditable="true">' . $ewww_debug . '</div>';
+		$output           .= '<div id="ewww-debug-info" style="border:1px solid #e5e5e5;background:#fff;overflow:auto;height:300px;width:800px;" contenteditable="true">' . $ewww_debug . '</div>';
 		$help_instructions = esc_html__( 'Debugging information will be included with your message automatically.', 'ewww-image-optimizer' ) . ' ' .
 			esc_html__( 'This will allow us to assist you more quickly.', 'ewww-image-optimizer' );
 	}
@@ -174,7 +174,7 @@ function ewww_image_optimizer_aux_images_table() {
 		if ( DAY_IN_SECONDS * 30 + $updated_time < time() ) {
 			$optimized_image['backup'] = '';
 		}
-		if ( strpos( $file, 's3' ) === 0 ) {
+		if ( ewww_image_optimizer_stream_wrapped( $file ) ) {
 			// Retrieve the mimetype of the attachment.
 			$type      = esc_html__( 'Amazon S3 image', 'ewww-image-optimizer' );
 			$file_size = ewww_image_optimizer_size_format( $optimized_image['image_size'] );
@@ -314,6 +314,23 @@ function ewww_image_optimizer_aux_images_table_count_pending_media() {
 }
 
 /**
+ * Set a batch of images to pending.
+ *
+ * @global object $wpdb
+ *
+ * @param array $reset_images A list of images to reset in the ewwwio_images table.
+ */
+function ewww_image_optimizer_reset_images( $reset_images ) {
+	if ( ! ewww_image_optimizer_iterable( $reset_images ) ) {
+		return;
+	}
+	array_walk( $reset_images, 'intval' );
+	global $wpdb;
+	$reset_images_sql = '(' . implode( ',', $reset_images ) . ')';
+	$wpdb->query( "UPDATE $wpdb->ewwwio_images SET pending = 1, updated = updated WHERE id IN $reset_images_sql" ); // phpcs:ignore WordPress.DB.PreparedSQL
+}
+
+/**
  * Remove all un-optimized images from the ewwwio_images table.
  *
  * @global object $wpdb
@@ -416,6 +433,7 @@ function ewww_image_optimizer_get_queued_attachments( $gallery, $limit = 100 ) {
  * @global object $wpdb
  */
 function ewww_image_optimizer_insert_unscanned( $ids, $gallery = 'media' ) {
+	ewwwio_debug_message( '<b>' . __FUNCTION__ . '()</b>' );
 	global $wpdb;
 	$images = array();
 	$id     = array_shift( $ids );
@@ -440,24 +458,21 @@ function ewww_image_optimizer_insert_unscanned( $ids, $gallery = 'media' ) {
  *
  * @since 4.6.0
  *
- * @param int    $id The attachment ID to update.
+ * @param int    $ids The attachment IDs to update.
  * @param string $gallery The type of attachment to update. Defaults to media library.
  * @global object $wpdb
  */
-function ewww_image_optimizer_update_scanned_image( $id, $gallery = 'media' ) {
+function ewww_image_optimizer_update_scanned_images( $ids, $gallery = 'media' ) {
+	ewwwio_debug_message( '<b>' . __FUNCTION__ . '()</b>' );
+	if ( ! ewww_image_optimizer_iterable( $ids ) ) {
+		return;
+	}
 	global $wpdb;
-	$wpdb->update(
-		$wpdb->ewwwio_queue,
-		array(
-			'scanned' => 1,
-		),
-		array(
-			'gallery'       => $gallery,
-			'attachment_id' => (int) $id,
-		),
-		array( '%d' ),
-		array( '%s', '%d' )
-	);
+
+	array_walk( $ids, 'intval' );
+	$ids_sql = '(' . implode( ',', $ids ) . ')';
+
+	$wpdb->query( $wpdb->prepare( "UPDATE $wpdb->ewwwio_queue SET scanned = 1 WHERE gallery = %s AND attachment_id IN $ids_sql", $gallery ) ); // phpcs:ignore WordPress.DB.PreparedSQL
 }
 
 /**
@@ -465,20 +480,21 @@ function ewww_image_optimizer_update_scanned_image( $id, $gallery = 'media' ) {
  *
  * @since 4.6.0
  *
- * @param int    $id The attachment ID to remove.
+ * @param int    $ids The attachment IDs to remove.
  * @param string $gallery The type of attachment to remove. Defaults to media library.
  * @global object $wpdb
  */
-function ewww_image_optimizer_delete_queued_image( $id, $gallery = 'media' ) {
+function ewww_image_optimizer_delete_queued_images( $ids, $gallery = 'media' ) {
+	ewwwio_debug_message( '<b>' . __FUNCTION__ . '()</b>' );
+	if ( ! ewww_image_optimizer_iterable( $ids ) ) {
+		return;
+	}
 	global $wpdb;
-	$wpdb->delete(
-		$wpdb->ewwwio_queue,
-		array(
-			'gallery'       => $gallery,
-			'attachment_id' => (int) $id,
-		),
-		array( '%s', '%d' )
-	);
+
+	array_walk( $ids, 'intval' );
+	$ids_sql = '(' . implode( ',', $ids ) . ')';
+
+	$wpdb->query( $wpdb->prepare( "DELETE from $wpdb->ewwwio_queue WHERE gallery = %s AND attachment_id IN $ids_sql", $gallery ) ); // phpcs:ignore WordPress.DB.PreparedSQL
 }
 
 /**
@@ -560,11 +576,7 @@ function ewww_image_optimizer_image_scan( $dir, $started = 0 ) {
 			continue;
 		}
 		if ( $started && ! empty( $_REQUEST['ewww_scan'] ) && 0 === $file_counter % 100 && microtime( true ) - $started > apply_filters( 'ewww_image_optimizer_timeout', 15 ) ) {
-			if ( ! empty( $reset_images ) ) {
-				array_walk( $reset_images, 'intval' );
-				$reset_images_sql = '(' . implode( ',', $reset_images ) . ')';
-				$wpdb->query( "UPDATE $wpdb->ewwwio_images SET pending = 1 WHERE id IN $reset_images_sql" ); // phpcs:ignore WordPress.DB.PreparedSQL
-			}
+			ewww_image_optimizer_reset_images( $reset_images );
 			if ( ! empty( $images ) ) {
 				ewww_image_optimizer_mass_insert( $wpdb->ewwwio_images, $images, array( '%s', '%d', '%d' ) );
 			}
@@ -592,11 +604,7 @@ function ewww_image_optimizer_image_scan( $dir, $started = 0 ) {
 					)
 				);
 			}
-			if ( ! empty( $reset_images ) ) {
-				array_walk( $reset_images, 'intval' );
-				$reset_images_sql = '(' . implode( ',', $reset_images ) . ')';
-				$wpdb->query( "UPDATE $wpdb->ewwwio_images SET pending = 1 WHERE id IN $reset_images_sql" ); // phpcs:ignore WordPress.DB.PreparedSQL
-			}
+			ewww_image_optimizer_reset_images( $reset_images );
 			if ( ! empty( $images ) ) {
 				ewww_image_optimizer_mass_insert( $wpdb->ewwwio_images, $images, array( '%s', '%d', '%d' ) );
 			}
@@ -694,11 +702,7 @@ function ewww_image_optimizer_image_scan( $dir, $started = 0 ) {
 	if ( ! empty( $images ) ) {
 		ewww_image_optimizer_mass_insert( $wpdb->ewwwio_images, $images, array( '%s', '%d', '%d' ) );
 	}
-	if ( ! empty( $reset_images ) ) {
-		array_walk( $reset_images, 'intval' );
-		$reset_images_sql = '(' . implode( ',', $reset_images ) . ')';
-		$wpdb->query( "UPDATE $wpdb->ewwwio_images SET pending = 1 WHERE id IN $reset_images_sql" ); // phpcs:ignore WordPress.DB.PreparedSQL
-	}
+	ewww_image_optimizer_reset_images( $reset_images );
 	delete_transient( 'ewww_image_optimizer_aux_iterator' );
 	$end = microtime( true ) - $start;
 	ewwwio_debug_message( "query time for $file_counter files (seconds): $end" );
@@ -952,27 +956,4 @@ function ewww_image_optimizer_aux_images_cleanup( $auto = false ) {
 add_action( 'wp_ajax_bulk_aux_images_table', 'ewww_image_optimizer_aux_images_table' );
 add_action( 'wp_ajax_bulk_aux_images_table_count', 'ewww_image_optimizer_aux_images_table_count' );
 add_action( 'wp_ajax_bulk_aux_images_remove', 'ewww_image_optimizer_aux_images_remove' );
-
-/**
- * Set a batch of images to pending.
- *
- * @global object $wpdb
- * @global object $ewwwdb A clone of $wpdb unless it is lacking utf8 connectivity.
- *
- * @param array $reset_images A list of images to reset in the ewwwio_images table.
- */
-function ewww_image_optimizer_reset_images( $reset_images ) {
-	if ( ! ewww_image_optimizer_iterable( $reset_images ) ) {
-		return;
-	}
-	array_walk( $reset_images, 'intval' );
-	global $wpdb;
-	if ( strpos( $wpdb->charset, 'utf8' ) === false ) {
-		ewww_image_optimizer_db_init();
-		global $ewwwdb;
-	} else {
-		$ewwwdb = $wpdb;
-	}
-	$ewwwdb->query( "UPDATE $ewwwdb->ewwwio_images SET pending = 1, updated = updated WHERE id IN (" . implode( ',', $reset_images ) . ')' );
-}
 ?>

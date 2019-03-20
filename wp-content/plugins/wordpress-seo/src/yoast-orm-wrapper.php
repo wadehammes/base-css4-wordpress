@@ -5,7 +5,7 @@
  * @package Yoast\YoastSEO
  */
 
-namespace Yoast\YoastSEO;
+namespace Yoast\WP\Free;
 
 use YoastSEO_Vendor\ORM;
 
@@ -29,13 +29,14 @@ use YoastSEO_Vendor\ORM;
  * @method Array|\IdiormResultSet findMany()
  */
 class ORMWrapper extends ORM {
+
 	/**
 	 * The wrapped find_one and find_many classes will return an instance or
 	 * instances of this class.
 	 *
-	 * @var string $_class_name
+	 * @var string
 	 */
-	protected $_class_name;
+	protected $class_name;
 
 	/**
 	 * Set the name of the class which the wrapped methods should return
@@ -46,7 +47,7 @@ class ORMWrapper extends ORM {
 	 * @return void
 	 */
 	public function set_class_name( $class_name ) {
-		$this->_class_name = $class_name;
+		$this->class_name = $class_name;
 	}
 
 	/**
@@ -63,8 +64,8 @@ class ORMWrapper extends ORM {
 		$args            = \func_get_args();
 		$filter_function = \array_shift( $args );
 		\array_unshift( $args, $this );
-		if ( \method_exists( $this->_class_name, $filter_function ) ) {
-			return \call_user_func_array( array( $this->_class_name, $filter_function ), $args );
+		if ( \method_exists( $this->class_name, $filter_function ) ) {
+			return \call_user_func_array( array( $this->class_name, $filter_function ), $args );
 		}
 
 		return null;
@@ -96,13 +97,13 @@ class ORMWrapper extends ORM {
 	 *
 	 * @return bool|Yoast_Model Instance of the model class.
 	 */
-	protected function _create_model_instance( $orm ) {
+	protected function create_model_instance( $orm ) {
 		if ( $orm === \false ) {
 			return \false;
 		}
 
 		/** @var Yoast_Model $model */
-		$model = new $this->_class_name();
+		$model = new $this->class_name();
 		$model->set_orm( $orm );
 
 		return $model;
@@ -117,7 +118,7 @@ class ORMWrapper extends ORM {
 	 * @return Yoast_Model Instance of the model.
 	 */
 	public function find_one( $id = null ) {
-		return $this->_create_model_instance( parent::find_one( $id ) );
+		return $this->create_model_instance( parent::find_one( $id ) );
 	}
 
 	/**
@@ -129,7 +130,7 @@ class ORMWrapper extends ORM {
 	public function find_many() {
 		$results = parent::find_many();
 		foreach ( $results as $key => $result ) {
-			$results[ $key ] = $this->_create_model_instance( $result );
+			$results[ $key ] = $this->create_model_instance( $result );
 		}
 
 		return $results;
@@ -144,6 +145,6 @@ class ORMWrapper extends ORM {
 	 * @return ORMWrapper|bool Instance of the ORM.
 	 */
 	public function create( $data = null ) {
-		return $this->_create_model_instance( parent::create( $data ) );
+		return $this->create_model_instance( parent::create( $data ) );
 	}
 }

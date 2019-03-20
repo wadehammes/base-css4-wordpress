@@ -12,11 +12,15 @@ class Yoast_Network_Admin implements WPSEO_WordPress_Integration, WPSEO_WordPres
 
 	/**
 	 * Action identifier for updating plugin network options.
+	 *
+	 * @var string
 	 */
 	const UPDATE_OPTIONS_ACTION = 'yoast_handle_network_options';
 
 	/**
 	 * Action identifier for restoring a site.
+	 *
+	 * @var string
 	 */
 	const RESTORE_SITE_ACTION = 'yoast_restore_site';
 
@@ -112,6 +116,7 @@ class Yoast_Network_Admin implements WPSEO_WordPress_Integration, WPSEO_WordPres
 		foreach ( $whitelist_options as $option_name ) {
 			$value = null;
 			if ( isset( $_POST[ $option_name ] ) ) { // WPCS: CSRF ok.
+			    // Adding sanitize_text_field around this will break the saving of settings because it expects a string: https://github.com/Yoast/wordpress-seo/issues/12440.
 				$value = wp_unslash( $_POST[ $option_name ] ); // WPCS: CSRF ok.
 			}
 
@@ -255,7 +260,7 @@ class Yoast_Network_Admin implements WPSEO_WordPress_Integration, WPSEO_WordPres
 		check_admin_referer( $action, $query_arg );
 
 		if ( ! $has_access ) {
-			wp_die( __( 'You are not allowed to perform this action.', 'wordpress-seo' ) );
+			wp_die( esc_html__( 'You are not allowed to perform this action.', 'wordpress-seo' ) );
 		}
 	}
 

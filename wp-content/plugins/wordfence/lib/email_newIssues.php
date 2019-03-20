@@ -62,6 +62,9 @@ foreach ($severitySections as $severityLevel => $severityLabel):
 	if ($i['type'] == 'coreUnknown') {
 		echo '<p>' . __('The core files scan has not run because this version is not currently indexed by Wordfence. New WordPress versions may take up to a day to be indexed.', 'wordfence') . '</p>';
 	}
+	else if ($i['type'] == 'wafStatus') {
+		echo '<p>' . __('Firewall issues may be caused by file permission changes or other technical problems.', 'wordfence') . ' <a href="' . wfSupportController::esc_supportURL(wfSupportController::ITEM_SCAN_RESULT_WAF_DISABLED) . '" target="_blank" rel="nofollow noreferrer noopener">' . __('More Details and Instructions', 'wordfence') . '</a></p>';
+    }
 
 	$showWPParagraph = !empty($i['tmplData']['vulnerable']) || isset($i['tmplData']['wpURL']);
 	if ($showWPParagraph) {
@@ -81,14 +84,12 @@ foreach ($severitySections as $severityLevel => $severityLabel):
 	}
 	?>
 
-<?php if (!empty($i['tmplData']['badURL'])): ?>
-<p><img src="<?php echo WORDFENCE_API_URL_BASE_NONSEC . "?" . http_build_query(array(
-		'v' => wfUtils::getWPVersion(), 
-		's' => home_url(),
-		'k' => wfConfig::get('apiKey'),
-		'action' => 'image',
-		'txt' => base64_encode($i['tmplData']['badURL'])
-	), '', '&') ?>" alt="" /></p>
+<?php
+if (!empty($i['tmplData']['badURL'])):
+	$api = new wfAPI(wfConfig::get('apiKey'), wfUtils::getWPVersion());
+	$url = set_url_scheme($api->getTextImageURL($i['tmplData']['badURL']), 'https');
+?>
+<p><img src="<?php echo esc_url($url) ?>" alt="The malicious URL matched" /></p>
 <?php endif ?>
 
 <?php } } ?>

@@ -26,6 +26,13 @@ if (wfOnboardingController::shouldShowAttempt3()) {
 	echo wfView::create('gdpr/disabled-overlay')->render();
 	echo wfView::create('gdpr/banner')->render();
 }
+
+if (function_exists('network_admin_url') && is_multisite()) {
+	$wordfenceURL = network_admin_url('admin.php?page=Wordfence');
+}
+else {
+	$wordfenceURL = admin_url('admin.php?page=Wordfence');
+}
 ?>
 <div class="wrap wordfence">
 	<div class="wf-container-fluid">
@@ -49,14 +56,14 @@ if (wfOnboardingController::shouldShowAttempt3()) {
 								<div class="wf-central-dashboard-copy">
 									<p><strong><?php _e('Wordfence Central', 'wordfence') ?></strong></p>
 									<p><?php _e('Wordfence Central allows you to manage Wordfence on multiple sites from one location. It makes security monitoring and configuring Wordfence easier.', 'wordfence') ?></p>
-									<p class="wf-right-lg"><a href="https://www.wordfence.com/central"><strong><?php _e('Visit Wordfence Central', 'wordfence') ?></strong></a></p>
+									<p class="wf-right-lg"><a href="https://www.wordfence.com/central" target="_blank" rel="noopener noreferrer"><strong><?php _e('Visit Wordfence Central', 'wordfence') ?></strong></a></p>
 								</div>
 							</div>
 						</div>
 						<div class="wf-flex-row-1 wf-block wf-active">
 							<p><strong><?php _e('Wordfence Central Status', 'wordfence') ?></strong></p>
 							<p><?php printf(__('Activated - connected by %s on %s', 'wordfence'), esc_html(wfConfig::get('wordfenceCentralConnectEmail')), date_i18n('F j, Y', (int) wfConfig::get('wordfenceCentralConnectTime'))) ?></p>
-							<p class="wf-right-lg"><a href="#" class="wf-central-disconnect"><strong><?php _e('Disconnect This Site', 'wordfence') ?></strong></a></p>
+							<p class="wf-right-lg"><a href="<?php echo esc_url($wordfenceURL); ?>"><strong><?php _e('Disconnect This Site', 'wordfence') ?></strong></a></p>
 						</div>
 					</div>
 				</div>
@@ -100,17 +107,15 @@ if (wfOnboardingController::shouldShowAttempt3()) {
 						<a href="<?php echo WORDFENCE_CENTRAL_URL_SEC ?>/sites/connection-issues?complete-setup=<?php echo esc_attr($partialConnection) ?>"
 								class="wf-btn wf-btn-primary"
 						><?php _e('Resume Installation', 'wordfence') ?></a>
-						<a href="#" class="wf-btn wf-btn-warning wf-central-disconnect"><?php _e('Disconnect Site', 'wordfence') ?></a>
+						<a href="<?php echo esc_url($wordfenceURL); ?>" class="wf-btn wf-btn-warning"><?php _e('Disconnect Site', 'wordfence') ?></a>
 					</p>
 				</div>
 			<?php else: ?>
 				<div class="wf-center-lg">
 					<p><?php _e('Wordfence Central allows you to manage Wordfence on multiple sites from one location. It makes security monitoring and configuring Wordfence easier.', 'wordfence') ?></p>
 					<p><?php _e('To connect your site your site to Wordfence Central, use the link below:', 'wordfence') ?></p>
-					<p style="text-align: center">
-						<a href="<?php echo WORDFENCE_CENTRAL_URL_SEC ?>?newsite=<?php echo esc_attr(home_url()) ?>"
-								class="wf-btn wf-btn-primary"
-						><?php _e('Connect Site', 'wordfence') ?></a>
+					<p class="wf-center">
+						<a href="<?php echo WORDFENCE_CENTRAL_URL_SEC ?>?newsite=<?php echo esc_attr(home_url()) ?>" class="wf-btn wf-btn-primary"><?php _e('Connect Site', 'wordfence') ?></a>
 					</p>
 				</div>
 			<?php endif ?>
@@ -227,30 +232,6 @@ if (wfOnboardingController::shouldShowAttempt3()) {
 
 		var self = this;
 
-		WFCentralInstaller.disconnect = function() {
-			var prompt = $('#wfTmpl_wfCentralDisconnectPrompt').tmpl();
-			var promptHTML = $("<div />").append(prompt).html();
-			WFAD.colorboxHTML('400px', promptHTML, {
-				overlayClose: false, closeButton: false, className: 'wf-modal', onComplete: function() {
-					$('#wf-central-prompt-cancel').on('click', function(e) {
-						e.preventDefault();
-						e.stopPropagation();
-
-						WFAD.colorboxClose();
-					});
-
-					$('#wf-central-prompt-disconnect').on('click', function(e) {
-						e.preventDefault();
-						e.stopPropagation();
-						WFAD.ajax('wordfence_wfcentral_disconnect', {}, function(response) {
-							window.location.reload(true);
-						});
-					});
-				}
-			});
-		};
-
-
 		$(function() {
 //			if (!authGrant) {
 //				wfConnectError('Auth grant not found.');
@@ -266,22 +247,7 @@ if (wfOnboardingController::shouldShowAttempt3()) {
 
 				WFCentralInstaller['step' + currentStep]();
 			}
-
-			$('.wf-central-disconnect').on('click', function() {
-				WFCentralInstaller.disconnect();
-				return false;
-			});
 		});
 
 	})(jQuery);
-</script>
-<script type="text/x-jquery-template" id="wfTmpl_wfCentralDisconnectPrompt">
-	<?php
-	echo wfView::create('common/modal-prompt', array(
-		'title'            => __('Confirm Disconnect', 'wordfence'),
-		'message'          => __('Are you sure you want to disconnect your site from Wordfence Central?', 'wordfence'),
-		'primaryButton'    => array('id' => 'wf-central-prompt-cancel', 'label' => __('Cancel', 'wordfence'), 'link' => '#'),
-		'secondaryButtons' => array(array('id' => 'wf-central-prompt-disconnect', 'label' => __('Disconnect', 'wordfence'), 'link' => '#')),
-	))->render();
-	?>
 </script>

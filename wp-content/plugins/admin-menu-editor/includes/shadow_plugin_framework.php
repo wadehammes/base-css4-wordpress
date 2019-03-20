@@ -318,9 +318,17 @@ class MenuEd_ShadowPluginFramework {
 		$normalizedFileName = realpath($filename);
 
 		//If realpath() fails, just normalize the syntax instead.
-		if ( empty($normalizedFileName) || empty($normalizedFileName) ) {
+		if ( empty($normalizedFileName) || empty($normalizedMuPluginDir) ) {
 			$normalizedMuPluginDir = wp_normalize_path(WPMU_PLUGIN_DIR);
 			$normalizedFileName = wp_normalize_path($filename);
+		}
+		//Yet another fallback if the above also fails.
+		if ( !is_string($normalizedMuPluginDir) || empty($normalizedMuPluginDir) ) {
+			if ( is_string(WPMU_PLUGIN_DIR) ) {
+				$normalizedMuPluginDir = WPMU_PLUGIN_DIR;
+			} else {
+				return false;
+			}
 		}
 		return (strpos( $normalizedFileName, $normalizedMuPluginDir ) !== false);
 	}

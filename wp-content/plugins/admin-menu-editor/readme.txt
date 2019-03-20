@@ -3,8 +3,8 @@ Contributors: whiteshadow
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=A6P9S6CE3SRSW
 Tags: admin, dashboard, menu, security, wpmu
 Requires at least: 4.1
-Tested up to: 5.0
-Stable tag: 1.8.7
+Tested up to: 5.1
+Stable tag: 1.8.8
 
 Lets you edit the WordPress admin menu. You can re-order, hide or rename menus, add custom menus and more. 
 
@@ -62,6 +62,14 @@ Plugins installed in the `mu-plugins` directory are treated as "always on", so y
 3. Re-ordering menu items via drag and drop
 
 == Changelog ==
+
+= 1.8.8 =
+* Added the ability to edit more plugin details like author name, site URL and version number. Note that this feature only changes how plugins are displayed. It doesn't actually modify plugin files.
+* Fixed a PHP deprecation notice: "strpos(): Non-string needles will be interpreted as strings in the future". Hopefully this time it's been fixed for good.
+* Fixed a couple of HTML validation errors.
+* Fixed an inefficiency where the plugin would reinitialise the media frame every time the user tried to select an image from the media library. 
+* Added a partial workaround for situations where menu icons that were more than 32 pixels wide would be displayed incorrectly. 
+* Tested up to WP 5.1.1.
 
 = 1.8.7 =
 * Fixed a bug introcuded in 1.8.6 that caused a PHP warning "strpos(): Empty needle".

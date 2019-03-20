@@ -6,6 +6,34 @@ $w = new wfConfig();
 	(function($) {
 		$(function() {
 			document.title = "<?php esc_attr_e('Live Traffic', 'wordfence'); ?>" + " \u2039 " + WFAD.basePageName;
+
+			//Hash-based option block linking
+			if (window.location.hash) {
+				var hashes = WFAD.parseHashes();
+				var hash = hashes[hashes.length - 1];
+				var block = $('.wf-block[data-persistence-key="' + hash + '"]');
+				if (block.length) {
+					if (!block.hasClass('wf-active')) {
+						block.find('.wf-block-content').slideDown({
+							always: function() {
+								block.addClass('wf-active');
+								$('html, body').animate({
+									scrollTop: block.offset().top - 100
+								}, 1000);
+							}
+						});
+
+						WFAD.ajax('wordfence_saveDisclosureState', {name: block.data('persistenceKey'), state: true}, function() {});
+					}
+					else {
+						$('html, body').animate({
+							scrollTop: block.offset().top - 100
+						}, 1000);
+					}
+
+					history.replaceState('', document.title, window.location.pathname + window.location.search);
+				}
+			}
 		});
 	})(jQuery);
 </script>

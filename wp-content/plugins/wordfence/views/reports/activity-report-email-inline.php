@@ -161,7 +161,7 @@ h6 a:visited { color: purple !important; }
 									<span class="wf-flag <?php echo esc_attr('wf-flag-' . $key); ?>" style="display: inline-block;vertical-align: middle;
 	margin: 0;padding: 0; border: 0;background-repeat: no-repeat;background-position: <?php echo $offset; ?>;width: 16px;height: 11px;background-image: url('<?php echo esc_attr(wfUtils::getBaseURL() . 'images/flags.png'); ?>')"></span>
 										&nbsp;
-										<?php echo esc_html($row->countryCode) ?>
+										<?php echo esc_html($row->countryName) ?>
 									<?php else: ?>
 										<?php _e('(Unknown)', 'wordfence'); ?>
 									<?php endif ?>
@@ -215,7 +215,7 @@ h6 a:visited { color: purple !important; }
 											<span class="wf-flag <?php echo esc_attr('wf-flag-' . $key); ?>" style="display: inline-block;vertical-align: middle;
 													margin: 0;padding: 0; border: 0;background-repeat: no-repeat;background-position: <?php echo $offset; ?>;width: 16px;height: 11px;background-image: url('<?php echo esc_attr(wfUtils::getBaseURL() . 'images/flags.png'); ?>')"></span>
 											&nbsp;
-											<?php echo esc_html($row->countryCode) ?>
+											<?php echo esc_html($row->countryName) ?>
 										<?php else: ?>
 											<?php _e('(Unknown)', 'wordfence'); ?>
 										<?php endif ?>

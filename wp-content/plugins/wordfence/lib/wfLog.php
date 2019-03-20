@@ -339,17 +339,32 @@ class wfLog {
 			$sqlArgs = array($afterTime, $limit);
 		}
 		if($hitType == 'hits'){
+			$securityOnly = !wfConfig::liveTrafficEnabled();
+			$delayedHumanBotFiltering = false;
+			
 			if($type == 'hit'){
 				$typeSQL = " ";
 			} else if($type == 'crawler'){
-				$now = time();
-				$typeSQL = " and jsRun = 0 and $now - ctime > 30 ";
+				if ($securityOnly) {
+					$typeSQL = " ";
+					$delayedHumanBotFiltering = true;
+				}
+				else {
+					$now = time();
+					$typeSQL = " and jsRun = 0 and {$now} - ctime > 30 ";
+				}
 			} else if($type == 'gCrawler'){
 				$typeSQL = " and isGoogle = 1 ";
 			} else if($type == '404'){
 				$typeSQL = " and statusCode = 404 ";
 			} else if($type == 'human'){
-				$typeSQL = " and jsRun = 1 ";
+				if ($securityOnly) {
+					$typeSQL = " ";
+					$delayedHumanBotFiltering = true;
+				}
+				else {
+					$typeSQL = " and jsRun = 1 ";
+				}
 			} else if($type == 'ruser'){
 				$typeSQL = " and userID > 0 ";
 			} else {
@@ -360,6 +375,25 @@ class wfLog {
 				LEFT JOIN {$wpdb->users} u on h.userID = u.ID
 				where ctime > %f $IPSQL $typeSQL order by ctime desc limit %d");
 			$results = call_user_func_array(array($this->getDB(), 'querySelect'), $sqlArgs);
+			
+			if ($delayedHumanBotFiltering) {
+				$browscap = wfBrowscap::shared();
+				foreach ($results as $index => $res) {
+					if ($res['UA']) {
+						$b = $browscap->getBrowser($res['UA']);
+						if ($b && $b['Parent'] != 'DefaultProperties') {
+							$jsRun = wfUtils::truthyToBoolean($res['jsRun']);
+							if (!wfConfig::liveTrafficEnabled() && !$jsRun) {
+								$jsRun = !(isset($b['Crawler']) && $b['Crawler']);
+							}
+							
+							if ($type == 'crawler' && $jsRun || $type == 'human' && !$jsRun) {
+								unset($results[$index]);
+							}
+						}
+					}
+				}
+			}
 
 		} else if($hitType == 'logins'){
 			array_unshift($sqlArgs, "select l.*, u.display_name from {$this->loginsTable} l
@@ -387,7 +421,7 @@ class wfLog {
 		$ourURL = parse_url(site_url());
 		$ourHost = strtolower($ourURL['host']);
 		$ourHost = preg_replace('/^www\./i', '', $ourHost);
-		$browscap = new wfBrowscap();
+		$browscap = wfBrowscap::shared();
 
 		$patternBlocks = wfBlock::patternBlocks(true);
 
@@ -466,6 +500,10 @@ class wfLog {
 						'isMobile'  => !empty($b['isMobileDevice']) ? $b['isMobileDevice'] : "",
 						'isCrawler' => !empty($b['Crawler']) ? $b['Crawler'] : "",
 					);
+					
+					if (isset($res['jsRun']) && !wfConfig::liveTrafficEnabled() && !wfUtils::truthyToBoolean($res['jsRun'])) {
+						$res['jsRun'] = !(isset($b['Crawler']) && $b['Crawler']) ? '1' : '0';
+					}
 				}
 				else {
 					$IP = wfUtils::getIP();
@@ -1402,8 +1440,31 @@ class wfLiveTrafficQuery {
 	 */
 	public function execute() {
 		global $wpdb;
-		$sql = $this->buildQuery();
+		$delayedHumanBotFiltering = false;
+		$humanOnly = false;
+		$sql = $this->buildQuery($delayedHumanBotFiltering, $humanOnly);
 		$results = $wpdb->get_results($sql, ARRAY_A);
+		
+		if ($delayedHumanBotFiltering) {
+			$browscap = wfBrowscap::shared();
+			foreach ($results as $index => $res) {
+				if ($res['UA']) {
+					$b = $browscap->getBrowser($res['UA']);
+					$jsRun = wfUtils::truthyToBoolean($res['jsRun']);
+					if ($b && $b['Parent'] != 'DefaultProperties') {
+						$jsRun = wfUtils::truthyToBoolean($res['jsRun']);
+						if (!wfConfig::liveTrafficEnabled() && !$jsRun) {
+							$jsRun = !(isset($b['Crawler']) && $b['Crawler']);
+						}
+					}
+					
+					if (!$humanOnly && $jsRun || $humanOnly && !$jsRun) {
+						unset($results[$index]);
+					}
+				}
+			}
+		}
+		
 		$this->getWFLog()->processGetHitsResults('', $results);
 		
 		$verifyCrawlers = false;
@@ -1431,10 +1492,13 @@ class wfLiveTrafficQuery {
 	}
 
 	/**
+	 * @param mixed $delayedHumanBotFiltering Whether or not human/bot filtering should be applied in PHP rather than SQL.
+	 * @param mixed $humanOnly When using delayed filtering, whether to show only humans or only bots.
+	 * 
 	 * @return string
 	 * @throws wfLiveTrafficQueryException
 	 */
-	public function buildQuery() {
+	public function buildQuery(&$delayedHumanBotFiltering = null, &$humanOnly) {
 		global $wpdb;
 		$filters = $this->getFilters();
 		$groupBy = $this->getGroupBy();
@@ -1452,6 +1516,21 @@ class wfLiveTrafficQuery {
 		}
 
 		if ($filters instanceof wfLiveTrafficQueryFilterCollection) {
+			if (!wfConfig::liveTrafficEnabled()) {
+				$individualFilters = $filters->getFilters();
+				foreach ($individualFilters as $index => $f) {
+					if ($f->getParam() == 'jsRun' && $delayedHumanBotFiltering !== null && $humanOnly !== null) {
+						$humanOnly = wfUtils::truthyToBoolean($f->getValue());
+						if ($f->getOperator() == '!=') {
+							$humanOnly = !$humanOnly;
+						}
+						$delayedHumanBotFiltering = true;
+						unset($individualFilters[$index]);
+					}
+				}
+				$filters->setFilters($individualFilters);
+			}
+			
 			$filtersSQL = $filters->toSQL();
 			if ($filtersSQL) {
 				$wheres[] = $filtersSQL;

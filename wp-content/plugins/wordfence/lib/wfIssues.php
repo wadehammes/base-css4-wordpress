@@ -65,6 +65,7 @@ class wfIssues {
 		'timelimit' => wfIssues::SEVERITY_HIGH,
 		'checkHowGetIPs' => wfIssues::SEVERITY_HIGH,
 		'diskSpace' => wfIssues::SEVERITY_HIGH,
+		'wafStatus' => wfIssues::SEVERITY_CRITICAL,
 		'configReadable' => wfIssues::SEVERITY_CRITICAL,
 		'wfPluginVulnerable' => wfIssues::SEVERITY_HIGH,
 		'coreUnknown' => wfIssues::SEVERITY_HIGH,
@@ -84,7 +85,7 @@ class wfIssues {
 	);
 
 	public static function validIssueTypes() {
-		return array('checkHowGetIPs', 'checkSpamIP', 'commentBadURL', 'configReadable', 'coreUnknown', 'database', 'diskSpace', 'dnsChange', 'easyPassword', 'file', 'geoipSupport', 'knownfile', 'optionBadURL', 'postBadTitle', 'postBadURL', 'publiclyAccessible', 'spamvertizeCheck', 'suspiciousAdminUsers', 'timelimit', 'wfPluginAbandoned', 'wfPluginRemoved', 'wfPluginUpgrade', 'wfPluginVulnerable', 'wfThemeUpgrade', 'wfUpgrade', 'wpscan_directoryList', 'wpscan_fullPathDiscl');
+		return array('checkHowGetIPs', 'checkSpamIP', 'commentBadURL', 'configReadable', 'coreUnknown', 'database', 'diskSpace', 'wafStatus', 'dnsChange', 'easyPassword', 'file', 'geoipSupport', 'knownfile', 'optionBadURL', 'postBadTitle', 'postBadURL', 'publiclyAccessible', 'spamvertizeCheck', 'suspiciousAdminUsers', 'timelimit', 'wfPluginAbandoned', 'wfPluginRemoved', 'wfPluginUpgrade', 'wfPluginVulnerable', 'wfThemeUpgrade', 'wfUpgrade', 'wpscan_directoryList', 'wpscan_fullPathDiscl');
 	}
 	
 	public static function statusPrep(){

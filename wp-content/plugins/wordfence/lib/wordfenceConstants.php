@@ -3,10 +3,7 @@ define('WORDFENCE_API_VERSION', '2.26');
 define('WORDFENCE_API_URL_SEC', 'https://noc1.wordfence.com/');
 define('WORDFENCE_API_URL_NONSEC', 'http://noc1.wordfence.com/');
 define('WORDFENCE_API_URL_BASE_SEC', WORDFENCE_API_URL_SEC . 'v' . WORDFENCE_API_VERSION . '/');
-define('WORDFENCE_API_URL_BASE_NONSEC', WORDFENCE_API_URL_NONSEC . 'v' . WORDFENCE_API_VERSION . '/');
 define('WORDFENCE_BREACH_URL_BASE_SEC', WORDFENCE_API_URL_SEC . 'passwords/');
-define('WORDFENCE_BREACH_URL_BASE_NONSEC', WORDFENCE_API_URL_NONSEC . 'passwords/');
-define('WORDFENCE_HACKATTEMPT_URL', 'http://noc3.wordfence.com/');
 define('WORDFENCE_HACKATTEMPT_URL_SEC', 'https://noc3.wordfence.com/');
 if (!defined('WORDFENCE_CENTRAL_URL_SEC')) { define('WORDFENCE_CENTRAL_URL_SEC', 'https://www.wordfence.com/central'); }
 if (!defined('WORDFENCE_CENTRAL_API_URL_SEC')) { define('WORDFENCE_CENTRAL_API_URL_SEC', 'https://www.wordfence.com/api/wf'); }

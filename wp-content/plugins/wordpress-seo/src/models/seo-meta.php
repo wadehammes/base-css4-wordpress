@@ -5,9 +5,9 @@
  * @package Yoast\YoastSEO\Models
  */
 
-namespace Yoast\YoastSEO\Models;
+namespace Yoast\WP\Free\Models;
 
-use Yoast\YoastSEO\Yoast_Model;
+use Yoast\WP\Free\Yoast_Model;
 
 /**
  * Table definition for the SEO Meta table.
@@ -17,12 +17,13 @@ use Yoast\YoastSEO\Yoast_Model;
  * @property int $incoming_link_count
  */
 class SEO_Meta extends Yoast_Model {
+
 	/**
 	 * Overwrites the default ID column name.
 	 *
-	 * @var string $_id_column
+	 * @var string
 	 */
-	public static $_id_column = 'object_id';
+	public static $id_column = 'object_id';
 
 	/**
 	 * Finds the SEO meta for given post.

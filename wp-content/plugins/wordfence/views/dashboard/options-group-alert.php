@@ -50,6 +50,17 @@ if (!isset($collapseable)) {
 						?>
 					</li>
 					<li>
+						<?php
+						echo wfView::create('options/option-toggled', array(
+							'optionName' => 'alertOn_wafDeactivated',
+							'enabledValue' => 1,
+							'disabledValue' => 0,
+							'value' => wfConfig::get('alertOn_wafDeactivated') ? 1 : 0,
+							'title' => __('Email me if the Wordfence Web Application Firewall is turned off', 'wordfence'),
+						))->render();
+						?>
+					</li>
+					<li>
 
 						<?php
 						echo wfView::create('options/option-toggled-select', array(
