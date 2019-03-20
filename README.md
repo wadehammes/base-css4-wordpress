@@ -122,6 +122,8 @@ Next, install Fabric:
 pip install fabric
 ```
 
+## Git Ignore the Fabfile for security
+
 **Once this is setup, please add `fabfile.py` to the `.gitignore` in order to hidegio your SSH info**g
 
 ### Fabric Commands
