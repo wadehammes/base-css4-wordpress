@@ -3,7 +3,7 @@
 =====================================*/
 require("es6-promise").polyfill();
 
-var gulp = require("gulp"),
+const gulp = require("gulp"),
   fs = require("fs"),
   concat = require("gulp-concat"),
   uglify = require("gulp-uglify"),
@@ -19,47 +19,43 @@ var gulp = require("gulp"),
   browserSync = require("browser-sync").create();
 
 // Read our Settings Configuration
-var settings = JSON.parse(fs.readFileSync("./settings.json"));
+const settings = JSON.parse(fs.readFileSync("./settings.json"));
 
 // Process arguments passed to Gulp CLI (like gulp --production)
-var args = minimist(process.argv);
+const args = minimist(process.argv);
 
-var config = {
+const config = {
   production: args.production
 };
 
 /*==================================
 =            Base Paths            =
 ==================================*/
-var themeBase = "./wp-content/themes/";
-var themeName = "base";
+const themeBase = "./wp-content/themes/";
+const themeName = "base";
 
 // Style Path
-var stylePathSrc = themeBase + themeName + "/assets/css/base.css";
-var stylePathWatch = themeBase + themeName + "/assets/css/**/*.css";
-var stylePathDest = themeBase + themeName + "/library/css/";
+const stylePathSrc = themeBase + themeName + "/assets/css/base.css";
+const stylePathWatch = themeBase + themeName + "/assets/css/**/*.css";
+const stylePathDest = themeBase + themeName + "/library/css/";
 
 // Script Path
-var scriptsPathWatch = themeBase + themeName + "/assets/js/**/*.js";
-var scriptsPathDest = themeBase + themeName + "/library/js/";
+const scriptsPathWatch = themeBase + themeName + "/assets/js/**/*.js";
+const scriptsPathDest = themeBase + themeName + "/library/js/";
 
 // Sprites Path
-var svgPathWatch = themeBase + themeName + "/assets/svg/*.svg";
-var svgDest = themeBase + themeName + "/library/svg";
-
-// Image Path
-var imgPathWatch = themeBase + themeName + "/assets/img/*";
-var imgDest = themeBase + themeName + "/library/img";
+const svgPathWatch = themeBase + themeName + "/assets/svg/*.svg";
+const svgDest = themeBase + themeName + "/library/svg";
 
 // PHP Paths
-var phpPath = themeBase + themeName + "/**/*.php";
+const phpPath = themeBase + themeName + "/**/*.php";
 
 /*=============================
 =            Tasks            =
 =============================*/
 // Compile, prefix, minify and move our CSS files
 gulp.task("stylesheets", function() {
-  var processors = [
+  const processors = [
     require("postcss-import")(),
     require("postcss-url")(),
     require("postcss-utilities")(),
@@ -70,7 +66,6 @@ gulp.task("stylesheets", function() {
       autoprefixer: false
     }),
     require("postcss-namespace")(),
-    require("css-mqpacker")(),
     require("cssnano")({
       discardComments: {
         removeAll: true
@@ -104,7 +99,7 @@ gulp.task("scripts", function() {
     gulp.src(themeBase + themeName + "/assets/js/application.js")
   )
     .pipe(plumber())
-    .pipe(babel({ presets: ["env"] }))
+    .pipe(babel({ presets: ["@babel/preset-env"] }))
     .pipe(concat("application.js", { newLine: ";" }))
     .pipe(uglify())
     .pipe(gulp.dest(scriptsPathDest))
@@ -148,7 +143,7 @@ gulp.task("svgs", function() {
 
 // Browser Sync
 gulp.task("serve", ["stylesheets", "scripts", "svgs"], function() {
-  var files = [stylePathWatch, scriptsPathWatch, phpPath];
+  const files = [stylePathWatch, scriptsPathWatch, phpPath];
 
   browserSync.init(files, {
     proxy: settings.devUrl
@@ -157,6 +152,7 @@ gulp.task("serve", ["stylesheets", "scripts", "svgs"], function() {
   gulp.watch(stylePathWatch, ["stylesheets"]);
   gulp.watch(scriptsPathWatch, ["scripts"]);
   gulp.watch(scriptsPathWatch, ["svgs"]);
+  gulp.watch(svgDest).on("change", browserSync.reload);
   gulp.watch(phpPath).on("change", browserSync.reload);
   gulp.watch(stylePathDest + "base.css").on("change", browserSync.reload);
 });
@@ -166,4 +162,3 @@ gulp.task("serve", ["stylesheets", "scripts", "svgs"], function() {
 ==========================================*/
 gulp.task("default", ["stylesheets", "scripts", "svgs", "serve"]);
 gulp.task("build", ["stylesheets", "scripts", "svgs"]);
-gulp.task("images", ["img-opt"]);
