@@ -16,9 +16,6 @@ function base_start() {
 
     // launching this stuff after theme setup
     base_theme_support();
-
-    // adding sidebars to Wordpress
-    add_action( 'widgets_init', 'base_register_sidebars' );
     // cleaning up excerpt
     add_filter('excerpt_more', 'base_excerpt_more');
 
