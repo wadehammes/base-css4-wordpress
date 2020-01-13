@@ -11,10 +11,6 @@ $modifiedDate = get_the_modified_date( 'Y-m-d H:i:s' );
 ?>
 
 <article id="post-<?php the_ID(); ?>" <?php post_class('bs-article'); ?> itemscope itemtype="http://schema.org/BlogPosting">
-	<img itemprop="image" src="<?php echo $thumb_url; ?>" class="hidden" alt="<?php the_title(); ?>" />
-	<span itemprop="mainEntityOfPage" class="hidden" content="<?php the_permalink(); ?>"></span>
-	<span itemprop="publisher" class="hidden" content="<?php echo $publisher; ?>"></span>
-	<time itemprop="dateModified" class="hidden" content="<?php echo $modifiedDate; ?>"></time>
 
 	<header class="article-header">
 		<h1 class="entry-title single-title" itemprop="headline"><?php the_title(); ?></h1>
@@ -30,5 +26,7 @@ $modifiedDate = get_the_modified_date( 'Y-m-d H:i:s' );
 	<footer class="article-footer">
 		<p class="tags"><?php the_tags('<span class="tags-title">' . __('Tags:', 'jointstheme') . '</span> ', ', ', ''); ?></p>
 	</footer>
+
+	<?php get_template_part('partials/blog', 'structureddata'); ?>
 
 </article>

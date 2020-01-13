@@ -1,7 +1,7 @@
 <?php
 
 // Adding WP Functions & Theme Support
-function joints_theme_support() {
+function base_theme_support() {
 
 	// Add WP Thumbnail Support
 	add_theme_support('post-thumbnails');

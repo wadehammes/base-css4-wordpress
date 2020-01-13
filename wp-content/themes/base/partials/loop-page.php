@@ -6,7 +6,6 @@
 
 	<section class="page-content" itemprop="postBody">
 		<?php the_content(); ?>
-		<?php wp_link_pages(); ?>
 	</section>
 
 	<footer class="page-footer">
