@@ -15,6 +15,10 @@
     <link rel="feed" type="application/atom+xml" href="<?php bloginfo('atom_url'); ?>" title="Atom Feed">
     <link rel="feed" type="application/rss+xml" href="<?php bloginfo('rss2_url'); ?>" title="RSS Feed">
 
+    <script>
+		document.documentElement.className = "bs-js"
+	</script>
+
     <!-- TYPEKIT ACCOUNT -->
     <!-- typekit css link here -->
 
@@ -40,6 +44,11 @@
     <?php } ?>
 </head>
 <body <?php body_class(); ?>>
+
+    <!-- SVG Sprite -->
+	<div class="bs-svg-symbols" hidden>
+		<?php include('wp-content/themes/base/library/svg/symbols.svg'); ?>
+	</div>
 
     <!-- SITE -->
     <div class="bs-site p5">

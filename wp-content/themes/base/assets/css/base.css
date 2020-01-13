@@ -1,13 +1,8 @@
 @import "globals/reboot";
 
-@import "globals/whitespace";
-
 /* Theme */
-@import "globals/colors";
 @import "globals/typography";
-@import "globals/list";
 @import "globals/forms";
-@import "globals/tooltips";
 @import "globals/buttons";
 
 /* Vendors */
@@ -16,77 +11,30 @@
 /* Wordpress Admin */
 @import "/globals/editor";
 
-/* Custom media queries */
-@custom-media --desktop-large-min (min-width: 70em); /* 1120px */
-@custom-media --desktop-large (max-width: 70em); /* 1120px */
-@custom-media --desktop-min (min-width: 63.9376em); /* 1023px */
-@custom-media --desktop (max-width: 63.9375em); /* 1023px */
-@custom-media --tablet-min (min-width: 51.9375em); /* 831px */
-@custom-media --tablet (max-width: 51.9375em); /* 831px */
-@custom-media --phone (max-width: 39.9375em); /* 639px */
-@custom-media --phone-small (max-width: 29.9375em); /* 479px */
-@custom-media --desktop-large-height (min-height: 1800px);
-
 /* Custom properties */
 :root {
-  --global-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
-    "Segoe UI Symbol";
-  --line-height: 1.5;
-  --heading-font-family: var(--global-font-family);
-  --heading-font-weight: bold;
-  --heading-line-height: 1.25;
-  --monospace-font-family: "Source Code Pro", Consolas, monospace;
+	--global-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+		Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+		"Segoe UI Symbol";
+	--monospace-font-family: "Source Code Pro", Consolas, monospace;
 
-  --h1: 2rem;
-  --h2: 1.5rem;
-  --h3: 1.25rem;
-  --h4: 1rem;
-  --h5: 0.875rem;
-  --h6: 0.75rem;
+	--h1: 2rem;
+	--h2: 1.5rem;
+	--h3: 1.25rem;
+	--h4: 1rem;
+	--h5: 0.875rem;
+	--h6: 0.75rem;
 
-  --bold-font-weight: bold;
+	--container-width: 70em;
 
-  --space-1: 0.5rem;
-  --space-2: 1rem;
-  --space-3: 2rem;
-  --space-4: 4rem;
+	--black: #111;
+	--gray: #aaa;
+	--silver: #ddd;
+	--white: #fff;
+	--blue: blue;
 
-  --form-field-font-size: 1rem;
-  --form-field-height: 2.25rem;
-  --form-field-padding-y: 0.5rem;
-  --form-field-padding-x: 0.5rem;
-
-  --button-font-size: inherit;
-  --button-font-weight: bold;
-  --button-line-height: 1.125rem;
-  --button-padding-y: 0.5rem;
-  --button-padding-x: 1rem;
-
-  --container-width: 70em;
-
-  --black: #111;
-  --gray: #AAA;
-  --silver: #DDD;
-  --white: #FFF;
-  --blue: blue;
-
-  --darken-1: rgba(0, 0, 0, 0.0625);
-  --darken-2: rgba(0, 0, 0, 0.125);
-  --darken-3: rgba(0, 0, 0, 0.25);
-  --darken-4: rgba(0, 0, 0, 0.5);
-
-  --border-width: 1px;
-  --border-radius: 5px;
-  --border-color: var(--darken-2);
-  --default-border: var(--border-width) solid var(--gray);
-  --hover-background-color: var(--darken-1);
-
-  --link-color: var(--black);
-  --button-background-color: var(--black);
-  --pre-background-color: var(--gray);
-
-  /* Custom Variables Overrides */
-  --body-color: var(--black);
-  --body-background-color: var(--gray);
+	--border-width: 1px;
+	--border-radius: 5px;
+	--border-color: var(--darken-2);
+	--default-border: var(--border-width) solid var(--gray);
 }
