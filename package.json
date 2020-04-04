@@ -25,7 +25,7 @@
     "gulp-svgmin": "^2.1.0",
     "gulp-svgstore": "^7.0.1",
     "gulp-uglify": "^3.0.1",
-    "minimist": "^1.2.0",
+    "minimist": "^1.2.3",
     "through2": "^3.0.0"
   },
   "devDependencies": {
